@@ -160,3 +160,22 @@ class TestConfigCommand:
         assert result.exit_code == 0
         # Should show config keys
         assert "llm" in result.output.lower() or "model" in result.output.lower()
+
+
+@patch("pygent.cli.PygentApp")
+@patch("pygent.cli.Agent")
+@patch("pygent.cli.LLMProvider")
+@patch("pygent.cli.ToolRegistry")
+@patch("pygent.cli.SessionStorage")
+@patch("pygent.cli.PermissionManager")
+def test_cli_resume_not_found_raises(
+    mock_permissions, mock_storage_class, mock_registry, mock_provider, mock_agent, mock_app
+):
+    """Test resume command when session doesn't exist raises ClickException."""
+    mock_storage = mock_storage_class.return_value
+    mock_storage.load = AsyncMock(return_value=None)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["resume", "nonexistent"])
+    assert result.exit_code == 1
+    assert "not found" in result.output.lower()

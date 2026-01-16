@@ -1,0 +1,58 @@
+.............................................DEBUG: Event received: tool_call
+DEBUG: Event received: tool_result
+DEBUG: Event received: finished
+.DEBUG: Event received: tool_call
+DEBUG: Event received: permission_denied
+DEBUG: Event received: finished
+.DEBUG: Event received: tool_call
+DEBUG: Event received: tool_result
+DEBUG: Event received: finished
+DEBUG: Toggling via action call
+DEBUG: App PM override: True
+DEBUG: Event received: tool_call
+DEBUG: Event received: tool_result
+DEBUG: Event received: finished
+......................... [ 82%]
+...........DEBUG: Event received: text
+DEBUG: Event received: tool_call
+DEBUG: Event received: tool_result
+DEBUG: Event received: finished
+....                                                          [100%]
+=============================== warnings summary ===============================
+tests/test_tools/test_shell.py::test_shell_property_output_handling
+  /home/david/Work/Development/python/pygent/.venv/lib/python3.13/site-packages/_pytest/nodes.py:344: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+    return (x[1] for x in self.iter_markers_with_node(name=name))
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.13.11-final-0 _______________
+
+Name                               Stmts   Miss  Cover   Missing
+----------------------------------------------------------------
+src/pygent/__init__.py                 0      0   100%
+src/pygent/cli.py                     88      3    97%   37, 76, 168
+src/pygent/config/__init__.py          0      0   100%
+src/pygent/config/loader.py           29      1    97%   8
+src/pygent/config/settings.py         19      0   100%
+src/pygent/core/__init__.py            0      0   100%
+src/pygent/core/agent.py              18      0   100%
+src/pygent/core/loop.py               91      0   100%
+src/pygent/core/mock_provider.py      87     11    87%   41, 73, 80, 115-116, 198, 204, 210, 215, 224, 231
+src/pygent/core/permissions.py        14      0   100%
+src/pygent/core/providers.py          42      0   100%
+src/pygent/session/__init__.py         0      0   100%
+src/pygent/session/models.py          42      0   100%
+src/pygent/session/storage.py         49      2    96%   16, 78
+src/pygent/tools/__init__.py           0      0   100%
+src/pygent/tools/base.py              50      1    98%   63
+src/pygent/tools/filesystem.py        43      3    93%   35, 58, 104
+src/pygent/tools/registry.py          15      0   100%
+src/pygent/tools/shell.py             27      0   100%
+src/pygent/tui/__init__.py             0      0   100%
+src/pygent/tui/app.py                 87     11    87%   59, 71, 77, 110-111, 118, 133-134, 142, 152-153
+src/pygent/tui/widgets.py             60      0   100%
+----------------------------------------------------------------
+TOTAL                                761     32    96%
+87 passed, 1 warning in 8.37s

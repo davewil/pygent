@@ -560,13 +560,13 @@ def temp_session_dir(tmp_path):
 ```
 
 #### 8.2 Test Coverage Requirements
-- [ ] `core/agent.py` - Agent initialization, run loop
-- [ ] `core/loop.py` - Conversation loop, tool handling
-- [ ] `core/permissions.py` - Risk-based permission checks
-- [ ] `tools/filesystem.py` - All file operations
-- [ ] `tools/shell.py` - Command execution, timeout
-- [ ] `config/loader.py` - Config merging, defaults
-- [ ] `session/storage.py` - Save, load, list, delete
+- [x] `core/agent.py` - Agent initialization, run loop
+- [x] `core/loop.py` - Conversation loop, tool handling
+- [x] `core/permissions.py` - Risk-based permission checks
+- [x] `tools/filesystem.py` - All file operations
+- [x] `tools/shell.py` - Command execution, timeout
+- [x] `config/loader.py` - Config merging, defaults
+- [x] `session/storage.py` - Save, load, list, delete
 
 ---
 
@@ -635,7 +635,7 @@ jobs:
 - [x] All tests pass on Python 3.10, 3.11, 3.12 (CI workflow implemented as identified in Phase 1)
 - [x] No ruff lint errors
 - [x] Full type coverage (mypy strict)
-- [ ] Response time <500ms for tool execution (excluding LLM latency) - not formally benchmarked
+- [x] Response time <500ms for tool execution (excluding LLM latency) - verified with automated benchmarks
 
 ---
 
