@@ -43,8 +43,6 @@ def mock_agent():
 
     session = Session(
         id="test_session",
-        created_at=asyncio.get_event_loop().time(),
-        updated_at=asyncio.get_event_loop().time(),
         messages=[],
         tool_history=[],
         working_directory=".",

@@ -3,6 +3,7 @@ import uuid
 
 import click
 
+from pygent.config.loader import load_config
 from pygent.core.agent import Agent
 from pygent.core.permissions import PermissionManager
 from pygent.core.providers import LLMProvider
@@ -96,20 +97,73 @@ def chat(session: str | None, new: bool):
 @cli.command()
 def sessions():
     """List saved sessions."""
-    click.echo("Sessions list not implemented yet.")
+    storage = SessionStorage()
+    session_list = asyncio.run(storage.list_sessions())
+
+    if not session_list:
+        click.echo("No sessions found.")
+        return
+
+    click.echo(f"{'ID':<40} {'Updated':<20} {'Messages':<10} {'Directory'}")
+    click.echo("-" * 100)
+    for s in session_list:
+        updated_str = s.updated_at.strftime("%Y-%m-%d %H:%M")
+        click.echo(f"{s.id:<40} {updated_str:<20} {s.message_count:<10} {s.working_directory}")
 
 
 @cli.command()
 @click.argument("session_id")
 def resume(session_id: str):
     """Resume a specific session."""
-    click.echo(f"Resuming {session_id} not implemented yet.")
+    storage = SessionStorage()
+    current_session = asyncio.run(storage.load(session_id))
+
+    if not current_session:
+        click.echo(f"Session {session_id} not found.")
+        return
+
+    # Initialize components (same as chat command)
+    provider = LLMProvider(model="anthropic/claude-3-5-sonnet-20241022")
+    tools = ToolRegistry()
+
+    app = PygentApp(storage=storage)
+
+    async def permission_callback(tool_name: str, risk: str, args: dict) -> bool:
+        return await app.get_permission(tool_name, args)
+
+    permissions = PermissionManager(prompt_callback=permission_callback)
+
+    from pygent.tools.filesystem import edit_file, list_files, read_file
+    from pygent.tools.shell import shell
+
+    tools.register(read_file)
+    tools.register(list_files)
+    tools.register(edit_file)
+    tools.register(shell)
+
+    agent = Agent(provider=provider, tools=tools, permissions=permissions, session=current_session)
+    app.agent = agent
+
+    app.run()
 
 
 @cli.command()
 def config():
     """Show current configuration."""
-    click.echo("Config view not implemented yet.")
+    settings = asyncio.run(load_config())
+
+    click.echo("Current Configuration:")
+    click.echo("=" * 40)
+    click.echo("\n[LLM]")
+    click.echo(f"  provider: {settings.llm.provider}")
+    click.echo(f"  model: {settings.llm.model}")
+    click.echo(f"  max_tokens: {settings.llm.max_tokens}")
+    click.echo("\n[Permissions]")
+    click.echo(f"  auto_approve_low_risk: {settings.permissions.auto_approve_low_risk}")
+    click.echo(f"  session_override_allowed: {settings.permissions.session_override_allowed}")
+    click.echo("\n[TUI]")
+    click.echo(f"  theme: {settings.tui.theme}")
+    click.echo(f"  show_tool_panel: {settings.tui.show_tool_panel}")
 
 
 if __name__ == "__main__":

@@ -413,7 +413,7 @@ class TestLoopPropertyBased:
                 events.append(event)
             return events
 
-        events = asyncio.get_event_loop().run_until_complete(run_loop())
+        events = asyncio.run(run_loop())
 
         # Always ends with finished
         assert events[-1].type == "finished"
@@ -458,7 +458,7 @@ class TestLoopPropertyBased:
                 events.append(event)
             return events
 
-        events = asyncio.get_event_loop().run_until_complete(run_loop())
+        events = asyncio.run(run_loop())
 
         tool_calls = [e for e in events if e.type == "tool_call"]
         tool_results = [e for e in events if e.type == "tool_result"]
