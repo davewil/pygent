@@ -33,3 +33,10 @@
   - MockLLMProvider tests: Added tests for delay feature, no-user-message edge case, quoted filename/path/command extraction, edit_file trigger, tool-result-only messages, and non-string content handling (87% → 97%)
   - Filesystem tests: Added tests for IsADirectoryError when reading directory, FileNotFoundError in list_files, and FileNotFoundError in edit_file (93% → 100%)
   - Total: 105 tests pass (up from 92), all linting/type checks pass.
+2026-01-16: Started Phase 2 - Extended Tools. Implemented grep_search tool (src/pygent/tools/search.py):
+  - Supports regex pattern matching in files with ripgrep backend (fast) or pure Python fallback
+  - Features: file pattern filtering (glob), case-insensitive search, max results limit, context lines
+  - Respects .gitignore-style exclusions (hidden dirs, node_modules, __pycache__, .git, venv)
+  - Returns structured JSON results with file, line number, content, and match text
+  - Added 22 tests including unit tests and property-based tests (hypothesis)
+  - Total: 127 tests pass, 97% coverage maintained
