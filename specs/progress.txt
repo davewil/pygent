@@ -26,3 +26,10 @@
 2026-01-16: Added comprehensive integration tests for TUI actions (tests/test_integration/test_tui_actions.py) and fixed regressions in existing tests (test_cli.py, test_config.py, test_integration.py). Verified all 86 tests pass.
 2026-01-16: Fixed case sensitivity in MockLLMProvider. Filenames now preserve original case for tool calls on Unix systems, while command triggers remains case-insensitive. Updated and added tests to verify fix.
 2026-01-16: Finalized Phase 1 MVP. Implemented performance benchmarking (tests/test_performance.py) verifying <500ms tool execution. Achieved 96% test coverage across the codebase. Verified all CLI commands and TUI actions.
+2026-01-16: Fixed GitHub Actions CI errors. Resolved ruff linting issues (import sorting) and fixed mypy source shadowing by configuring mypy_path = "src" in pyproject.toml. Handled version-specific mypy errors in loader.py using pragmas. Verified successful CI run across Python 3.10, 3.11, and 3.12.
+2026-01-16: Improved test coverage from 96% to 97%. Added 13 new tests covering edge cases:
+  - Fixed RuntimeWarnings in test_shell.py by replacing AsyncMock with MagicMock+explicit async methods to avoid unawaited coroutine warnings during pytest-asyncio/hypothesis cleanup
+  - Added filterwarnings to pyproject.toml to suppress spurious AsyncMock cleanup warnings
+  - MockLLMProvider tests: Added tests for delay feature, no-user-message edge case, quoted filename/path/command extraction, edit_file trigger, tool-result-only messages, and non-string content handling (87% → 97%)
+  - Filesystem tests: Added tests for IsADirectoryError when reading directory, FileNotFoundError in list_files, and FileNotFoundError in edit_file (93% → 100%)
+  - Total: 105 tests pass (up from 92), all linting/type checks pass.

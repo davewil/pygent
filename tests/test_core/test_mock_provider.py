@@ -1,7 +1,6 @@
 """Tests for MockLLMProvider."""
 
 import pytest
-
 from pygent.core.mock_provider import MockLLMProvider
 from pygent.core.providers import LLMResponse
 from pygent.tools.base import ToolDefinition, ToolRisk
@@ -158,3 +157,136 @@ class TestMockProviderNoTools:
         # Should not have tool calls
         tool_calls = [b for b in response.content if hasattr(b, "name")]
         assert len(tool_calls) == 0
+
+
+class TestMockProviderDelay:
+    """Test delay feature."""
+
+    @pytest.mark.asyncio
+    async def test_provider_with_delay(self, tools):
+        """Test that delay is applied to responses (covers line 41)."""
+        import time
+
+        provider = MockLLMProvider(delay=0.1)
+        messages = [{"role": "user", "content": "hello"}]
+
+        start = time.monotonic()
+        await provider.complete(messages, tools)
+        elapsed = time.monotonic() - start
+
+        # Should have delayed at least 0.1 seconds
+        assert elapsed >= 0.1
+
+
+class TestMockProviderEdgeCases:
+    """Test edge cases and uncovered paths."""
+
+    @pytest.mark.asyncio
+    async def test_no_user_message_returns_empty_string(self, mock_provider, tools):
+        """Test when conversation has no user messages (covers line 73)."""
+        # Messages without any user role
+        messages = [
+            {"role": "system", "content": "You are helpful"},
+            {"role": "assistant", "content": "Hello"},
+        ]
+        response = await mock_provider.complete(messages, tools)
+
+        assert isinstance(response, LLMResponse)
+        assert response.stop_reason == "end_turn"
+
+    @pytest.mark.asyncio
+    async def test_edit_file_trigger_returns_text_response(self, mock_provider, tools):
+        """Test edit file trigger returns guidance text (covers lines 115-116)."""
+        messages = [{"role": "user", "content": "edit the config file"}]
+        response = await mock_provider.complete(messages, tools)
+
+        assert response.stop_reason == "end_turn"
+        # Should return guidance text, not a tool call
+        assert "edit" in response.content[0].text.lower() or "specify" in response.content[0].text.lower()
+
+    @pytest.mark.asyncio
+    async def test_read_file_with_quoted_filename(self, mock_provider, tools):
+        """Test filename extraction with quotes (covers line 198)."""
+        messages = [{"role": "user", "content": "read file 'config.yaml'"}]
+        response = await mock_provider.complete(messages, tools)
+
+        assert response.stop_reason == "tool_use"
+        tool_calls = [b for b in response.content if hasattr(b, "name")]
+        assert len(tool_calls) >= 1
+        assert tool_calls[0].name == "read_file"
+        assert tool_calls[0].input.get("path") == "config.yaml"
+
+    @pytest.mark.asyncio
+    async def test_list_files_with_quoted_path(self, mock_provider, tools):
+        """Test path extraction with quotes (covers line 210)."""
+        messages = [{"role": "user", "content": "list files in 'src/components'"}]
+        response = await mock_provider.complete(messages, tools)
+
+        assert response.stop_reason == "tool_use"
+        tool_calls = [b for b in response.content if hasattr(b, "name")]
+        assert len(tool_calls) >= 1
+        assert tool_calls[0].name == "list_files"
+        assert tool_calls[0].input.get("path") == "src/components"
+
+    @pytest.mark.asyncio
+    async def test_shell_with_quoted_command(self, mock_provider, tools):
+        """Test command extraction with quotes (covers line 224)."""
+        messages = [{"role": "user", "content": "run command 'git status'"}]
+        response = await mock_provider.complete(messages, tools)
+
+        assert response.stop_reason == "tool_use"
+        tool_calls = [b for b in response.content if hasattr(b, "name")]
+        assert len(tool_calls) >= 1
+        assert tool_calls[0].name == "shell"
+        assert tool_calls[0].input.get("command") == "git status"
+
+    @pytest.mark.asyncio
+    async def test_tool_result_as_only_message(self, mock_provider, tools):
+        """Test when last message is tool result but no preceding user message (covers line 80)."""
+        messages = [
+            {"role": "tool", "tool_call_id": "call_1", "content": "result"},
+        ]
+        response = await mock_provider.complete(messages, tools)
+
+        assert response.stop_reason == "end_turn"
+        # Should return continuation response
+        assert "completed" in response.content[0].text.lower() or "anything else" in response.content[0].text.lower()
+
+    @pytest.mark.asyncio
+    async def test_user_message_with_non_string_content(self, mock_provider, tools):
+        """Test handling user message with list content."""
+        messages = [
+            {"role": "user", "content": [{"type": "text", "text": "hello"}]},
+        ]
+        response = await mock_provider.complete(messages, tools)
+
+        assert isinstance(response, LLMResponse)
+        # Should fall back to empty string since content is not a string
+        assert response.stop_reason == "end_turn"
+
+    @pytest.mark.asyncio
+    async def test_extract_path_without_quotes(self, mock_provider, tools):
+        """Test path extraction for relative paths (covers line 215)."""
+        # Use a path pattern that will match the common path regex (foo/bar pattern)
+        messages = [{"role": "user", "content": "list files in src/components"}]
+        response = await mock_provider.complete(messages, tools)
+
+        assert response.stop_reason == "tool_use"
+        tool_calls = [b for b in response.content if hasattr(b, "name")]
+        assert len(tool_calls) >= 1
+        assert tool_calls[0].name == "list_files"
+        assert tool_calls[0].input.get("path") == "src/components"
+
+    @pytest.mark.asyncio
+    async def test_extract_command_common_pattern(self, mock_provider, tools):
+        """Test command extraction for common commands (covers line 231)."""
+        # Use "execute" instead of "run" to avoid overlap with list patterns
+        messages = [{"role": "user", "content": "execute git status"}]
+        response = await mock_provider.complete(messages, tools)
+
+        assert response.stop_reason == "tool_use"
+        tool_calls = [b for b in response.content if hasattr(b, "name")]
+        assert len(tool_calls) >= 1
+        assert tool_calls[0].name == "shell"
+        # Should extract "git status"
+        assert "git" in tool_calls[0].input.get("command", "")

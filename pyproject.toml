@@ -49,6 +49,10 @@ minversion = "8.0"
 addopts = "-ra -q --asyncio-mode=strict"
 testpaths = ["tests"]
 pythonpath = ["src"]
+filterwarnings = [
+    # Ignore spurious RuntimeWarning from AsyncMock cleanup during hypothesis tests
+    "ignore:coroutine 'AsyncMockMixin._execute_mock_call' was never awaited:RuntimeWarning",
+]
 
 [tool.mypy]
 strict = true

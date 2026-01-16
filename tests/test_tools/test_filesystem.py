@@ -3,7 +3,6 @@ import json
 import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
-
 from pygent.tools.filesystem import edit_file, list_files, read_file
 
 
@@ -22,6 +21,13 @@ async def test_read_file_not_found(tmp_path):
     p = tmp_path / "non_existent_file.txt"
     with pytest.raises(FileNotFoundError):
         await read_file(str(p))
+
+
+@pytest.mark.asyncio
+async def test_read_file_is_directory(tmp_path):
+    """Test that reading a directory raises IsADirectoryError (covers line 35)."""
+    with pytest.raises(IsADirectoryError, match="Path is a directory"):
+        await read_file(str(tmp_path))
 
 
 @pytest.mark.asyncio
@@ -47,6 +53,14 @@ async def test_list_files(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_list_files_directory_not_found(tmp_path):
+    """Test that listing non-existent directory raises FileNotFoundError (covers line 58)."""
+    non_existent = tmp_path / "does_not_exist"
+    with pytest.raises(FileNotFoundError, match="Directory not found"):
+        await list_files(str(non_existent))
+
+
+@pytest.mark.asyncio
 async def test_edit_file(tmp_path):
     f = tmp_path / "code.py"
     f.write_text("print('hello')\nprint('world')", encoding="utf-8")
@@ -58,12 +72,21 @@ async def test_edit_file(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_edit_file_not_found(tmp_path):
+async def test_edit_file_string_not_found(tmp_path):
+    """Test that editing with non-existent string raises ValueError."""
     f = tmp_path / "notes.txt"
     f.write_text("foo bar", encoding="utf-8")
 
     with pytest.raises(ValueError, match="String not found"):
         await edit_file(str(f), "baz", "qux")
+
+
+@pytest.mark.asyncio
+async def test_edit_file_file_not_found(tmp_path):
+    """Test that editing non-existent file raises FileNotFoundError (covers line 104)."""
+    non_existent = tmp_path / "does_not_exist.txt"
+    with pytest.raises(FileNotFoundError, match="File not found"):
+        await edit_file(str(non_existent), "old", "new")
 
 
 # Property-based tests
