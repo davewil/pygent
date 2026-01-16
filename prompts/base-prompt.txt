@@ -1,0 +1,9 @@
+study specs/README.md
+study specs/phase-1-mvp.md and pick the most important thing to do
+
+IMPORTANT:
+- author property based tests or unit tests (whichever is best)
+- after making changes to the files run the tests
+- update the plan when the task is done
+- append to progress.txt what you have learned
+- when tests pass, commit and push to gh
