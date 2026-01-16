@@ -16,6 +16,8 @@ async def test_tui_integration_with_mock_agent():
     mock_agent = MagicMock(spec=Agent)
     # agent.run is an async generator, so it should NOT be an AsyncMock (which is awaitable).
     # It should be a standard Mock that returns an async iterator.
+    mock_agent.session = MagicMock()
+    mock_agent.session.id = "test-session-id"
 
     # Define the events the agent will yield
     events = [

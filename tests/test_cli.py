@@ -140,8 +140,7 @@ class TestResumeCommand:
 
         runner = CliRunner()
         result = runner.invoke(cli, ["resume", "nonexistent"])
-
-        assert result.exit_code == 0
+        assert result.exit_code == 1
         assert "not found" in result.output.lower()
 
 

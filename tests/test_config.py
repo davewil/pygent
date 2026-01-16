@@ -9,7 +9,7 @@ def test_default_settings():
     settings = Settings()
     assert settings.llm.provider == "anthropic"
     assert settings.permissions.auto_approve_low_risk is True
-    assert settings.tui.theme == "dark"
+    assert settings.tui.theme == "textual-dark"
 
 
 # Test TOML Loading

@@ -26,6 +26,11 @@ class ConversationPanel(Static):
         scroll.mount(Static(f"🤖 Agent: {content}", classes="agent-message"))
         scroll.scroll_end(animate=False)
 
+    def clear(self) -> None:
+        """Clear the conversation history."""
+        scroll = self.query_one("#conversation-messages", VerticalScroll)
+        scroll.query("*").remove()
+
 
 class ToolResultItem(Static):
     """Widget to display a tool result."""
@@ -58,6 +63,11 @@ class ToolPanel(Static):
         scroll = self.query_one("#tool-output", VerticalScroll)
         scroll.mount(item)
         scroll.scroll_end(animate=False)
+
+    def clear(self) -> None:
+        """Clear the tool activity."""
+        scroll = self.query_one("#tool-output", VerticalScroll)
+        scroll.query("*").remove()
 
 
 class MessageInput(Input):

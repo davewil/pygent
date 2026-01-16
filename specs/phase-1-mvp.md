@@ -9,12 +9,12 @@ Deliver a functional coding agent with core capabilities: natural language inter
 ### 1. Project Setup
 
 #### 1.1 Repository Initialization
-- [ ] Initialize git repository
-- [ ] Create `.gitignore` (Python, IDE, OS artifacts)
-- [ ] Set up `pyproject.toml` with uv
-- [ ] Configure ruff (linting + formatting)
-- [ ] Set up pytest configuration
-- [ ] Create GitHub Actions CI workflow
+- [x] Initialize git repository
+- [x] Create `.gitignore` (Python, IDE, OS artifacts)
+- [x] Set up `pyproject.toml` with uv
+- [x] Configure ruff (linting + formatting)
+- [x] Set up pytest configuration
+- [x] Create GitHub Actions CI workflow
 
 #### 1.2 Project Structure
 ```

@@ -21,3 +21,6 @@
 2026-01-16: Added MockLLMProvider (core/mock_provider.py) for TUI testing without API key. Supports canned text responses and tool call triggers based on user input keywords. Added --mock flag to CLI chat command. Verified with unit tests.
 2026-01-16: Added comprehensive error handling tests for SessionStorage (test_storage.py): corrupted file loading, non-existent session deletion, index.json skipping, and corrupted file filtering in list_sessions. Coverage for storage.py improved from 84% to 96%.
 2026-01-16: Added shell tool exception path tests (test_shell.py): ProcessLookupError during timeout (when process exits before kill) and generic exception handling (when subprocess creation fails). Coverage for shell.py improved from 85% to 100%.
+2026-01-16: Refactored CLI (src/pygent/cli.py) to consolidate initialization logic in _init_agent_and_app, reducing code duplication and ensuring consistent settings integration.
+2026-01-16: Implemented missing TUI actions (PygentApp.action_new_session, PygentApp.action_toggle_permissions) and integrated TUI settings (theme, show_tool_panel).
+2026-01-16: Added comprehensive integration tests for TUI actions (tests/test_integration/test_tui_actions.py) and fixed regressions in existing tests (test_cli.py, test_config.py, test_integration.py). Verified all 86 tests pass.

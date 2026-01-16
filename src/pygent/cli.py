@@ -22,68 +22,28 @@ def cli() -> None:
     pass
 
 
-@cli.command()
-@click.option("--session", "-s", help="Resume a session by ID")
-@click.option("--new", "-n", is_flag=True, help="Start a new session")
-@click.option("--mock", "-m", is_flag=True, help="Use mock provider (no API key needed)")
-def chat(session: str | None, new: bool, mock: bool) -> None:
-    """Start interactive chat session."""
-
-    # 1. Load Config (Default for now)
-    # config = asyncio.run(load_config())
-    # TODO: Pass config to components
+async def _init_agent_and_app(
+    session_id: str | None = None,
+    is_new: bool = False,
+    use_mock: bool = False,
+) -> PygentApp:
+    """Initialize agent and app components."""
+    # 1. Load Config
+    settings = await load_config()
 
     # 2. Initialize Components
     provider: LLMProvider
-    if mock:
-        provider = MockLLMProvider(delay=0.3)  # Small delay for realistic feel
+    if use_mock:
+        provider = MockLLMProvider(delay=0.3)
     else:
-        provider = LLMProvider(model="anthropic/claude-3-5-sonnet-20241022")
-    # Note: LLMProvider in specs/phase-1-mvp.md signature is (model, api_key).
-    # We should check providers.py to match signature.
+        # Priority: Settings > Env (handled in settings.py)
+        provider = LLMProvider(
+            model=settings.llm.model,
+            api_key=settings.llm.api_key,
+        )
 
     tools = ToolRegistry()
     # Register basic tools
-    # We need to import the tool definitions or functions decorated with @tool
-    # The current implementation of filesystem.py and shell.py uses @tool decorator
-    # which returns a function with .tool_def attribute or we need to manage registration.
-    # Let's check how tools are implemented. Assuming standard registry pattern.
-
-    # For MVP we manually register known tools
-    # Actually, the @tool decorator usually registers or we need to pass the function.
-    # Let's check existing tool implementations.
-    # But I will proceed with assumption and fix if needed in verification.
-
-    # 3. Session Management
-    storage = SessionStorage()
-
-    current_session = None
-    if session:
-        current_session = asyncio.run(storage.load(session))
-        if not current_session:
-            click.echo(f"Session {session} not found.")
-            return
-    else:
-        # Create new session
-        current_session = Session(id=str(uuid.uuid4()), working_directory=".", messages=[], tool_history=[])
-        # async save? storage.save(current_session)
-
-    # 6. Initialize App & Wiring
-    # We initialize the app first so we can use it in the permission callback
-    app = PygentApp(storage=storage)
-
-    async def permission_callback(tool_name: str, risk: str, args: dict[str, Any]) -> bool:
-        # We need to run this on the main app loop
-        # Since this callback is async, we can just await the app method
-        return await app.get_permission(tool_name, args)
-
-    # 4. Permissions (now with callback)
-    permissions = PermissionManager(prompt_callback=permission_callback)
-
-    # 5. Agent
-    # For MVP manual tool registration
-    # Inspecting src/pygent/tools/filesystem.py and shell.py shows they use @tool decorator
-    # We need to import them to register
     from pygent.tools.filesystem import edit_file, list_files, read_file
     from pygent.tools.shell import shell
 
@@ -92,12 +52,70 @@ def chat(session: str | None, new: bool, mock: bool) -> None:
     tools.register(edit_file)
     tools.register(shell)
 
-    agent = Agent(provider=provider, tools=tools, permissions=permissions, session=current_session)
+    # 3. Session Management
+    storage = SessionStorage()
+    current_session: Session | None = None
 
-    # Connect agent to app
+    if session_id:
+        current_session = await storage.load(session_id)
+        if not current_session and not is_new:
+            raise click.ClickException(f"Session {session_id} not found.")
+
+    if not current_session:
+        current_session = Session(
+            id=str(uuid.uuid4()),
+            working_directory=".",
+            messages=[],
+            tool_history=[],
+        )
+
+    # 4. Initialize App & Wiring
+    app = PygentApp(storage=storage, settings=settings)
+
+    async def permission_callback(tool_name: str, risk: Any, args: dict[str, Any]) -> bool:
+        return await app.get_permission(tool_name, args)
+
+    # 5. Permissions
+    permissions = PermissionManager(
+        prompt_callback=permission_callback,
+        session_override=not settings.permissions.auto_approve_low_risk,  # This seems backwards in current logic?
+    )
+    # Actually, current PermissionManager logic:
+    # if risk == LOW: return True
+    # if risk == MEDIUM and self.session_override: return True
+    # else return prompt_callback
+    # So settings.permissions.auto_approve_low_risk is ALWAYS True for LOW risk in code.
+    # The session_override in PermissionManager is for MEDIUM risk.
+    # Let's check settings again.
+    # class PermissionSettings(BaseModel):
+    #     auto_approve_low_risk: bool = True
+    #     session_override_allowed: bool = True
+    # The session_override in PermissionManager is a RUNTIME toggle (Ctrl+P).
+    # It should probably start as False unless we want it sticky.
+    permissions.session_override = False
+
+    # 6. Agent
+    agent = Agent(
+        provider=provider,
+        tools=tools,
+        permissions=permissions,
+        session=current_session,
+    )
     app.agent = agent
 
-    # 7. Run TUI
+    # 7. Apply TUI settings
+    app.theme = settings.tui.theme
+
+    return app
+
+
+@cli.command()
+@click.option("--session", "-s", help="Resume a session by ID")
+@click.option("--new", "-n", is_flag=True, help="Start a new session")
+@click.option("--mock", "-m", is_flag=True, help="Use mock provider (no API key needed)")
+def chat(session: str | None, new: bool, mock: bool) -> None:
+    """Start interactive chat session."""
+    app = asyncio.run(_init_agent_and_app(session_id=session, is_new=new, use_mock=mock))
     app.run()
 
 
@@ -120,37 +138,10 @@ def sessions() -> None:
 
 @cli.command()
 @click.argument("session_id")
-def resume(session_id: str) -> None:
+@click.option("--mock", "-m", is_flag=True, help="Use mock provider")
+def resume(session_id: str, mock: bool) -> None:
     """Resume a specific session."""
-    storage = SessionStorage()
-    current_session = asyncio.run(storage.load(session_id))
-
-    if not current_session:
-        click.echo(f"Session {session_id} not found.")
-        return
-
-    # Initialize components (same as chat command)
-    provider = LLMProvider(model="anthropic/claude-3-5-sonnet-20241022")
-    tools = ToolRegistry()
-
-    app = PygentApp(storage=storage)
-
-    async def permission_callback(tool_name: str, risk: str, args: dict[str, Any]) -> bool:
-        return await app.get_permission(tool_name, args)
-
-    permissions = PermissionManager(prompt_callback=permission_callback)
-
-    from pygent.tools.filesystem import edit_file, list_files, read_file
-    from pygent.tools.shell import shell
-
-    tools.register(read_file)
-    tools.register(list_files)
-    tools.register(edit_file)
-    tools.register(shell)
-
-    agent = Agent(provider=provider, tools=tools, permissions=permissions, session=current_session)
-    app.agent = agent
-
+    app = asyncio.run(_init_agent_and_app(session_id=session_id, use_mock=mock))
     app.run()
 
 
