@@ -75,9 +75,15 @@ class MockLLMProvider:
             return last.get("role") == "tool"
         return False
 
-    def _check_tool_triggers(self, user_message: str, tools: list[dict]) -> LLMResponse | None:
+    def _check_tool_triggers(self, user_message: str, tools: list) -> LLMResponse | None:
         """Check if user message should trigger a tool call."""
-        tool_names = {t.get("name", "") for t in tools}
+        # Handle both dict and ToolDefinition objects
+        tool_names = set()
+        for t in tools:
+            if hasattr(t, "name"):
+                tool_names.add(t.name)
+            elif isinstance(t, dict):
+                tool_names.add(t.get("name", ""))
 
         # File reading triggers
         if re.search(r"\bread\b.*\bfile\b|\bshow\b.*\bfile\b|\bcat\b", user_message):
