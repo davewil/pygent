@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import aiofiles
+
 from pygent.tools.base import ToolRisk, tool
 
 
@@ -31,8 +33,8 @@ async def read_file(path: str) -> str:
     if not file_path.is_file():
         raise IsADirectoryError(f"Path is a directory: {path}")
 
-    async with AwaitableFileOpen(file_path):
-        return file_path.read_text(encoding="utf-8")
+    async with aiofiles.open(file_path, mode="r", encoding="utf-8") as f:
+        return await f.read()
 
 
 @tool(
@@ -100,49 +102,15 @@ async def edit_file(path: str, old_str: str, new_str: str) -> str:
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {path}")
 
-    # Use async reading pattern or just sync for now as pathlib is sync
-    # For MVP, synchronous file I/O within async wrapper is okay but ideally should be non-blocking.
-    # The `tool` decorator makes the function async-capable but doesn't magic force sync IO to async.
-    # However, for simple local file I/O, Python's async file support is limited (aiofiles).
-    # Spec deps include `aiofiles`. I should use `aiofiles`!
-
-    # Wait, I imported `Path` but not `aiofiles`.
-    # Let me re-read dependencies. `aiofiles` IS in `pyproject.toml`.
-    # I should update `read_file` and `edit_file` to use `aiofiles`.
-    pass
-    # Since I'm inside the tool function which I defined as async in code content...
-    # I'll implement a sync version first using pathlib read_text/write_text for simplicity and MVP speed
-    # UNLESS `read_file` signature requires `await`.
-    # Annotated with `async def`.
-
-    content = file_path.read_text(encoding="utf-8")
+    async with aiofiles.open(file_path, mode="r", encoding="utf-8") as f:
+        content = await f.read()
 
     if old_str not in content:
         raise ValueError(f"String not found in file: {old_str}")
 
     new_content = content.replace(old_str, new_str)
 
-    file_path.write_text(new_content, encoding="utf-8")
+    async with aiofiles.open(file_path, mode="w", encoding="utf-8") as f:
+        await f.write(new_content)
 
     return f"Successfully replaced occurrences in {path}"
-
-
-# Helper for future aiofiles usage (commented out/omitted for now to match sync pathlib usage in minimal impl)
-# Actually, the tools are defined as `async def`. Pathlib is sync.
-# It works, just blocks the loop.
-# Given `aiofiles` is a dependency, I should probably use it.
-# But for now, sticking to pathlib for robustness and simplicity of implementation is MVP safe.
-# I will use a helper context manager if I were to switch, but I'll stick to simple Path methods.
-
-
-class AwaitableFileOpen:
-    """Mock awaitable context for structure if needed, or simple pass through."""
-
-    def __init__(self, path):
-        self.path = path
-
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, *args):
-        pass
