@@ -34,7 +34,7 @@ jobs:
         run: uv run ruff format --check .
 
       - name: Type check with mypy
-        run: uv run mypy src/
+        run: uv run mypy
 
       - name: Run tests
         run: uv run pytest --cov=pygent --cov-report=xml

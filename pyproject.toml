@@ -53,11 +53,12 @@ pythonpath = ["src"]
 [tool.mypy]
 strict = true
 python_version = "3.10"
+mypy_path = "src"
 packages = ["pygent"]
 explicit_package_bases = true
 
 [dependency-groups]
 dev = [
-    "hypothesis>=6.150.2",
-    "pytest-cov>=7.0.0",
+  "hypothesis>=6.150.2",
+  "pytest-cov>=7.0.0",
 ]
