@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock
 
 import pytest
+
 from pygent.core.permissions import PermissionManager
 from pygent.tools.base import ToolRisk
 

@@ -1,5 +1,6 @@
 from hypothesis import given
 from hypothesis import strategies as st
+
 from pygent.tools.base import ToolDefinition, ToolRisk
 from pygent.tools.registry import ToolRegistry
 

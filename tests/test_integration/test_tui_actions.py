@@ -2,6 +2,7 @@ import asyncio
 from unittest.mock import AsyncMock
 
 import pytest
+
 from pygent.config.settings import Settings
 from pygent.core.agent import Agent
 from pygent.core.permissions import PermissionManager

@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
 from pygent.core.agent import Agent
 from pygent.session.models import Session
 from pygent.session.storage import SessionStorage

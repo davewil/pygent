@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
 from pygent.core.agent import Agent
 from pygent.core.loop import conversation_loop
 from pygent.core.providers import LLMResponse

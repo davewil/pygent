@@ -2,6 +2,7 @@ import asyncio
 from unittest.mock import MagicMock
 
 import pytest
+
 from pygent.core.agent import Agent
 from pygent.core.loop import LoopEvent
 from pygent.tui.app import PygentApp

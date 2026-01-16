@@ -2,6 +2,7 @@ from datetime import datetime
 from unittest.mock import AsyncMock, patch
 
 from click.testing import CliRunner
+
 from pygent.cli import cli
 from pygent.session.models import SessionSummary
 

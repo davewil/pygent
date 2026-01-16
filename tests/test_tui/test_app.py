@@ -1,7 +1,8 @@
 import pytest
+from textual.widgets import Footer, Header
+
 from pygent.tui.app import PygentApp
 from pygent.tui.widgets import ConversationPanel, MessageInput, ToolPanel
-from textual.widgets import Footer, Header
 
 
 @pytest.mark.asyncio

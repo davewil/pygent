@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
+
 from pygent.core.agent import Agent
 from pygent.core.loop import _convert_to_llm_messages, conversation_loop
 from pygent.core.providers import LLMResponse

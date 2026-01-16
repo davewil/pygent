@@ -19,8 +19,7 @@ class ToolFunction(Protocol[P, R_co]):
 
     _tool_definition: ToolDefinition
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Awaitable[R_co]:
-        ...
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> Awaitable[R_co]: ...
 
 
 class ToolRisk(str, Enum):

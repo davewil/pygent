@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
+
 from pygent.tools.shell import shell
 
 
