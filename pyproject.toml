@@ -59,4 +59,5 @@ explicit_package_bases = true
 [dependency-groups]
 dev = [
     "hypothesis>=6.150.2",
+    "pytest-cov>=7.0.0",
 ]

@@ -16,3 +16,4 @@
 2026-01-16: Implemented CLI entry point (src/pygent/cli.py) with chat command. Wired up to Agent/TUI. Verified with units tests.
 2026-01-16: Implemented Permission Integration. Wired PermissionPrompt in TUI to Agent's PermissionManager via CLI. Added integration tests for Allow/Deny flows. Refactored CLI initialization to resolve circular dependencies.
 2026-01-16: Implemented Session Persistence in TUI. Wired SessionStorage to PygentApp and implemented action_save_session method. Added verification tests.
+2026-01-16: Added comprehensive tests for conversation loop error handling (test_loop.py): unknown tool handling, tool execution exceptions, permission denied flows, message conversion, multiple tool calls, and property-based tests. Also added LLMProvider tool call parsing tests for string/dict JSON args and invalid JSON handling. Coverage improved from 91% to 94%, with core/loop.py and core/providers.py now at 100%.
