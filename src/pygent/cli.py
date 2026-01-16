@@ -60,20 +60,36 @@ def chat(session: str | None, new: bool):
         current_session = Session(id=str(uuid.uuid4()), working_directory=".", messages=[], tool_history=[])
         # async save? storage.save(current_session)
 
-    # 4. Permissions
-    permissions = PermissionManager()
+    # 6. Initialize App & Wiring
+    # We initialize the app first so we can use it in the permission callback
+    app = PygentApp()
+
+    async def permission_callback(tool_name: str, risk: str, args: dict) -> bool:
+        # We need to run this on the main app loop
+        # Since this callback is async, we can just await the app method
+        return await app.get_permission(tool_name, args)
+
+    # 4. Permissions (now with callback)
+    permissions = PermissionManager(prompt_callback=permission_callback)
 
     # 5. Agent
+    # For MVP manual tool registration
+    # Inspecting src/pygent/tools/filesystem.py and shell.py shows they use @tool decorator
+    # We need to import them to register
+    from pygent.tools.filesystem import edit_file, list_files, read_file
+    from pygent.tools.shell import shell
+
+    tools.register(read_file)
+    tools.register(list_files)
+    tools.register(edit_file)
+    tools.register(shell)
+
     agent = Agent(provider=provider, tools=tools, permissions=permissions, session=current_session)
 
-    # Register Tools (Manual for now, should be dynamic)
-    # The 'tool' decorator in spec returns the wrapper.
-    # We need to extract the definition or if the registry does it.
-    # Inspecting registry.py would be good, but I'll write the code to register what I know.
-    # tools.register(read_file) # Assuming register takes the decorated function or definition
+    # Connect agent to app
+    app.agent = agent
 
-    # 6. Run TUI
-    app = PygentApp(agent=agent)
+    # 7. Run TUI
     app.run()
 
 

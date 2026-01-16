@@ -1,7 +1,7 @@
 from textual.app import ComposeResult
-from textual.containers import VerticalScroll
+from textual.containers import Horizontal, VerticalScroll
 from textual.screen import ModalScreen
-from textual.widgets import Input, Pretty, Static
+from textual.widgets import Button, Input, Pretty, Static
 
 
 class ConversationPanel(Static):
@@ -19,6 +19,15 @@ class ConversationPanel(Static):
         self.query_one("#conversation-messages").mount(Static(f"Agent: {content}", classes="agent-message"))
 
 
+class ToolResultItem(Static):
+    """Widget to display a tool result."""
+
+    def __init__(self, content: str, tool_name: str, result: str, **kwargs):
+        super().__init__(content, **kwargs)
+        self.tool_name = tool_name
+        self.result = result
+
+
 class ToolPanel(Static):
     """Display for tool activity."""
 
@@ -31,7 +40,8 @@ class ToolPanel(Static):
 
     def append_tool_result(self, tool_name: str, result: str) -> None:
         """Append a tool result to the panel."""
-        self.query_one("#tool-output").mount(Static(f"Result ({tool_name}): {result}", classes="tool-result"))
+        item = ToolResultItem(f"Result ({tool_name}): {result}", tool_name, result, classes="tool-result")
+        self.query_one("#tool-output").mount(item)
 
 
 class MessageInput(Input):
@@ -52,4 +62,12 @@ class PermissionPrompt(ModalScreen[bool]):
     def compose(self) -> ComposeResult:
         yield Static(f"Allow execution of tool '{self.tool_name}'?")
         yield Pretty(self.args)
-        # In a real impl we'd have buttons here, for now just basic structure
+        with Horizontal(classes="buttons"):
+            yield Button("Yes", variant="success", id="btn-yes")
+            yield Button("No", variant="error", id="btn-no")
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "btn-yes":
+            self.dismiss(True)
+        else:
+            self.dismiss(False)
