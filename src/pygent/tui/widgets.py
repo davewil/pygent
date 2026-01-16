@@ -14,11 +14,15 @@ class ConversationPanel(Static):
 
     def append_user_message(self, content: str) -> None:
         """Append a user message to the conversation."""
-        self.query_one("#conversation-messages").mount(Static(f"👤 You: {content}", classes="user-message"))
+        scroll = self.query_one("#conversation-messages", VerticalScroll)
+        scroll.mount(Static(f"👤 You: {content}", classes="user-message"))
+        scroll.scroll_end(animate=False)
 
     def append_assistant_message(self, content: str) -> None:
         """Append an assistant message to the conversation."""
-        self.query_one("#conversation-messages").mount(Static(f"🤖 Agent: {content}", classes="agent-message"))
+        scroll = self.query_one("#conversation-messages", VerticalScroll)
+        scroll.mount(Static(f"🤖 Agent: {content}", classes="agent-message"))
+        scroll.scroll_end(animate=False)
 
 
 class ToolResultItem(Static):
@@ -40,14 +44,18 @@ class ToolPanel(Static):
 
     def append_tool_call(self, tool_name: str, tool_id: str) -> None:
         """Append a tool call to the panel."""
-        self.query_one("#tool-output").mount(Static(f"⏳ Running: {tool_name}", classes="tool-call"))
+        scroll = self.query_one("#tool-output", VerticalScroll)
+        scroll.mount(Static(f"⏳ Running: {tool_name}", classes="tool-call"))
+        scroll.scroll_end(animate=False)
 
     def append_tool_result(self, tool_name: str, result: str) -> None:
         """Append a tool result to the panel."""
         # Truncate long results for display
         display_result = result[:200] + "..." if len(result) > 200 else result
         item = ToolResultItem(f"✅ {tool_name}: {display_result}", tool_name, result, classes="tool-result")
-        self.query_one("#tool-output").mount(item)
+        scroll = self.query_one("#tool-output", VerticalScroll)
+        scroll.mount(item)
+        scroll.scroll_end(animate=False)
 
 
 class MessageInput(Input):
