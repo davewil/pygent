@@ -344,3 +344,37 @@
   - Learned: Use vars(__builtins__) to convert module to dict for consistent access
   - Error Recovery section of Phase 3 now complete
   - Total: 597 tests pass
+2026-01-17: Implemented Tool Result Caching (src/pygent/core/cache.py):
+  - Added ToolCache class with LRU eviction and TTL-based expiration
+  - CacheEntry dataclass stores: value, expires_at, tool_name, args_hash
+  - CacheStats dataclass tracks: hits, misses, evictions, invalidations
+  - NON_CACHEABLE_TOOLS frozenset identifies mutation tools (edit_file, shell, git_commit, etc.)
+  - DEFAULT_TOOL_TTL dictionary sets per-tool TTL (git_status: 5s, grep_search: 30s, web_fetch: 60s)
+  - Cache key generation: SHA256 hash of JSON-serialized sorted args
+  - LRU eviction using OrderedDict with move_to_end on access
+  - Pattern-based invalidation with fnmatch (e.g., "read_file:*")
+  - Methods: get, set, invalidate, invalidate_tool, clear, cleanup_expired, get_stats, reset_stats
+  - Integrated into conversation_loop (loop.py):
+    * Checks cache before tool execution
+    * Stores results after successful execution
+    * LoopEvent gains cached=True flag for cache hits
+  - Added tool_cache parameter to Agent.__init__ (defaults to new ToolCache)
+  - Added 48 tests:
+    * TestCacheEntry: 2 tests for dataclass creation/expiration
+    * TestCacheStats: 2 tests for defaults and incrementing
+    * TestNonCacheableTools: 4 tests for mutation tool categorization
+    * TestDefaultToolTTL: 3 tests for TTL configuration
+    * TestToolCache: 15 tests for set/get, expiration, LRU eviction, stats
+    * TestToolCacheInvalidation: 5 tests for pattern invalidation, clear, cleanup
+    * TestToolCacheKeyGeneration: 4 tests for deterministic key generation
+    * TestToolCacheTTL: 4 tests for TTL handling
+    * TestToolCacheConcurrency: 3 tests for concurrent access with asyncio.Lock
+    * TestPropertyBased: 4 property-based tests using hypothesis
+    * TestIntegration: 5 integration tests for realistic scenarios
+  - Learned: OrderedDict.move_to_end(key) is efficient O(1) for LRU implementation
+  - Learned: asyncio.Lock for async-safe cache operations (not threading.Lock)
+  - Learned: JSON serialization with sort_keys=True ensures deterministic cache keys
+  - Learned: fnmatch provides simple glob-style pattern matching for invalidation
+  - Learned: dict[str, int | float] union type needed when return value includes both types
+  - Tool Caching section of Phase 3 now complete
+  - Total: 645 tests pass

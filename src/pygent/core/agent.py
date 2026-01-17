@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 
+from pygent.core.cache import ToolCache
 from pygent.core.loop import LoopEvent, conversation_loop
 from pygent.core.permissions import PermissionManager
 from pygent.core.providers import LLMProvider
@@ -18,11 +19,13 @@ class Agent:
         tools: ToolRegistry,
         permissions: PermissionManager,
         session: Session,
+        tool_cache: ToolCache | None = None,
     ) -> None:
         self.provider = provider
         self.tools = tools
         self.permissions = permissions
         self.session = session
+        self.tool_cache = tool_cache or ToolCache()
 
     async def run(self, user_message: str) -> AsyncIterator[LoopEvent]:
         # Add user message to session

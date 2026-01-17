@@ -566,10 +566,10 @@ async def test_session_sidebar():
 - [x] Error recovery provides intelligent suggestions for common errors
 
 ### Non-Functional
-- [ ] Tool caching reduces redundant operations
+- [x] Tool caching reduces redundant operations (ToolCache: 48 tests)
 - [ ] TUI remains responsive during long operations
 - [ ] Memory usage stays bounded with large sessions
-- [x] All features have test coverage (Context Awareness: 92 tests, Test Runner: 72 tests, Scaffolding: 77 tests, Error Recovery: 43 tests)
+- [x] All features have test coverage (Context Awareness: 92 tests, Test Runner: 72 tests, Scaffolding: 77 tests, Error Recovery: 43 tests, ToolCache: 48 tests)
 
 ---
 

@@ -17,10 +17,11 @@ if TYPE_CHECKING:
 
 @dataclass
 class LoopEvent:
-    type: str  # "text", "tool_call", "tool_result", "param_error", "permission_denied", "finished"
+    type: str  # "text", "tool_call", "tool_result", "param_error", "permission_denied", "finished", "cache_hit"
     content: str | None = None
     tool_name: str | None = None
     tool_id: str | None = None
+    cached: bool = False
 
 
 def _convert_to_llm_messages(messages: list[Message]) -> list[dict[str, Any]]:
@@ -131,14 +132,25 @@ async def conversation_loop(
                 result_blocks.append(ToolResultBlock(tool_use_id=tool_use.id, content=result, is_error=True))
                 continue
 
-            # Execute
+            # Execute (with caching)
             try:
+                # Check cache first
+                cached_result = await agent.tool_cache.get(tool_use.name, tool_use.input)
+                if cached_result is not None:
+                    result = cached_result
+                    yield LoopEvent(type="tool_result", content=result, tool_name=tool_use.name, cached=True)
+                    result_blocks.append(ToolResultBlock(tool_use_id=tool_use.id, content=result, is_error=False))
+                    continue
+
                 # Dispatch to tool function
                 # tool_def.function is async
                 output = await tool_def.function(**tool_use.input)
                 result = str(output)
-                yield LoopEvent(type="tool_result", content=result, tool_name=tool_use.name)
 
+                # Cache the result
+                await agent.tool_cache.set(tool_use.name, tool_use.input, result)
+
+                yield LoopEvent(type="tool_result", content=result, tool_name=tool_use.name)
                 result_blocks.append(ToolResultBlock(tool_use_id=tool_use.id, content=result, is_error=False))
 
             except Exception as e:
