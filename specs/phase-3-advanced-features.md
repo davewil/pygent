@@ -557,8 +557,8 @@ async def test_session_sidebar():
 ### Functional
 - [x] Test runner detects framework automatically
 - [x] Test results displayed in structured format
-- [ ] Project scaffolding creates valid project structures
-- [ ] Templates are customizable
+- [x] Project scaffolding creates valid project structures
+- [x] Templates are customizable
 - [ ] Command palette accessible and functional
 - [ ] Session sidebar shows all sessions
 - [x] Project context correctly detected
@@ -568,7 +568,7 @@ async def test_session_sidebar():
 - [ ] Tool caching reduces redundant operations
 - [ ] TUI remains responsive during long operations
 - [ ] Memory usage stays bounded with large sessions
-- [x] All features have test coverage (Context Awareness: 92 tests, Test Runner: 72 tests)
+- [x] All features have test coverage (Context Awareness: 92 tests, Test Runner: 72 tests, Scaffolding: 77 tests)
 
 ---
 

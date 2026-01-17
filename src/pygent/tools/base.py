@@ -38,6 +38,7 @@ class ToolCategory(str, Enum):
     WEB = "web"
     SHELL = "shell"
     TESTING = "testing"
+    PROJECT = "project"
 
 
 @dataclass

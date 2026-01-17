@@ -233,11 +233,19 @@ def _create_full_registry() -> ToolRegistry:
 
     registry.register(run_tests)
 
+    # Project scaffolding tools
+    from pygent.tools.scaffold import add_component, create_project, list_components, list_templates
+
+    registry.register(list_templates)
+    registry.register(create_project)
+    registry.register(add_component)
+    registry.register(list_components)
+
     return registry
 
 
 @cli.command()
-@click.option("--category", "-c", help="Filter by category (filesystem, git, search, web, shell, testing)")
+@click.option("--category", "-c", help="Filter by category (filesystem, git, search, web, shell, testing, project)")
 def tools(category: str | None) -> None:
     """List all available tools."""
     registry = _create_full_registry()

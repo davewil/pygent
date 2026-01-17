@@ -240,3 +240,63 @@
   - Learned: Use MagicMock with explicit async methods to avoid RuntimeWarning for unawaited coroutines
   - Test Runner section of Phase 3 now complete (framework detection, run_tests tool, output parsing)
   - Total: 477 tests pass
+2026-01-17: Implemented Project Scaffolding System (src/pygent/tools/scaffold.py):
+  - Added PROJECT category to ToolCategory enum in tools/base.py
+  - Implemented data models:
+    * TemplateOption: Configuration options (bool, str, choice types)
+    * TemplateFile: File templates with path, content, and optional condition
+    * ProjectTemplate: Complete project templates with files, options, post-create commands, next steps
+    * ComponentTemplate: Components that can be added to existing projects
+  - Implemented 3 built-in project templates:
+    * python-cli: Python CLI application with Click (or Typer via use_typer option)
+      - Full pyproject.toml with setuptools, pytest, ruff, mypy configuration
+      - src/{name}/ structure with cli.py, main.py, __init__.py
+      - tests/ with conftest.py and test_main.py
+      - Optional Dockerfile via include_docker option
+    * python-lib: Python library for PyPI distribution
+      - Minimal structure focused on library distribution
+      - Includes classifiers, URLs, example docstrings
+    * fastapi: FastAPI web application
+      - Full project structure: api/, core/, tests/
+      - routes.py, schemas.py, config.py with pydantic-settings
+      - Health check endpoint, example greet endpoint
+  - Implemented 5 built-in component templates:
+    * model: Data model class with dataclass
+    * service: Service class with CRUD-like methods
+    * test: Test file skeleton
+    * cli_command: Click command (for python-cli projects)
+    * route: FastAPI router (for fastapi projects)
+  - Implemented 4 tools:
+    * list_templates: Returns JSON array of available templates with options (LOW risk)
+    * create_project: Creates project from template with options (MEDIUM risk)
+    * list_components: Returns JSON array of available components (LOW risk)
+    * add_component: Adds component to existing project (MEDIUM risk)
+  - Implemented helper functions:
+    * _normalize_project_name: Converts name to valid Python identifier (hyphens→underscores, lowercase, remove invalid chars)
+    * _to_class_name: Converts to PascalCase for class names
+    * _evaluate_condition: Evaluates template conditions ("use_typer", "not include_docker")
+    * _render_template: Replaces {placeholders}, handles {{escaped}} braces
+    * _detect_project_name: Detects project name from pyproject.toml or directory
+    * _create_file: Creates file with parent directories
+  - Template rendering features:
+    * {name} placeholders replaced with project name
+    * {{double_braces}} become {single_braces} for Python f-strings
+    * Conditional files via condition field
+    * Default option values applied automatically
+  - Registered all tools in cli.py _create_full_registry()
+  - Added 77 tests:
+    * Helper function tests (normalize, class_name, condition, render, detect)
+    * Data model tests (TemplateOption, TemplateFile, ProjectTemplate, ComponentTemplate)
+    * Built-in template/component structure tests
+    * list_templates/list_components tool tests
+    * create_project tests (python-cli, python-lib, fastapi, options, errors)
+    * add_component tests (model, service, test, errors, existing files)
+    * Property-based tests (name normalization, template rendering, all templates)
+    * Integration tests (full workflow, list-then-create)
+    * Edge cases (deep paths, unicode, numbers)
+  - Learned: Template strings with f-string braces need {{double_braces}} to escape, then rendered back to single braces
+  - Learned: Use placeholder substitution before restoring escaped braces to avoid conflicts
+  - Learned: Property tests for create_project need uuid subdirectories to isolate examples
+  - Learned: Component templates need project type context to generate correct paths
+  - Project Scaffolding section of Phase 3 now complete
+  - Total: 554 tests pass
