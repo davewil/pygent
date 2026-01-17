@@ -10,7 +10,7 @@ from pygent.session.models import Session
 from pygent.tools.base import ToolRisk, tool
 from pygent.tools.registry import ToolRegistry
 from pygent.tui.app import PygentApp
-from pygent.tui.widgets import MessageInput, PermissionPrompt, ToolResultItem
+from pygent.tui.widgets import MessageInput, PermissionPrompt, ToolProgressItem
 
 
 @tool(name="high_risk_tool", description="A high risk tool", risk=ToolRisk.HIGH)
@@ -92,8 +92,8 @@ async def test_permission_flow_allow(mock_agent):
 
         # Check tool panel for result
         tool_panel = app.query_one("ToolPanel")
-        results = tool_panel.query(ToolResultItem)
-        assert any("executed" in r.result for r in results)
+        results = tool_panel.query(ToolProgressItem)
+        assert any(r.result and "executed" in r.result for r in results)
 
 
 @pytest.mark.asyncio
@@ -128,14 +128,14 @@ async def test_permission_flow_deny(mock_agent):
         results = []
         for _ in range(20):  # Increased polling
             await asyncio.sleep(0.1)
-            results = tool_panel.query(ToolResultItem)
+            results = tool_panel.query(ToolProgressItem)
             # print(f"DEBUG IN TEST: Found items: {[r.result for r in results]}")
-            if any("Permission Denied" in r.result for r in results):
+            if any(r.result and "Permission" in r.result for r in results):
                 break
         else:
             # Re-enable print for debugging if failure
             print(f"DEBUG: Final items found: {[r.result for r in results]}")
             pytest.fail("Permission Denied result did not appear")
 
-        results = tool_panel.query(ToolResultItem)
-        assert any("Permission Denied" in r.result for r in results)
+        results = tool_panel.query(ToolProgressItem)
+        assert any(r.result and "Permission" in r.result for r in results)

@@ -511,3 +511,63 @@
     * TestEdgeCases: 5 edge case tests (empty commands, special chars, unicode, rapid filter)
   - Command Palette section of Phase 3 now complete
   - Total: 784 tests pass
+2026-01-17: Implemented Tool Execution Progress (src/pygent/tui/widgets.py, core/loop.py, app.py, styles.tcss):
+  - Added timestamp field to LoopEvent dataclass for tracking execution timing
+  - Added ToolStatus enum with states: WAITING, RUNNING, COMPLETED, ERROR, CACHED, PERMISSION_DENIED
+  - Added STATUS_ICONS dict mapping each status to a visual indicator emoji
+  - Added _format_elapsed_time() helper to format duration as human-readable (e.g., "1.2s", "5m 30.0s")
+  - Implemented ToolProgressItem widget:
+    * Tracks tool_id, tool_name, status, start_time, end_time, result, is_error
+    * Shows status icon, tool name, elapsed time, and result preview
+    * update_status() method for in-place updates when results arrive
+    * refresh_elapsed_time() method for periodic timer updates while running
+    * CSS classes: tool-progress, tool-progress-{status} for styling each state
+    * Truncates long results to 100 chars with "..." suffix
+    * Replaces newlines with spaces in display text
+  - Updated ToolPanel to track progress items by tool_id:
+    * _progress_items dict maps tool_id to ToolProgressItem for in-place updates
+    * append_tool_call() creates new ToolProgressItem with RUNNING status
+    * update_tool_result() finds existing item by tool_id and updates status
+    * update_permission_denied() sets PERMISSION_DENIED status
+    * get_running_count() returns number of currently running tools
+    * refresh_running_tools() updates elapsed time display for all running tools
+    * Legacy append_tool_result() maintained for backwards compatibility
+    * clear() now also clears the _progress_items tracking dict
+  - Updated conversation_loop to emit timestamps and tool_id in events:
+    * tool_call events include timestamp for accurate elapsed time
+    * tool_result events include tool_id for matching to progress items
+    * permission_denied events include tool_id for proper tracking
+  - Updated PygentApp.run_agent_loop() to use new ToolPanel methods:
+    * Passes start_time from event.timestamp to append_tool_call()
+    * Calls update_tool_result() with tool_id, result, is_error, cached
+    * Calls update_permission_denied() for permission_denied events
+  - Added CSS styling for tool progress states:
+    * tool-progress-waiting: muted background for queued tools
+    * tool-progress-running: warning color (yellow) for executing tools
+    * tool-progress-completed: success color (green) for successful tools
+    * tool-progress-error: error color (red) for failed tools
+    * tool-progress-cached: accent color for cached results
+    * tool-progress-permission_denied: error highlight for denied tools
+  - Updated tests to use ToolProgressItem instead of legacy ToolResultItem
+  - Learned: When widgets update in-place, need to match tool_id between call and result events
+  - Learned: datetime timestamps are useful for accurate elapsed time calculation
+  - Learned: CSS class naming with status.value provides clean status-based styling
+  - Learned: Legacy method wrappers maintain backwards compatibility for existing tests
+  - Learned: Result preview truncation with newline replacement improves display readability
+  - Added 56 tests:
+    * TestToolStatus: 2 tests for enum values and icons
+    * TestStatusIcons: 2 tests for icon mapping
+    * TestFormatElapsedTime: 6 tests for time formatting
+    * TestToolProgressItem: 5 tests for widget creation and properties
+    * TestToolProgressItemUpdateStatus: 5 tests for status updates
+    * TestToolProgressItemRefresh: 2 tests for elapsed time refresh
+    * TestToolProgressItemBuildDisplayText: 5 tests for display formatting
+    * TestToolPanel: 13 tests for panel operations
+    * TestToolPanelLegacyMethod: 1 test for backwards compatibility
+    * TestLoopEventTimestamp: 3 tests for event timestamp field
+    * TestToolProgressIntegration: 1 integration test
+    * TestPropertyBased: 5 property-based tests using hypothesis
+    * TestEdgeCases: 6 edge case tests
+  - Tool Execution Progress section of Phase 3 now complete
+  - TUI remains responsive during long operations acceptance criterion now met
+  - Total: 840 tests pass

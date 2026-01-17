@@ -93,15 +93,36 @@ class PygentApp(App[None]):
             return
 
         async for event in self.agent.run(user_input):
-            print(f"DEBUG: Event received: {event.type}")
             if event.type == "text" and event.content:
                 self.query_one(ConversationPanel).append_assistant_message(event.content)
             elif event.type == "tool_call" and event.tool_name and event.tool_id:
-                self.query_one(ToolPanel).append_tool_call(event.tool_name, event.tool_id)
-            elif event.type == "tool_result" and event.tool_name and event.content:
-                self.query_one(ToolPanel).append_tool_result(event.tool_name, event.content)
-            elif event.type == "permission_denied":
-                self.query_one(ToolPanel).append_tool_result(str(event.tool_name), "Permission Denied")
+                try:
+                    self.query_one(ToolPanel).append_tool_call(
+                        tool_name=event.tool_name,
+                        tool_id=event.tool_id,
+                        start_time=event.timestamp,
+                    )
+                except Exception:
+                    pass  # ToolPanel might not be present
+            elif event.type == "tool_result" and event.tool_name and event.tool_id and event.content is not None:
+                try:
+                    self.query_one(ToolPanel).update_tool_result(
+                        tool_id=event.tool_id,
+                        tool_name=event.tool_name,
+                        result=event.content,
+                        is_error=False,
+                        cached=event.cached,
+                    )
+                except Exception:
+                    pass  # ToolPanel might not be present
+            elif event.type == "permission_denied" and event.tool_name:
+                try:
+                    self.query_one(ToolPanel).update_permission_denied(
+                        tool_id=event.tool_id or "",
+                        tool_name=event.tool_name,
+                    )
+                except Exception:
+                    pass  # ToolPanel might not be present
 
     async def get_permission(self, tool_name: str, args: dict[str, Any]) -> bool:
         """Prompt user for permission to execute a tool."""

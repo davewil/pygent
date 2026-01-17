@@ -103,6 +103,7 @@ ToolPanel {
     scrollbar-size: 1 1;
 }
 
+/* Legacy tool styling (for backwards compatibility) */
 .tool-call {
     background: $warning-darken-2;
     color: $text;
@@ -115,6 +116,48 @@ ToolPanel {
     color: $text;
     padding: 0 1;
     margin: 0 0 1 0;
+}
+
+/* Tool progress item base styling */
+.tool-progress {
+    padding: 0 1;
+    margin: 0 0 1 0;
+}
+
+/* Waiting state - tool is queued */
+.tool-progress-waiting {
+    background: $surface-darken-1;
+    color: $text-muted;
+}
+
+/* Running state - tool is executing */
+.tool-progress-running {
+    background: $warning-darken-2;
+    color: $text;
+}
+
+/* Completed state - tool succeeded */
+.tool-progress-completed {
+    background: $success-darken-2;
+    color: $text;
+}
+
+/* Error state - tool failed */
+.tool-progress-error {
+    background: $error-darken-2;
+    color: $text;
+}
+
+/* Cached state - result came from cache */
+.tool-progress-cached {
+    background: $accent-darken-2;
+    color: $text;
+}
+
+/* Permission denied state */
+.tool-progress-permission_denied {
+    background: $error-darken-1;
+    color: $text;
 }
 
 /* Input area at bottom */

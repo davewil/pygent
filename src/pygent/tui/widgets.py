@@ -1,10 +1,43 @@
 from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
 from typing import Any
 
 from textual.app import ComposeResult
 from textual.containers import Horizontal, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Pretty, Static
+
+
+class ToolStatus(Enum):
+    """Status of a tool execution.
+
+    Attributes:
+        WAITING: Tool is queued for execution.
+        RUNNING: Tool is currently executing.
+        COMPLETED: Tool completed successfully.
+        ERROR: Tool execution failed.
+        CACHED: Result came from cache.
+        PERMISSION_DENIED: User denied permission.
+    """
+
+    WAITING = "waiting"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    ERROR = "error"
+    CACHED = "cached"
+    PERMISSION_DENIED = "permission_denied"
+
+
+# Status icons for each tool status
+STATUS_ICONS: dict[ToolStatus, str] = {
+    ToolStatus.WAITING: "⏸",
+    ToolStatus.RUNNING: "⏳",
+    ToolStatus.COMPLETED: "✅",
+    ToolStatus.ERROR: "❌",
+    ToolStatus.CACHED: "📦",
+    ToolStatus.PERMISSION_DENIED: "🚫",
+}
 
 
 @dataclass
@@ -146,33 +179,362 @@ class ToolResultItem(Static):
         self.result = result
 
 
+def _format_elapsed_time(start_time: datetime, end_time: datetime | None = None) -> str:
+    """Format elapsed time as a human-readable string.
+
+    Args:
+        start_time: When the execution started.
+        end_time: When the execution ended (None for current time).
+
+    Returns:
+        Formatted elapsed time string (e.g., "1.2s", "5.0s").
+    """
+    end = end_time or datetime.now()
+    elapsed = (end - start_time).total_seconds()
+
+    if elapsed < 0.1:
+        return "<0.1s"
+    elif elapsed < 60:
+        return f"{elapsed:.1f}s"
+    else:
+        minutes = int(elapsed // 60)
+        seconds = elapsed % 60
+        return f"{minutes}m {seconds:.1f}s"
+
+
+class ToolProgressItem(Static):
+    """Widget to display tool execution progress with status and elapsed time.
+
+    Features:
+    - Shows tool name and current status (waiting/running/completed/error/cached)
+    - Displays elapsed time since execution started
+    - Updates in-place when status changes
+    - Visual indicator for each status state
+
+    Attributes:
+        tool_id: Unique ID for this tool execution.
+        tool_name: Name of the tool being executed.
+        status: Current execution status.
+        start_time: When execution started.
+        end_time: When execution ended (if finished).
+        result: The result string (if available).
+        is_error: Whether the result is an error.
+    """
+
+    def __init__(
+        self,
+        tool_id: str,
+        tool_name: str,
+        status: ToolStatus = ToolStatus.RUNNING,
+        start_time: datetime | None = None,
+        **kwargs: Any,
+    ):
+        """Initialize a tool progress item.
+
+        Args:
+            tool_id: Unique ID for this tool execution.
+            tool_name: Name of the tool being executed.
+            status: Initial execution status.
+            start_time: When execution started (defaults to now).
+            **kwargs: Additional arguments passed to Static.
+        """
+        self.tool_id = tool_id
+        self.tool_name = tool_name
+        self.status = status
+        self.start_time = start_time or datetime.now()
+        self.end_time: datetime | None = None
+        self.result: str | None = None
+        self.is_error: bool = False
+
+        # Build initial display
+        display_text = self._build_display_text()
+
+        # Set CSS class based on status
+        classes = kwargs.pop("classes", "")
+        classes = f"{classes} tool-progress tool-progress-{status.value}".strip()
+
+        super().__init__(display_text, classes=classes, **kwargs)
+
+    def _build_display_text(self) -> str:
+        """Build the display text for the current state.
+
+        Returns:
+            Formatted display string.
+        """
+        icon = STATUS_ICONS.get(self.status, "?")
+        elapsed = _format_elapsed_time(self.start_time, self.end_time)
+
+        if self.status == ToolStatus.RUNNING:
+            return f"{icon} {self.tool_name} [{elapsed}]"
+        elif self.status in (ToolStatus.COMPLETED, ToolStatus.CACHED):
+            # Show truncated result
+            result_preview = ""
+            if self.result:
+                preview = self.result[:100].replace("\n", " ")
+                if len(self.result) > 100:
+                    preview += "..."
+                result_preview = f": {preview}"
+            return f"{icon} {self.tool_name} [{elapsed}]{result_preview}"
+        elif self.status == ToolStatus.ERROR:
+            error_preview = ""
+            if self.result:
+                preview = self.result[:100].replace("\n", " ")
+                if len(self.result) > 100:
+                    preview += "..."
+                error_preview = f": {preview}"
+            return f"{icon} {self.tool_name} [{elapsed}]{error_preview}"
+        elif self.status == ToolStatus.PERMISSION_DENIED:
+            return f"{icon} {self.tool_name} [Permission Denied]"
+        else:
+            return f"{icon} {self.tool_name}"
+
+    def _update_css_class(self) -> None:
+        """Update CSS classes based on current status."""
+        # Remove old status classes
+        for s in ToolStatus:
+            self.remove_class(f"tool-progress-{s.value}")
+
+        # Add current status class
+        self.add_class(f"tool-progress-{self.status.value}")
+
+    def update_status(
+        self,
+        status: ToolStatus,
+        result: str | None = None,
+        is_error: bool = False,
+        cached: bool = False,
+    ) -> None:
+        """Update the tool execution status.
+
+        Args:
+            status: New status.
+            result: Result string (if available).
+            is_error: Whether the result is an error.
+            cached: Whether the result came from cache.
+        """
+        # Handle cached results
+        if cached and status == ToolStatus.COMPLETED:
+            self.status = ToolStatus.CACHED
+        else:
+            self.status = status
+
+        self.result = result
+        self.is_error = is_error
+
+        # Set end time for completed states
+        if status in (
+            ToolStatus.COMPLETED,
+            ToolStatus.ERROR,
+            ToolStatus.CACHED,
+            ToolStatus.PERMISSION_DENIED,
+        ):
+            self.end_time = datetime.now()
+
+        # Update display
+        self._update_css_class()
+        self.update(self._build_display_text())
+
+    def refresh_elapsed_time(self) -> None:
+        """Refresh the elapsed time display for running tools.
+
+        Call this periodically for running tools to update the timer.
+        """
+        if self.status == ToolStatus.RUNNING and self.end_time is None:
+            self.update(self._build_display_text())
+
+
 class ToolPanel(Static):
-    """Display for tool activity."""
+    """Display for tool activity with progress tracking.
+
+    Features:
+    - Tracks tool executions by tool_id
+    - Updates progress items in-place when results arrive
+    - Shows elapsed time for running tools
+    - Displays cached vs fresh results
+    """
 
     BORDER_TITLE = "🔧 Tools"
+
+    def __init__(self, **kwargs: Any) -> None:
+        """Initialize the tool panel."""
+        super().__init__(**kwargs)
+        # Map tool_id -> ToolProgressItem for in-place updates
+        self._progress_items: dict[str, ToolProgressItem] = {}
 
     def compose(self) -> ComposeResult:
         yield VerticalScroll(id="tool-output")
 
-    def append_tool_call(self, tool_name: str, tool_id: str) -> None:
-        """Append a tool call to the panel."""
-        scroll = self.query_one("#tool-output", VerticalScroll)
-        scroll.mount(Static(f"⏳ Running: {tool_name}", classes="tool-call"))
-        scroll.scroll_end(animate=False)
+    def append_tool_call(
+        self,
+        tool_name: str,
+        tool_id: str,
+        start_time: datetime | None = None,
+    ) -> None:
+        """Add a new tool execution to the panel.
 
-    def append_tool_result(self, tool_name: str, result: str) -> None:
-        """Append a tool result to the panel."""
-        # Truncate long results for display
-        display_result = result[:200] + "..." if len(result) > 200 else result
-        item = ToolResultItem(f"✅ {tool_name}: {display_result}", tool_name, result, classes="tool-result")
+        Args:
+            tool_name: Name of the tool being executed.
+            tool_id: Unique ID for this tool execution.
+            start_time: When execution started (defaults to now).
+        """
         scroll = self.query_one("#tool-output", VerticalScroll)
+
+        # Create progress item
+        item = ToolProgressItem(
+            tool_id=tool_id,
+            tool_name=tool_name,
+            status=ToolStatus.RUNNING,
+            start_time=start_time,
+        )
+
+        # Track by tool_id for later updates
+        self._progress_items[tool_id] = item
+
         scroll.mount(item)
         scroll.scroll_end(animate=False)
+
+    def update_tool_result(
+        self,
+        tool_id: str,
+        tool_name: str,
+        result: str,
+        is_error: bool = False,
+        cached: bool = False,
+    ) -> None:
+        """Update a tool execution with its result.
+
+        If the tool_id is found, updates the existing item in-place.
+        If not found (e.g., for tools that completed before the UI started),
+        creates a new completed item.
+
+        Args:
+            tool_id: Unique ID for this tool execution.
+            tool_name: Name of the tool.
+            result: The result string.
+            is_error: Whether the result is an error.
+            cached: Whether the result came from cache.
+        """
+        if tool_id in self._progress_items:
+            # Update existing item in-place
+            item = self._progress_items[tool_id]
+
+            if is_error:
+                status = ToolStatus.ERROR
+            else:
+                status = ToolStatus.COMPLETED
+
+            item.update_status(
+                status=status,
+                result=result,
+                is_error=is_error,
+                cached=cached,
+            )
+        else:
+            # Create a new completed item (fallback for missed tool_call events)
+            scroll = self.query_one("#tool-output", VerticalScroll)
+
+            if cached:
+                status = ToolStatus.CACHED
+            elif is_error:
+                status = ToolStatus.ERROR
+            else:
+                status = ToolStatus.COMPLETED
+
+            item = ToolProgressItem(
+                tool_id=tool_id,
+                tool_name=tool_name,
+                status=status,
+            )
+            item.result = result
+            item.is_error = is_error
+            item.end_time = datetime.now()
+
+            # Update display for the new status
+            item._update_css_class()
+            item.update(item._build_display_text())
+
+            self._progress_items[tool_id] = item
+            scroll.mount(item)
+            scroll.scroll_end(animate=False)
+
+    def update_permission_denied(self, tool_id: str, tool_name: str) -> None:
+        """Update a tool execution to show permission denied.
+
+        Args:
+            tool_id: Unique ID for this tool execution.
+            tool_name: Name of the tool.
+        """
+        if tool_id in self._progress_items:
+            item = self._progress_items[tool_id]
+            item.update_status(
+                status=ToolStatus.PERMISSION_DENIED,
+                result="Permission denied by user",
+                is_error=True,
+            )
+        else:
+            # Create a new item showing permission denied
+            scroll = self.query_one("#tool-output", VerticalScroll)
+
+            item = ToolProgressItem(
+                tool_id=tool_id,
+                tool_name=tool_name,
+                status=ToolStatus.PERMISSION_DENIED,
+            )
+            item.result = "Permission denied by user"
+            item.is_error = True
+            item.end_time = datetime.now()
+
+            item._update_css_class()
+            item.update(item._build_display_text())
+
+            self._progress_items[tool_id] = item
+            scroll.mount(item)
+            scroll.scroll_end(animate=False)
+
+    def append_tool_result(self, tool_name: str, result: str) -> None:
+        """Append a tool result to the panel (legacy method for backwards compatibility).
+
+        Deprecated: Use update_tool_result() instead for proper progress tracking.
+
+        Args:
+            tool_name: Name of the tool.
+            result: The result string.
+        """
+        # Generate a fake tool_id for legacy calls
+        import uuid
+
+        tool_id = str(uuid.uuid4())
+
+        self.update_tool_result(
+            tool_id=tool_id,
+            tool_name=tool_name,
+            result=result,
+            is_error=False,
+            cached=False,
+        )
+
+    def refresh_running_tools(self) -> None:
+        """Refresh elapsed time display for all running tools.
+
+        Call this periodically (e.g., every second) to update timers.
+        """
+        for item in self._progress_items.values():
+            if item.status == ToolStatus.RUNNING:
+                item.refresh_elapsed_time()
+
+    def get_running_count(self) -> int:
+        """Get the number of currently running tools.
+
+        Returns:
+            Count of tools with RUNNING status.
+        """
+        return sum(1 for item in self._progress_items.values() if item.status == ToolStatus.RUNNING)
 
     def clear(self) -> None:
         """Clear the tool activity."""
         scroll = self.query_one("#tool-output", VerticalScroll)
         scroll.query("*").remove()
+        self._progress_items.clear()
 
 
 class MessageInput(Input):

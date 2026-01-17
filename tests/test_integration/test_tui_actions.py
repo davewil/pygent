@@ -11,7 +11,7 @@ from pygent.session.models import Session
 from pygent.tools.base import ToolRisk, tool
 from pygent.tools.registry import ToolRegistry
 from pygent.tui.app import PygentApp
-from pygent.tui.widgets import MessageInput, PermissionPrompt, ToolResultItem
+from pygent.tui.widgets import MessageInput, PermissionPrompt, ToolProgressItem
 
 
 @tool(name="medium_risk_tool", description="A medium risk tool", risk=ToolRisk.MEDIUM)
@@ -95,7 +95,7 @@ async def test_action_toggle_permissions(mock_agent):
         # Wait a bit
         for _ in range(10):
             await asyncio.sleep(0.1)
-            if app.query(ToolResultItem).filter(".tool-result"):  # If results appear
+            if app.query(ToolProgressItem):  # If results appear
                 break
 
         # Ensure no prompt is active
@@ -103,8 +103,8 @@ async def test_action_toggle_permissions(mock_agent):
 
         # Check tool panel for result
         tool_panel = app.query_one("ToolPanel")
-        results = tool_panel.query(ToolResultItem)
-        assert any("executed" in r.result for r in results)
+        results = tool_panel.query(ToolProgressItem)
+        assert any(r.result and "executed" in r.result for r in results)
 
 
 @pytest.mark.asyncio

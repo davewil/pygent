@@ -18,11 +18,24 @@ if TYPE_CHECKING:
 
 @dataclass
 class LoopEvent:
-    type: str  # "text", "tool_call", "tool_result", "param_error", "permission_denied", "finished", "cache_hit"
+    """Event emitted during conversation loop execution.
+
+    Attributes:
+        type: Event type - "text", "tool_call", "tool_result", "param_error",
+              "permission_denied", "finished", "cache_hit".
+        content: Event content (text or tool result).
+        tool_name: Name of the tool involved (for tool events).
+        tool_id: Unique ID of the tool call (for matching calls to results).
+        cached: Whether the result came from cache.
+        timestamp: When the event occurred (for progress tracking).
+    """
+
+    type: str
     content: str | None = None
     tool_name: str | None = None
     tool_id: str | None = None
     cached: bool = False
+    timestamp: datetime | None = None
 
 
 def _convert_to_llm_messages(messages: list[Message]) -> list[dict[str, Any]]:
@@ -101,7 +114,12 @@ async def conversation_loop(
                 assistant_blocks.append(TextBlock(text=block.text))
 
             elif isinstance(block, ProvToolUseBlock):
-                yield LoopEvent(type="tool_call", tool_name=block.name, tool_id=block.id)
+                yield LoopEvent(
+                    type="tool_call",
+                    tool_name=block.name,
+                    tool_id=block.id,
+                    timestamp=datetime.now(),
+                )
                 assistant_blocks.append(ToolUseBlock(id=block.id, name=block.name, input=block.input))
                 tool_invocations.append(block)
 
@@ -140,13 +158,20 @@ async def conversation_loop(
             for tool_result in results:
                 # Yield appropriate event type
                 if tool_result.is_error and "Permission denied" in tool_result.result:
-                    yield LoopEvent(type="permission_denied", tool_name=tool_result.tool_name)
+                    yield LoopEvent(
+                        type="permission_denied",
+                        tool_name=tool_result.tool_name,
+                        tool_id=tool_result.tool_use_id,
+                        timestamp=datetime.now(),
+                    )
                 else:
                     yield LoopEvent(
                         type="tool_result",
                         content=tool_result.result,
                         tool_name=tool_result.tool_name,
+                        tool_id=tool_result.tool_use_id,
                         cached=tool_result.was_cached,
+                        timestamp=datetime.now(),
                     )
 
                 result_blocks.append(

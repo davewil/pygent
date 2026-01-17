@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -6,7 +7,7 @@ import pytest
 from pygent.core.agent import Agent
 from pygent.core.loop import LoopEvent
 from pygent.tui.app import PygentApp
-from pygent.tui.widgets import ConversationPanel, MessageInput, ToolPanel
+from pygent.tui.widgets import ConversationPanel, MessageInput, ToolPanel, ToolProgressItem
 
 
 @pytest.mark.asyncio
@@ -21,10 +22,12 @@ async def test_tui_integration_with_mock_agent():
     mock_agent.session.id = "test-session-id"
 
     # Define the events the agent will yield
+    # Note: tool_result needs tool_id to match the tool_call for proper progress tracking
+    now = datetime.now()
     events = [
         LoopEvent(type="text", content="Hello from Agent"),
-        LoopEvent(type="tool_call", tool_name="test_tool", tool_id="call_1"),
-        LoopEvent(type="tool_result", tool_name="test_tool", content="Tool Output"),
+        LoopEvent(type="tool_call", tool_name="test_tool", tool_id="call_1", timestamp=now),
+        LoopEvent(type="tool_result", tool_name="test_tool", tool_id="call_1", content="Tool Output", timestamp=now),
         LoopEvent(type="finished"),
     ]
 
@@ -83,11 +86,9 @@ async def test_tui_integration_with_mock_agent():
         assert agent_msgs, "No agent messages found"
         assert "Hello from Agent" in get_text_content(agent_msgs.last())
 
-        # Check tool panel
-        tool_call_msgs = tool_panel.query(".tool-call")
-        assert tool_call_msgs
-        assert "test_tool" in get_text_content(tool_call_msgs.last())
-
-        tool_result_msgs = tool_panel.query(".tool-result")
-        assert tool_result_msgs
-        assert "Tool Output" in get_text_content(tool_result_msgs.last())
+        # Check tool panel - now uses ToolProgressItem widgets with .tool-progress class
+        tool_progress_items = tool_panel.query(ToolProgressItem)
+        assert tool_progress_items, "No tool progress items found"
+        progress_item = tool_progress_items.last()
+        assert progress_item.tool_name == "test_tool"
+        assert progress_item.result == "Tool Output"
