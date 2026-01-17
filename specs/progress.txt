@@ -199,3 +199,44 @@
   - Learned: Pydantic models with nested optional models (like GitInfo) serialize/deserialize cleanly
   - Context Awareness section of Phase 3 now complete
   - Total: 405 tests pass
+2026-01-17: Implemented Test Runner Integration (src/pygent/tools/testing.py):
+  - Added TESTING category to ToolCategory enum in tools/base.py
+  - Implemented TestResult dataclass: name, status (passed/failed/skipped/error), duration, error_message, file_path, line_number
+  - Implemented TestSummary dataclass: total, passed, failed, skipped, errors, duration, results list, raw_output
+  - Implemented detect_test_framework() function:
+    * Auto-detects from config files: pyproject.toml, pytest.ini, setup.cfg, package.json, go.mod, Cargo.toml
+    * Falls back to checking for test_*.py files in tests/ or root directory
+    * Returns TestFramework enum (reused from context/models.py)
+  - Implemented output parsers for each framework:
+    * _parse_pytest_output: Parses verbose test results and summary line ("X passed, Y failed in Z.XXs")
+    * _parse_jest_output: Parses ✓/✕/○ markers and "Tests: X passed, Y failed" summary
+    * _parse_go_test_output: Parses "--- PASS/FAIL/SKIP:" lines and "ok/FAIL package" summary
+    * _parse_cargo_test_output: Parses "test ... ok/FAILED/ignored" and "test result:" summary
+    * _parse_unittest_output: Parses verbose output and "Ran X tests in Y.YYYs" summary
+  - Implemented _build_test_command() helper:
+    * Builds framework-specific command line with options (verbose, coverage, fail_fast, pattern, path)
+    * Supports: pytest, unittest, jest, vitest, go test, cargo test, mocha
+  - Implemented _format_summary() for human-readable output
+  - Implemented run_tests tool:
+    * Auto-detects or accepts explicit framework
+    * Supports: path, pattern, verbose, coverage, fail_fast, timeout options
+    * Uses asyncio.create_subprocess_exec for non-blocking execution
+    * Returns formatted summary with failed test details
+    * Risk level: MEDIUM, Category: TESTING
+  - Registered run_tests tool in cli.py _create_full_registry()
+  - Added 72 tests:
+    * TestResult/TestSummary model tests
+    * Framework detection tests (pytest, jest, vitest, mocha, go, cargo, unknown)
+    * Output parser tests for each framework (passed, failed, skipped scenarios)
+    * parse_test_output dispatcher tests
+    * _build_test_command tests for each framework with options
+    * _format_summary tests
+    * run_tests tool tests (success, failure, timeout, not found, error paths)
+    * Property-based tests with hypothesis
+    * Integration tests
+  - Learned: Pytest summary line format varies - counts can appear in any order, so use individual regex patterns
+  - Learned: Add __test__ = False to dataclasses with "Test" in name to prevent pytest collection
+  - Learned: Test frameworks often output to stderr (warnings), so combine stdout/stderr for complete results
+  - Learned: Use MagicMock with explicit async methods to avoid RuntimeWarning for unawaited coroutines
+  - Test Runner section of Phase 3 now complete (framework detection, run_tests tool, output parsing)
+  - Total: 477 tests pass

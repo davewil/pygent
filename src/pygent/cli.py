@@ -228,11 +228,16 @@ def _create_full_registry() -> ToolRegistry:
 
     registry.register(web_fetch)
 
+    # Testing tools
+    from pygent.tools.testing import run_tests
+
+    registry.register(run_tests)
+
     return registry
 
 
 @cli.command()
-@click.option("--category", "-c", help="Filter by category (filesystem, git, search, web, shell)")
+@click.option("--category", "-c", help="Filter by category (filesystem, git, search, web, shell, testing)")
 def tools(category: str | None) -> None:
     """List all available tools."""
     registry = _create_full_registry()
