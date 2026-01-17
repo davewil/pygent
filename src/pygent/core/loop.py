@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
+from pygent.core.parallel import execute_tools_parallel
 from pygent.core.providers import LLMResponse
 from pygent.core.providers import TextBlock as ProvTextBlock
 from pygent.core.providers import ToolUseBlock as ProvToolUseBlock
@@ -112,51 +113,49 @@ async def conversation_loop(
         if not tool_invocations:
             break
 
-        # Execute Tools
+        # Execute Tools (with parallel execution where safe)
         result_blocks: list[ContentBlock] = []
 
+        # Build list of tool calls with definitions
+        tool_calls: list[tuple[ProvToolUseBlock, Any]] = []
+        tool_not_found: list[ProvToolUseBlock] = []
+
         for tool_use in tool_invocations:
-            # Check permissions
             tool_def = agent.tools.get(tool_use.name)
             if not tool_def:
-                result = f"Error: Tool {tool_use.name} not found."
-                result_blocks.append(ToolResultBlock(tool_use_id=tool_use.id, content=result, is_error=True))
-                yield LoopEvent(type="tool_result", content=result, tool_name=tool_use.name)
-                continue
+                tool_not_found.append(tool_use)
+            else:
+                tool_calls.append((tool_use, tool_def))
 
-            allowed = await agent.permissions.check(tool_name=tool_use.name, risk=tool_def.risk, args=tool_use.input)
+        # Handle tools not found
+        for tool_use in tool_not_found:
+            result = f"Error: Tool {tool_use.name} not found."
+            result_blocks.append(ToolResultBlock(tool_use_id=tool_use.id, content=result, is_error=True))
+            yield LoopEvent(type="tool_result", content=result, tool_name=tool_use.name)
 
-            if not allowed:
-                result = "Error: Permission denied by user."
-                yield LoopEvent(type="permission_denied", tool_name=tool_use.name)
-                result_blocks.append(ToolResultBlock(tool_use_id=tool_use.id, content=result, is_error=True))
-                continue
+        # Execute valid tool calls with parallel execution
+        if tool_calls:
+            results = await execute_tools_parallel(tool_calls, agent)
 
-            # Execute (with caching)
-            try:
-                # Check cache first
-                cached_result = await agent.tool_cache.get(tool_use.name, tool_use.input)
-                if cached_result is not None:
-                    result = cached_result
-                    yield LoopEvent(type="tool_result", content=result, tool_name=tool_use.name, cached=True)
-                    result_blocks.append(ToolResultBlock(tool_use_id=tool_use.id, content=result, is_error=False))
-                    continue
+            for tool_result in results:
+                # Yield appropriate event type
+                if tool_result.is_error and "Permission denied" in tool_result.result:
+                    yield LoopEvent(type="permission_denied", tool_name=tool_result.tool_name)
+                else:
+                    yield LoopEvent(
+                        type="tool_result",
+                        content=tool_result.result,
+                        tool_name=tool_result.tool_name,
+                        cached=tool_result.was_cached,
+                    )
 
-                # Dispatch to tool function
-                # tool_def.function is async
-                output = await tool_def.function(**tool_use.input)
-                result = str(output)
-
-                # Cache the result
-                await agent.tool_cache.set(tool_use.name, tool_use.input, result)
-
-                yield LoopEvent(type="tool_result", content=result, tool_name=tool_use.name)
-                result_blocks.append(ToolResultBlock(tool_use_id=tool_use.id, content=result, is_error=False))
-
-            except Exception as e:
-                result = f"Error execution tool: {str(e)}"
-                yield LoopEvent(type="tool_result", content=result, tool_name=tool_use.name)
-                result_blocks.append(ToolResultBlock(tool_use_id=tool_use.id, content=result, is_error=True))
+                result_blocks.append(
+                    ToolResultBlock(
+                        tool_use_id=tool_result.tool_use_id,
+                        content=tool_result.result,
+                        is_error=tool_result.is_error,
+                    )
+                )
 
         # Append Tool Results
         if result_blocks:

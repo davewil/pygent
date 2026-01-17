@@ -378,3 +378,58 @@
   - Learned: dict[str, int | float] union type needed when return value includes both types
   - Tool Caching section of Phase 3 now complete
   - Total: 645 tests pass
+2026-01-17: Implemented Parallel Tool Execution (src/pygent/core/parallel.py):
+  - Added READ_ONLY_TOOLS frozenset identifying safe-for-parallel tools:
+    * Filesystem reads: read_file, list_files
+    * Search operations: grep_search, find_files, find_definition
+    * Git reads: git_status, git_diff, git_log, git_branch
+    * Web: web_fetch (no local side effects)
+    * Listing: list_templates, list_components
+  - Added PATH_ARGUMENTS frozenset for conflict detection (path, file_path, source, destination, etc.)
+  - Implemented data models:
+    * ToolExecution: Wraps tool_use + tool_def with is_read_only and affected_paths metadata
+    * ToolResult: Execution result with tool_use_id, result, is_error, was_cached flags
+    * ExecutionBatch: Groups executions with can_parallelize flag
+  - Implemented helper functions:
+    * is_read_only_tool(): Checks if tool is safe for parallel execution
+    * extract_affected_paths(): Extracts file paths from tool arguments
+    * paths_conflict(): Detects overlap or parent-child relationships between path sets
+    * prepare_tool_execution(): Prepares tool use with metadata
+    * group_into_batches(): Groups tools into parallel/sequential batches
+  - Implemented execution functions:
+    * execute_single_tool(): Executes one tool with permission checking and caching
+    * execute_batch(): Executes batch with asyncio.gather for parallel, sequential for writes
+    * execute_tools_parallel(): Main entry point - groups and executes tool calls
+    * get_parallel_stats(): Returns parallelization statistics
+  - Safety rules enforced:
+    * Read operations can run in parallel with each other
+    * Write operations always run sequentially
+    * Operations affecting same paths (including parent-child) run sequentially
+  - Updated conversation_loop (loop.py):
+    * Replaced sequential tool execution with execute_tools_parallel()
+    * Maintains result ordering for LLM response
+    * Preserves permission_denied event handling
+  - Added 58 tests:
+    * TestReadOnlyTools: 4 tests for READ_ONLY_TOOLS constant
+    * TestPathArguments: 1 test for PATH_ARGUMENTS constant
+    * TestIsReadOnlyTool: 4 tests for tool classification
+    * TestExtractAffectedPaths: 6 tests for path extraction
+    * TestPathsConflict: 7 tests for conflict detection
+    * TestToolExecution: 1 test for dataclass creation
+    * TestToolResult: 3 tests for result dataclass
+    * TestExecutionBatch: 2 tests for batch creation
+    * TestPrepareToolExecution: 2 tests for preparation
+    * TestGroupIntoBatches: 6 tests for batching logic
+    * TestExecuteSingleTool: 4 async tests for single execution
+    * TestExecuteBatch: 2 async tests for batch execution
+    * TestExecuteToolsParallel: 5 async tests for parallel execution
+    * TestGetParallelStats: 3 tests for statistics
+    * TestPropertyBased: 4 property-based tests using hypothesis
+    * TestIntegration: 4 async integration tests (timing verification, permission denied)
+  - Learned: asyncio.gather() preserves order of results matching input order
+  - Learned: Path conflict detection needs to handle trailing slashes
+  - Learned: Parent-child path relationships need startswith() with "/" suffix check
+  - Learned: Factory pattern needed for capturing loop variables in async closures
+  - Learned: Return type Any for mock factory functions avoids mypy type mismatch errors in tests
+  - Parallel Tool Execution section of Phase 3 now complete
+  - Total: 703 tests pass
