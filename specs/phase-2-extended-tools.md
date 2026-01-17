@@ -575,8 +575,8 @@ async def test_find_definition_python(tmp_path):
 ## Acceptance Criteria
 
 ### Functional
-- [ ] All git tools work correctly in valid git repositories
-- [ ] Git tools fail gracefully outside of git repos
+- [x] All git tools work correctly in valid git repositories
+- [x] Git tools fail gracefully outside of git repos
 - [ ] Web fetch handles various content types
 - [ ] Web fetch respects size limits
 - [x] Grep search finds patterns accurately
@@ -586,10 +586,11 @@ async def test_find_definition_python(tmp_path):
 - [ ] Tools categorized and discoverable
 
 ### Non-Functional
-- [ ] Git operations complete in <1s for typical repos
+- [x] Git operations complete in <1s for typical repos
 - [x] Search operations use ripgrep when available (with Python fallback)
 - [ ] Web fetch has configurable timeout
 - [x] Search tools have comprehensive unit and property-based tests
+- [x] Git tools have comprehensive unit and property-based tests
 
 ---
 
@@ -606,10 +607,19 @@ async def test_find_definition_python(tmp_path):
    - move_file ✅ (move/rename, auto-creates parent directories)
    - copy_file ✅ (copies with shutil.copy2, preserves metadata, auto-creates parent directories)
 
-3. **Git Tools** (4-5 days)
-   - Read-only tools first (status, diff, log, branch)
-   - Write tools (add, commit, checkout)
-   - Remote tools (push, pull)
+3. **Git Tools** ✅ COMPLETE
+   - git_status ✅ (shows working tree status, staged/unstaged/untracked files)
+   - git_diff ✅ (unified diff, supports --cached, specific commit, path filter)
+   - git_log ✅ (commit history, count limit, oneline format, path filter)
+   - git_branch ✅ (list/create/delete branches, list all including remotes)
+   - git_add ✅ (stage files for commit)
+   - git_commit ✅ (create commit with message)
+   - git_checkout ✅ (switch branches, create new branch, restore files)
+   - git_push ✅ (push to remote, set upstream)
+   - git_pull ✅ (fetch and integrate from remote)
+   - All tools use async subprocess with proper error handling
+   - GitError exception for graceful failure outside git repos
+   - 50 tests including unit tests, mocked remote tests, and property-based tests
 
 4. **Web Tools** (3 days)
    - web_fetch with content handling

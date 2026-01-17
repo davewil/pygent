@@ -93,3 +93,22 @@
   - Learned: shutil.copy2 preserves metadata unlike shutil.copy; use asyncio.to_thread to wrap blocking shutil calls
   - Additional File Tools section of Phase 2 now complete
   - Total: 201 tests pass
+2026-01-17: Implemented Git Tools (src/pygent/tools/git.py):
+  - git_status: Shows working tree status (staged/unstaged/untracked files, current branch)
+  - git_diff: Unified diff output with --cached, commit, and path filter support
+  - git_log: Commit history with count limit, oneline format, and path filter
+  - git_branch: List/create/delete branches, includes --all for remote branches
+  - git_add: Stage files for commit (MEDIUM risk)
+  - git_commit: Create commit with message (MEDIUM risk)
+  - git_checkout: Switch branches (-b for create), restore files from HEAD (MEDIUM risk)
+  - git_push: Push to remote with -u set-upstream support (HIGH risk)
+  - git_pull: Fetch and integrate from remote (MEDIUM risk)
+  - Helper functions: _run_git_command (async subprocess), _check_git_repo (validates git repo)
+  - GitError exception class for graceful failure outside git repositories
+  - All tools use asyncio.create_subprocess_exec for non-blocking git operations
+  - Added 50 tests: 42 unit tests + 4 property-based tests + 1 integration test (full workflow)
+  - Learned: Git commands often output to stderr even on success (e.g., checkout, push), so check both stdout and stderr
+  - Learned: Use MagicMock with patch for testing remote operations (push/pull) since no real remote exists
+  - Learned: Property tests with hypothesis need careful strategy selection - st.from_regex is cleaner than filter()
+  - Git Tools section of Phase 2 now complete
+  - Total: 251 tests pass
