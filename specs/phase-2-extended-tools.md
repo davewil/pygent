@@ -577,8 +577,8 @@ async def test_find_definition_python(tmp_path):
 ### Functional
 - [x] All git tools work correctly in valid git repositories
 - [x] Git tools fail gracefully outside of git repos
-- [ ] Web fetch handles various content types
-- [ ] Web fetch respects size limits
+- [x] Web fetch handles various content types
+- [x] Web fetch respects size limits
 - [x] Grep search finds patterns accurately
 - [x] Find files works with glob patterns and depth limits
 - [x] Find definition locates symbol definitions across multiple languages
@@ -588,9 +588,10 @@ async def test_find_definition_python(tmp_path):
 ### Non-Functional
 - [x] Git operations complete in <1s for typical repos
 - [x] Search operations use ripgrep when available (with Python fallback)
-- [ ] Web fetch has configurable timeout
+- [x] Web fetch has configurable timeout
 - [x] Search tools have comprehensive unit and property-based tests
 - [x] Git tools have comprehensive unit and property-based tests
+- [x] Web tools have comprehensive unit and property-based tests
 
 ---
 
@@ -621,12 +622,14 @@ async def test_find_definition_python(tmp_path):
    - GitError exception for graceful failure outside git repos
    - 50 tests including unit tests, mocked remote tests, and property-based tests
 
-4. **Web Tools** (3 days)
-   - web_fetch with content handling
-   - HTML to markdown conversion
-   - Optional: web_search integration
+4. **Web Tools** ✅ COMPLETE
+   - web_fetch ✅ (fetches URL content with httpx, HTTPS enforced, HTTP auto-upgraded)
+   - Features: configurable timeout, max response size limit (default 1MB)
+   - Content handling: JSON pretty-printing, HTML to text conversion, plain text passthrough
+   - Error handling: WebFetchError exception for timeout, connection, and request errors
+   - 45 tests including unit tests and property-based tests, 97% coverage
 
-5. **TUI Enhancements** (2 days)
+5. **TUI Enhancements**
    - Tool panel improvements
    - Permission dialog enhancements
 

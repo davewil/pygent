@@ -112,3 +112,28 @@
   - Learned: Property tests with hypothesis need careful strategy selection - st.from_regex is cleaner than filter()
   - Git Tools section of Phase 2 now complete
   - Total: 251 tests pass
+2026-01-17: Implemented Web Tools (src/pygent/tools/web.py):
+  - web_fetch: Fetches URL content with httpx async client
+    * HTTPS enforced (HTTP URLs automatically upgraded)
+    * Configurable timeout (default 30s) and max_size (default 1MB)
+    * Content type handling: JSON pretty-printing, HTML to text conversion, plain text passthrough
+    * Follows redirects automatically (httpx follow_redirects=True)
+    * Returns JSON with status_code, content_type, url (final), and content
+    * Truncation indicator when content exceeds max_size
+  - WebFetchError exception class for graceful error handling
+  - _HTMLToTextParser: Simple HTML to text converter using html.parser
+    * Strips script, style, noscript, head, meta, link tags
+    * Handles common elements: p, div, h1-h6, ul, ol, li, br, hr, pre, a
+    * Normalizes whitespace for non-preformatted text
+  - Helper functions: _upgrade_to_https, _html_to_text, _format_response
+  - Added 45 tests: 30 unit tests + 5 property-based tests covering:
+    * URL validation (HTTPS enforcement, HTTP upgrade)
+    * Content type handling (JSON, HTML, plain text)
+    * Size limit enforcement
+    * Error handling (timeout, connect error, HTTP status error, request error)
+    * Custom headers, various HTTP methods
+  - Learned: latin-1 encoding can decode any byte sequence (0x00-0xFF), so fallback after latin-1 is unreachable
+  - Learned: HTMLParser is robust and rarely throws exceptions, making exception fallback hard to test
+  - Learned: httpx.AsyncClient context manager pattern with patch requires mocking __aenter__ and __aexit__
+  - Web Tools section of Phase 2 now complete
+  - Total: 296 tests pass, 96% overall coverage, web.py at 97% coverage
