@@ -611,3 +611,35 @@
   - System Prompt Customization section of Phase 4 now complete (user/project config, template variables, context injection)
   - CLI prompt commands (show, set, edit, reset) deferred to future work
   - Total: 890 tests pass
+2026-01-18: Implemented Environment Variable Support for Configuration (src/pygent/config/loader.py):
+  - Added ENV_MAPPINGS constant mapping env vars to config paths:
+    * PYGENT_MODEL -> llm.model
+    * PYGENT_API_KEY -> llm.api_key
+    * PYGENT_MAX_TOKENS -> llm.max_tokens
+    * PYGENT_PROVIDER -> llm.provider
+    * ANTHROPIC_API_KEY -> llm.api_key (fallback)
+    * OPENAI_API_KEY -> llm.api_key (fallback)
+  - Added API_KEY_ENV_PRIORITY list for API key precedence: PYGENT_API_KEY > ANTHROPIC_API_KEY > OPENAI_API_KEY
+  - Implemented helper functions:
+    * _set_nested_value() - sets value in nested dict using dotted path like "llm.model"
+    * _convert_env_value() - converts env strings to appropriate types (int for max_tokens, bool for flags)
+    * _load_env_config() - loads all configured env vars into a dict
+  - Updated load_config() with new priority order: env vars > project config > user config > defaults
+    * Added load_env parameter (default True) to optionally skip env var loading
+  - Exported ENV_MAPPINGS and API_KEY_ENV_PRIORITY from config module
+  - Added 37 comprehensive tests (test_config_env.py):
+    * TestEnvMappings: 3 tests for ENV_MAPPINGS constant
+    * TestApiKeyEnvPriority: 3 tests for API key priority
+    * TestSetNestedValue: 6 tests for nested value setting
+    * TestConvertEnvValue: 6 tests for type conversion
+    * TestLoadEnvConfig: 7 tests for env config loading
+    * TestLoadConfigWithEnv: 4 async tests for integrated loading
+    * TestPropertyBased: 3 property-based tests using hypothesis
+    * TestEdgeCases: 4 edge case tests (empty vars, whitespace, special chars)
+    * TestIntegration: 1 integration test for realistic usage
+  - Learned: API key env vars need priority ordering since multiple can be set
+  - Learned: Empty strings are falsy in Python, so empty env vars are effectively unset
+  - Learned: Boolean conversion should support multiple true-like values: "true", "1", "yes", "on"
+  - Learned: monkeypatch.delenv() with raising=False is cleaner for clearing env vars in tests
+  - Configuration Polish: Environment Variables section of Phase 4 now complete
+  - Total: 927 tests pass

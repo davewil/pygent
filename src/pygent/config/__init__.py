@@ -1,6 +1,6 @@
 """Configuration module for pygent."""
 
-from pygent.config.loader import load_config
+from pygent.config.loader import API_KEY_ENV_PRIORITY, ENV_MAPPINGS, load_config
 from pygent.config.prompt import (
     TEMPLATE_VARIABLES,
     PromptLoadError,
@@ -28,6 +28,8 @@ __all__ = [
     "SystemPromptSettings",
     "TUISettings",
     # Loader
+    "API_KEY_ENV_PRIORITY",
+    "ENV_MAPPINGS",
     "load_config",
     # Prompt
     "TEMPLATE_VARIABLES",
