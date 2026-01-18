@@ -554,9 +554,177 @@ enabled = false  # Opt-in, default off
 
 ---
 
-### 9. Future-Proofing
+### 9. Logging Infrastructure
 
-#### 9.1 Plugin System Foundation
+#### 9.1 Loguru Setup
+
+Add `loguru` dependency for file-based logging that doesn't interfere with the TUI.
+
+```python
+# src/pygent/core/logging.py
+
+from pathlib import Path
+from loguru import logger
+
+# Remove default stderr handler (would corrupt TUI)
+logger.remove()
+
+LOG_DIR = Path("~/.local/share/pygent/logs").expanduser()
+LOG_FILE = LOG_DIR / "pygent.log"
+
+def setup_logging(level: str = "DEBUG") -> None:
+    """Configure logging to file with rotation.
+
+    Args:
+        level: Minimum log level (DEBUG, INFO, WARNING, ERROR).
+    """
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+    logger.add(
+        LOG_FILE,
+        level=level,
+        format="{time:YYYY-MM-DD HH:mm:ss} | {level:<8} | {name}:{function}:{line} | {message}",
+        rotation="10 MB",      # Rotate when file reaches 10MB
+        retention="7 days",    # Keep logs for 7 days
+        compression="gz",      # Compress rotated files
+        enqueue=True,          # Thread-safe async logging
+    )
+```
+
+#### 9.2 Configuration
+
+```toml
+# ~/.config/pygent/config.toml
+
+[logging]
+level = "INFO"          # DEBUG, INFO, WARNING, ERROR
+# file = "~/.local/share/pygent/logs/pygent.log"  # Custom path
+```
+
+```python
+# settings.py addition
+
+class LoggingSettings(BaseModel):
+    """Logging configuration."""
+    level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    file: str | None = None  # Override default log path
+```
+
+#### 9.3 Integration Points
+
+Add logging throughout the codebase:
+
+```python
+# core/agent.py
+from loguru import logger
+
+class Agent:
+    async def run(self, message: str) -> AsyncIterator[LoopEvent]:
+        logger.info("Starting agent run", message_length=len(message))
+        try:
+            async for event in conversation_loop(...):
+                logger.debug("Loop event", event_type=event.type)
+                yield event
+        except Exception as e:
+            logger.exception("Agent run failed")
+            raise
+
+# tools/filesystem.py
+@tool(name="read_file", ...)
+async def read_file(path: str) -> str:
+    logger.debug("Reading file", path=path)
+    # ...
+    logger.debug("File read complete", path=path, size=len(content))
+
+# core/providers.py
+async def complete(self, messages, tools, max_tokens):
+    logger.debug("LLM request", model=self.model, message_count=len(messages))
+    # ...
+    logger.debug("LLM response", stop_reason=response.stop_reason)
+```
+
+#### 9.4 Log Report CLI Command
+
+```python
+# cli.py
+
+import tarfile
+from datetime import datetime
+
+@cli.command()
+@click.option("--output", "-o", type=click.Path(), help="Output file path")
+@click.option("--days", default=7, help="Include logs from last N days")
+def report(output: str | None, days: int) -> None:
+    """Package logs for bug reporting.
+
+    Creates a compressed archive of recent logs with sensitive
+    data (API keys, absolute paths) redacted.
+    """
+    log_dir = Path("~/.local/share/pygent/logs").expanduser()
+
+    if not log_dir.exists():
+        click.echo("No logs found.")
+        return
+
+    # Default output path
+    if output is None:
+        output = f"pygent-report-{datetime.now():%Y%m%d-%H%M%S}.tar.gz"
+
+    # Collect and sanitize logs
+    with tarfile.open(output, "w:gz") as tar:
+        for log_file in log_dir.glob("*.log*"):
+            # Read and redact sensitive info
+            content = _redact_sensitive(log_file.read_text())
+            # Add to archive with sanitized content
+            # ...
+
+    click.echo(f"Report created: {output}")
+    click.echo("Please attach this file to your GitHub issue.")
+
+
+def _redact_sensitive(content: str) -> str:
+    """Remove API keys, absolute paths, and other sensitive data."""
+    import re
+
+    # Redact API keys
+    content = re.sub(r'(api[_-]?key["\s:=]+)["\']?[\w-]+', r'\1[REDACTED]', content, flags=re.I)
+    content = re.sub(r'(sk-[a-zA-Z0-9]{20,})', '[REDACTED_KEY]', content)
+
+    # Redact home directory paths
+    home = str(Path.home())
+    content = content.replace(home, "~")
+
+    return content
+```
+
+#### 9.5 Log Levels Guide
+
+| Level | When to Use |
+|-------|-------------|
+| `DEBUG` | Detailed diagnostic info (tool args, file contents preview) |
+| `INFO` | Normal operation milestones (session start, tool execution) |
+| `WARNING` | Unexpected but recoverable situations (cache miss, retry) |
+| `ERROR` | Failures that affect functionality (API error, file not found) |
+
+#### 9.6 Testing Considerations
+
+```python
+# conftest.py
+
+@pytest.fixture(autouse=True)
+def disable_logging():
+    """Disable file logging during tests."""
+    from loguru import logger
+    logger.disable("pygent")
+    yield
+    logger.enable("pygent")
+```
+
+---
+
+### 10. Future-Proofing
+
+#### 10.1 Plugin System Foundation
 ```python
 # Placeholder for future plugin system
 
@@ -573,7 +741,7 @@ class PluginBase(ABC):
     def register(self, app: PygentApp) -> None: ...
 ```
 
-#### 9.2 API Stability
+#### 10.2 API Stability
 ```python
 # Public API marked explicitly
 __all__ = [
@@ -595,9 +763,11 @@ __all__ = [
 - [x] Environment variables override config files
 - [x] Config CLI commands functional
 - [x] Config validation with helpful error messages
-- [ ] Package installable from PyPI
+- [x] Logging infrastructure with Loguru (file-based, no TUI interference)
+- [x] Log report command for bug reporting (`pygent report`)
 - [ ] Documentation complete and accurate
 - [ ] First-run experience smooth
+- [ ] Package installable from PyPI (last step)
 
 ### Non-Functional
 - [ ] Install time <30s
@@ -610,27 +780,28 @@ __all__ = [
 
 ## Implementation Order
 
-1. **System Prompt Customization** (3 days)
+1. **System Prompt Customization** (3 days) ✓
    - User-level config
    - Project-level overrides
    - Template variables
    - CLI commands
 
-2. **Configuration Polish** (2 days)
+2. **Configuration Polish** (2 days) ✓
    - Validation
    - CLI enhancements
    - Environment variables
 
-3. **Documentation** (4 days)
+3. **Logging Infrastructure** (1 day)
+   - Loguru setup with file rotation
+   - Configuration integration
+   - Add logging to core modules
+   - `pygent report` command
+
+4. **Documentation** (4 days)
    - README finalization
    - User documentation
    - API documentation
    - Contributing guide
-
-4. **PyPI Packaging** (2 days)
-   - pyproject.toml finalization
-   - Build verification
-   - Publish workflow
 
 5. **Quality Assurance** (3 days)
    - E2E tests
@@ -642,7 +813,10 @@ __all__ = [
    - First-run experience
    - Help system
 
-7. **Release** (1 day)
+7. **PyPI Packaging & Release** (2 days) - LAST
+   - pyproject.toml finalization
+   - Build verification
+   - Publish workflow
    - Final testing
    - Create release
    - Publish to PyPI
@@ -664,5 +838,6 @@ After v0.1.0, consider:
 
 ---
 
-*Document Version: 1.0*
+*Document Version: 1.1*
 *Created: 2026-01-16*
+*Updated: 2026-01-18 - Added Logging Infrastructure section (Loguru)*

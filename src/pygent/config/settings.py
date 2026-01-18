@@ -233,6 +233,31 @@ class SystemPromptSettings(BaseModel):
         return self
 
 
+class LoggingSettings(BaseModel):
+    """Logging configuration.
+
+    Attributes:
+        level: Log level (DEBUG, INFO, WARNING, ERROR).
+        file: Custom log file path (supports ~ expansion).
+               If not specified, defaults to ~/.local/share/pygent/logs/pygent.log
+    """
+
+    level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    file: str | None = None  # Override default log path
+
+    @field_validator("file")
+    @classmethod
+    def validate_file_path(cls, v: str | None) -> str | None:
+        """Validate that file path is well-formed (doesn't check existence)."""
+        if v is not None:
+            v = v.strip()
+            if v == "":
+                raise ValueError(
+                    "logging.file cannot be an empty string. Either provide a valid path or omit the setting."
+                )
+        return v
+
+
 class Settings(BaseModel):
     """Root settings model combining all configuration sections.
 
@@ -241,12 +266,14 @@ class Settings(BaseModel):
         permissions: Permission handling settings.
         tui: TUI appearance settings.
         system_prompt: System prompt customization settings.
+        logging: Logging configuration.
     """
 
     llm: LLMSettings = LLMSettings()
     permissions: PermissionSettings = PermissionSettings()
     tui: TUISettings = TUISettings()
     system_prompt: SystemPromptSettings = SystemPromptSettings()
+    logging: LoggingSettings = LoggingSettings()
 
     @classmethod
     def validate_config(cls, config_dict: dict[str, Any]) -> "Settings":

@@ -735,3 +735,62 @@
   - Learned: Settings.validate_config() provides cleaner API than direct Pydantic validation for users
   - Config Validation section of Phase 4 now complete (Section 2.1)
   - Total: 1063 tests pass
+2026-01-18: Implemented Logging Infrastructure with Loguru (src/pygent/core/logging.py):
+  - Added loguru>=0.7.0 dependency to pyproject.toml
+  - Created logging module with file-based logging that doesn't interfere with TUI:
+    * DEFAULT_LOG_DIR: ~/.local/share/pygent/logs/
+    * DEFAULT_LOG_FILE: pygent.log in log dir
+    * LOG_FORMAT: timestamp | level | module:function:line | message
+    * VALID_LOG_LEVELS frozenset: DEBUG, INFO, WARNING, ERROR
+  - Implemented setup_logging() function:
+    * Removes default stderr handler (would corrupt TUI)
+    * Adds file handler with rotation, retention, and compression
+    * Supports custom log file path and level
+    * Uses enqueue=True for thread-safe async logging
+    * Returns path to the log file being used
+  - Implemented helper functions:
+    * get_log_dir(), get_log_file(), get_valid_log_levels()
+    * disable_logging(), enable_logging(), reset_logging() for testing
+    * get_log_files() returns log files sorted by modification time
+  - Implemented redact_sensitive() function:
+    * Redacts API key patterns (api_key=, sk-xxx, ANTHROPIC_API_KEY=, etc.)
+    * Replaces home directory paths with ~
+    * Case-insensitive matching for api_key patterns
+  - Added LoggingSettings model to settings.py:
+    * level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] with default "INFO"
+    * file: str | None for custom log file path
+    * Validation for non-empty file path
+  - Implemented CLI commands:
+    * `pygent report`: Creates tar.gz archive of redacted logs for bug reporting
+      - Supports --output/-o for custom output path
+      - Supports --days for filtering logs by age
+      - Shows progress as files are added to archive
+    * `pygent logs`: Shows log file path and status
+      - Supports --level/-l and --file/-f for configuration
+  - Added logging.level and logging.file to VALID_CONFIG_KEYS
+  - Updated default config template to include [logging] section
+  - Added logging level validation in _convert_value() (normalizes to uppercase)
+  - Added 60 comprehensive tests (tests/test_logging.py):
+    * TestConstants: 7 tests for module constants
+    * TestGetLogDir/TestGetLogFile/TestGetValidLogLevels: 5 tests
+    * TestSetupLogging: 7 tests for setup function
+    * TestDisableEnableLogging: 2 tests
+    * TestResetLogging: 1 test
+    * TestRedactSensitive: 9 tests for sensitive data redaction
+    * TestGetLogFiles: 3 tests for log file discovery
+    * TestLoggingSettings: 5 tests for settings model
+    * TestCLIReportCommand: 4 tests for report command
+    * TestCLILogsCommand: 2 tests for logs command
+    * TestConfigSetLogging: 3 tests for config set logging keys
+    * TestPropertyBased: 3 property-based tests with hypothesis
+    * TestEdgeCases: 5 edge case tests
+    * TestIntegration: 3 integration tests
+  - Learned: Loguru's logger.remove() removes default stderr handler to prevent TUI corruption
+  - Learned: logger.add() with enqueue=True provides thread-safe async logging
+  - Learned: tarfile.TarInfo allows creating archive entries from in-memory data (BytesIO)
+  - Learned: Hypothesis @given parameters must be named (keyword form) when combined with pytest fixtures
+  - Learned: Hypothesis HealthCheck.function_scoped_fixture must be suppressed when using tmp_path with uuid
+  - Learned: Path.expanduser() handles ~ expansion for user-provided paths
+  - Learned: loguru supports rotation by size ("10 MB") or time ("1 day") and retention by time ("7 days")
+  - Logging Infrastructure section of Phase 4 now complete (Section 9)
+  - Total: 1123 tests pass
