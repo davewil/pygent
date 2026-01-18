@@ -766,7 +766,7 @@ __all__ = [
 - [x] Logging infrastructure with Loguru (file-based, no TUI interference)
 - [x] Log report command for bug reporting (`pygent report`)
 - [ ] Documentation complete and accurate
-- [ ] First-run experience smooth
+- [x] First-run experience smooth
 - [ ] Package installable from PyPI (last step)
 
 ### Non-Functional
@@ -808,7 +808,7 @@ __all__ = [
    - Cross-platform testing
    - Performance benchmarks
 
-6. **UX Polish** (2 days)
+6. **UX Polish** (2 days) ✓
    - Error messages
    - First-run experience
    - Help system
@@ -838,6 +838,6 @@ After v0.1.0, consider:
 
 ---
 
-*Document Version: 1.2*
+*Document Version: 1.3*
 *Created: 2026-01-16*
-*Updated: 2026-01-18 - Added Quality Assurance (E2E tests, performance benchmarks)*
+*Updated: 2026-01-18 - Added UX Polish (error messages, first-run experience, help system)*

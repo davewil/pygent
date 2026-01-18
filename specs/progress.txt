@@ -822,3 +822,97 @@
   - Learned: For bulk replacements, need to read file, do Python string replace, write back
   - Quality Assurance section of Phase 4 now complete (Section 6)
   - Total: 1155 tests pass
+2026-01-18: Implemented UX Polish (Phase 4, Section 7):
+  - Created src/pygent/ux/ module with submodules for UX features
+  - Implemented Friendly Error Messages (messages.py):
+    * ERROR_MESSAGES dict with 19 user-friendly error templates
+    * Covers: no_api_key, invalid_api_key, model_not_found, rate_limit, network_error, timeout
+    * Covers: file_not_found, permission_denied, git_not_repo, git_conflict, tool_not_found
+    * Covers: config_invalid, session_not_found, template_not_found, no_test_framework, etc.
+    * get_error_message(): Retrieve error template by code
+    * format_error_message(): Substitute context values into template placeholders
+    * classify_error(): Classify exceptions to error codes based on type and message
+    * get_suggestion_for_error(): Get concise fix suggestions for each error code
+  - Implemented Help System (help.py):
+    * HelpTopic dataclass: name, title, summary, content
+    * HELP_TOPICS dict with 8 comprehensive help topics:
+      - tools: Available tools and risk levels
+      - config: Configuration options and commands
+      - shortcuts: Keyboard shortcuts in TUI
+      - permissions: Permission system explained
+      - sessions: Session management
+      - prompts: System prompt customization
+      - quickstart: Quick start guide
+      - troubleshooting: Common issues and solutions
+    * get_help_topic(): Retrieve topic by name (case-insensitive)
+    * list_help_topics(): List all topics with summaries
+    * search_help(): Search topics by query
+    * format_help_topic(): Format topic for display with decorations
+    * get_topic_names(): Get sorted list of topic names
+  - Implemented First-Run Experience (first_run.py):
+    * SetupStatus dataclass: tracks is_first_run, has_api_key, has_config_file, missing_items
+    * check_api_key(): Check if ANTHROPIC_API_KEY, OPENAI_API_KEY, or PYGENT_API_KEY is set
+    * check_setup_status(): Detect current setup state
+    * get_welcome_message(): Formatted welcome banner for new users
+    * get_setup_instructions(): Step-by-step setup guide based on missing items
+    * get_api_key_help(): Detailed API key setup instructions
+    * validate_api_key_format(): Validate key format (Anthropic sk-ant-, OpenAI sk-)
+    * format_setup_complete_message(): Completion message with current config summary
+    * First-run marker file to track setup completion
+  - Added CLI commands:
+    * 'pygent help [topic]': Show help topics or specific topic content
+    * 'pygent setup': Interactive first-run setup wizard
+      - Shows welcome message and current status
+      - Offers to set API key interactively (with validation)
+      - Offers to create config file with defaults
+      - Shows completion message with config summary
+  - Added 151 comprehensive tests (tests/test_ux/):
+    * test_messages.py: 41 tests for error messages module
+      - TestErrorMessages: dict structure and content tests
+      - TestGetErrorMessage: retrieval tests
+      - TestFormatErrorMessage: placeholder substitution tests
+      - TestClassifyError: exception classification tests
+      - TestGetSuggestionForError: suggestion tests
+      - TestPropertyBased: hypothesis tests for robustness
+      - TestEdgeCases: empty strings, unicode, etc.
+      - TestIntegration: full error handling flow
+    * test_help.py: 42 tests for help system
+      - TestHelpTopic: dataclass tests
+      - TestHelpTopics: constant structure tests
+      - TestGetHelpTopic: retrieval and case-insensitivity tests
+      - TestListHelpTopics: listing tests
+      - TestSearchHelp: search functionality tests
+      - TestFormatHelpTopic: formatting tests
+      - TestGetTopicNames: name listing tests
+      - TestPropertyBased: hypothesis tests
+      - TestEdgeCases: special characters, long queries
+      - TestIntegration: end-to-end flows
+    * test_first_run.py: 45 tests for first-run experience
+      - TestSetupStatus: dataclass tests
+      - TestGetConfigPath: path construction tests
+      - TestCheckApiKey: env var detection tests
+      - TestCheckSetupStatus: status detection tests
+      - TestValidateApiKeyFormat: key format validation tests
+      - TestGetWelcomeMessage/GetSetupInstructions/GetApiKeyHelp: message tests
+      - TestFormatSetupCompleteMessage: completion message tests
+      - TestShouldShowFirstRunPrompt: prompt logic tests
+      - TestFirstRunMarker: marker file tests
+      - TestPropertyBased: hypothesis tests
+      - TestEdgeCases: edge cases
+      - TestIntegration: full setup flow
+    * test_ux_cli.py: 23 tests for CLI commands
+      - TestHelpCommand: 'pygent help' command tests
+      - TestSetupCommand: 'pygent setup' command tests
+      - TestHelpCommandOutput: formatting tests
+      - TestPropertyBased: random topic handling
+      - TestEdgeCases: empty topics, non-interactive mode
+      - TestIntegration: help-then-setup flow
+  - Learned: classify_error needs to check both "api_key" and "api key" patterns for API key errors
+  - Learned: _write_default_config needs parent directory creation before writing
+  - Learned: With 'from __future__ import annotations', TYPE_CHECKING imports don't need quotes in type hints
+  - Learned: SetupStatus dataclass provides clean way to represent multi-field setup state
+  - Learned: click.confirm() provides easy yes/no prompts with default value
+  - Learned: click.prompt(hide_input=True) masks sensitive input like API keys
+  - Learned: CliRunner input parameter allows simulating user input in tests
+  - UX Polish section of Phase 4 now complete (Section 7)
+  - Total: 1306 tests pass

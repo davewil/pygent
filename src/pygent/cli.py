@@ -670,5 +670,137 @@ def logs(level: str, log_file: str | None) -> None:
         click.echo(f"To tail logs: tail -f {log_path}")
 
 
+@cli.command("help")
+@click.argument("topic", required=False)
+def help_cmd(topic: str | None) -> None:
+    """Show help for a topic.
+
+    Available topics: tools, config, shortcuts, permissions, sessions,
+    prompts, quickstart, troubleshooting.
+
+    Examples:
+      pygent help              List all help topics
+      pygent help tools        Show help about available tools
+      pygent help shortcuts    Show keyboard shortcuts
+    """
+    from pygent.ux.help import format_help_topic, get_help_topic, list_help_topics
+
+    if topic is None:
+        # List all topics
+        click.echo("Pygent Help Topics")
+        click.echo("=" * 60)
+        click.echo()
+
+        topics = list_help_topics()
+        for name, summary in sorted(topics):
+            click.echo(f"  {name:<15} {summary}")
+
+        click.echo()
+        click.echo("Use 'pygent help <topic>' for detailed information.")
+        click.echo("Use 'pygent --help' for command-line options.")
+        return
+
+    # Show specific topic
+    help_topic = get_help_topic(topic)
+    if help_topic is None:
+        topics = list_help_topics()
+        available = ", ".join(name for name, _ in sorted(topics))
+        raise click.ClickException(f"Unknown help topic: {topic}\nAvailable topics: {available}") from None
+
+    click.echo(format_help_topic(help_topic))
+
+
+@cli.command()
+def setup() -> None:
+    """Interactive setup for first-time users.
+
+    Guides you through configuring pygent with your API key
+    and creating a configuration file.
+    """
+    from pygent.ux.first_run import (
+        check_setup_status,
+        format_setup_complete_message,
+        get_api_key_help,
+        get_setup_instructions,
+        get_welcome_message,
+        validate_api_key_format,
+    )
+
+    status = check_setup_status()
+
+    # Show welcome message
+    click.echo(get_welcome_message())
+
+    # Check if already set up
+    if status.has_api_key and status.has_config_file:
+        click.echo("You're already set up!")
+        click.echo()
+        click.echo("Current status:")
+        click.echo("  API key: configured")
+        click.echo(f"  Config:  {status.config_path}")
+        click.echo()
+        click.echo("Run 'pygent chat' to start chatting.")
+        return
+
+    # Show what needs to be done
+    click.echo(get_setup_instructions(status))
+    click.echo()
+
+    # Offer to set up API key interactively
+    if not status.has_api_key:
+        if click.confirm("Would you like to set up your API key now?"):
+            click.echo()
+            click.echo(get_api_key_help())
+            click.echo()
+
+            api_key = click.prompt("Enter your API key", hide_input=True)
+
+            is_valid, message = validate_api_key_format(api_key)
+            if not is_valid:
+                click.echo(f"Warning: {message}")
+                if not click.confirm("Continue anyway?"):
+                    click.echo("Setup cancelled.")
+                    return
+
+            # Set the API key in config
+            user_config, _ = _get_config_paths()
+            user_config.parent.mkdir(parents=True, exist_ok=True)
+
+            import sys
+
+            if sys.version_info >= (3, 11):
+                import tomllib
+            else:
+                import tomli as tomllib  # type: ignore
+
+            existing: dict[str, Any] = {}
+            if user_config.exists():
+                with open(user_config, "rb") as f:
+                    existing = tomllib.load(f)
+
+            if "llm" not in existing:
+                existing["llm"] = {}
+            existing["llm"]["api_key"] = api_key
+
+            _write_toml(user_config, existing)
+            click.echo(f"API key saved to {user_config}")
+            click.echo()
+
+    # Offer to create config file
+    if not status.has_config_file:
+        if click.confirm("Would you like to create a config file with defaults?"):
+            status.config_path.parent.mkdir(parents=True, exist_ok=True)
+            _write_default_config(status.config_path)
+            click.echo(f"Config file created at {status.config_path}")
+            click.echo()
+
+    # Show completion message
+    try:
+        settings = asyncio.run(load_config())
+        click.echo(format_setup_complete_message(settings))
+    except Exception:
+        click.echo(format_setup_complete_message(None))
+
+
 if __name__ == "__main__":
     cli()

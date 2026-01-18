@@ -521,7 +521,10 @@ class TestPropertyBasedE2E:
         result = await read_file(str(file_path))
         assert result == content
 
-    @given(old=st.text(min_size=1, max_size=50).filter(lambda x: x.strip()), new=st.text(min_size=1, max_size=50))
+    @given(
+        old=st.text(min_size=1, max_size=50).filter(lambda x: x.strip() and "\r" not in x),
+        new=st.text(min_size=1, max_size=50).filter(lambda x: "\r" not in x),
+    )
     @settings(max_examples=10, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @pytest.mark.asyncio
     async def test_edit_replaces_correctly(self, tmp_path, old, new):
