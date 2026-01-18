@@ -12,21 +12,35 @@ from pygent.config.prompt import (
 )
 from pygent.config.settings import (
     DEFAULT_SYSTEM_PROMPT,
+    KNOWN_MODELS,
+    VALID_PROVIDERS,
+    VALID_THEMES,
+    ConfigValidationError,
     LLMSettings,
     PermissionSettings,
     Settings,
     SystemPromptSettings,
     TUISettings,
+    get_known_models,
+    get_valid_providers,
+    get_valid_themes,
 )
 
 __all__ = [
     # Settings
     "DEFAULT_SYSTEM_PROMPT",
+    "KNOWN_MODELS",
+    "VALID_PROVIDERS",
+    "VALID_THEMES",
+    "ConfigValidationError",
     "LLMSettings",
     "PermissionSettings",
     "Settings",
     "SystemPromptSettings",
     "TUISettings",
+    "get_known_models",
+    "get_valid_providers",
+    "get_valid_themes",
     # Loader
     "API_KEY_ENV_PRIORITY",
     "ENV_MAPPINGS",

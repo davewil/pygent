@@ -685,3 +685,53 @@
   - Learned: Click's CliRunner captures subprocess output differently; use 'echo' as test editor
   - Config CLI Commands section of Phase 4 now complete
   - Total: 989 tests pass
+2026-01-18: Implemented Config Validation with Pydantic Validators (src/pygent/config/settings.py):
+  - Added VALID_PROVIDERS frozenset with 16 supported LLM providers:
+    * anthropic, openai, azure, bedrock, vertex_ai, cohere, replicate, huggingface
+    * ollama, together_ai, deepinfra, groq, mistral, perplexity, anyscale, fireworks_ai
+  - Added KNOWN_MODELS frozenset with common model names (Claude, GPT, Llama, Mistral, etc.)
+  - Added VALID_THEMES frozenset with 11 valid TUI themes including rose-pine
+  - Added helper functions: get_valid_providers(), get_known_models(), get_valid_themes()
+  - Added ConfigValidationError exception class for user-friendly validation errors
+  - Implemented LLMSettings validators:
+    * validate_provider: Validates against VALID_PROVIDERS, case-insensitive, shows valid options on error
+    * validate_max_tokens: Range validation 1-100000 with helpful error messages
+    * validate_api_key: Rejects empty strings, allows None (for env var fallback)
+  - Implemented TUISettings validator:
+    * validate_theme: Validates against VALID_THEMES, case-insensitive, shows valid options on error
+  - Implemented SystemPromptSettings validator:
+    * validate_file_path: Rejects empty strings for file path
+    * validate_content_or_file: Model validator documenting file precedence over content
+  - Implemented Settings.validate_config() class method:
+    * Wraps Pydantic validation with ConfigValidationError
+    * Converts multiple validation errors to user-friendly format with field paths
+    * Shows all validation errors at once, not just the first one
+  - Added 74 tests (tests/test_config_validation.py):
+    * TestValidProviders: 4 tests for VALID_PROVIDERS constant
+    * TestKnownModels: 4 tests for KNOWN_MODELS constant
+    * TestValidThemes: 5 tests for VALID_THEMES constant
+    * TestConfigValidationError: 2 tests for exception class
+    * TestLLMSettingsProviderValidation: 6 tests for provider validation
+    * TestLLMSettingsMaxTokensValidation: 7 tests for max_tokens validation
+    * TestLLMSettingsApiKeyValidation: 4 tests for api_key validation
+    * TestLLMSettingsModelField: 3 tests for model field (no strict validation)
+    * TestTUISettingsThemeValidation: 6 tests for theme validation
+    * TestTUISettingsBooleanFields: 3 tests for boolean fields
+    * TestSystemPromptSettingsFileValidation: 4 tests for file path validation
+    * TestSystemPromptSettingsOtherFields: 3 tests for other fields
+    * TestPermissionSettings: 2 tests for permission settings
+    * TestSettingsDefaults: 1 test for default settings
+    * TestSettingsValidateConfig: 4 tests for validate_config method
+    * TestSettingsNestedValidation: 2 tests for nested model validation
+    * TestPropertyBased: 6 property-based tests using hypothesis
+    * TestEdgeCases: 6 edge case tests (unicode, newlines, special chars)
+    * TestIntegration: 2 end-to-end integration tests
+  - Learned: Pydantic v2 uses @field_validator and @model_validator decorators (not @validator)
+  - Learned: @field_validator requires @classmethod decorator in Pydantic v2
+  - Learned: Case-insensitive validation should normalize to lowercase and store normalized value
+  - Learned: frozenset is ideal for immutable validation sets (constant-time lookup, immutable)
+  - Learned: Model validation (custom models) is kept flexible to allow new models without code updates
+  - Learned: ValidationError.errors() returns list of dicts with "loc" and "msg" keys for error details
+  - Learned: Settings.validate_config() provides cleaner API than direct Pydantic validation for users
+  - Config Validation section of Phase 4 now complete (Section 2.1)
+  - Total: 1063 tests pass

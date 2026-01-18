@@ -297,14 +297,14 @@ class TestLoadConfigWithEnv:
 
         # User config sets provider and model
         with open(user_config_path, "wb") as f:
-            tomli_w.dump({"llm": {"provider": "user-provider", "model": "user-model"}}, f)
+            tomli_w.dump({"llm": {"provider": "openai", "model": "user-model"}}, f)
 
         # Project config sets model (overrides user)
         with open(project_config_path, "wb") as f:
             tomli_w.dump({"llm": {"model": "project-model"}}, f)
 
-        # Env var sets provider (overrides all)
-        monkeypatch.setenv("PYGENT_PROVIDER", "env-provider")
+        # Env var sets provider (overrides all) - use a different valid provider
+        monkeypatch.setenv("PYGENT_PROVIDER", "groq")
 
         settings = await load_config(
             user_config_path=user_config_path,
@@ -313,7 +313,7 @@ class TestLoadConfigWithEnv:
         )
 
         # Env overrides user for provider
-        assert settings.llm.provider == "env-provider"
+        assert settings.llm.provider == "groq"
         # Project overrides user for model
         assert settings.llm.model == "project-model"
         # Default for max_tokens (not set anywhere)

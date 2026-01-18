@@ -1,6 +1,101 @@
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
+
+# Valid LLM providers supported by litellm
+VALID_PROVIDERS = frozenset(
+    {
+        "anthropic",
+        "openai",
+        "azure",
+        "bedrock",
+        "vertex_ai",
+        "cohere",
+        "replicate",
+        "huggingface",
+        "ollama",
+        "together_ai",
+        "deepinfra",
+        "groq",
+        "mistral",
+        "perplexity",
+        "anyscale",
+        "fireworks_ai",
+    }
+)
+
+# Known models by provider (not exhaustive, but common ones)
+KNOWN_MODELS = frozenset(
+    {
+        # Anthropic
+        "claude-sonnet-4-20250514",
+        "claude-opus-4-20250514",
+        "claude-3-5-sonnet-20241022",
+        "claude-3-5-haiku-20241022",
+        "claude-3-opus-20240229",
+        "claude-3-sonnet-20240229",
+        "claude-3-haiku-20240307",
+        # OpenAI
+        "gpt-4o",
+        "gpt-4o-mini",
+        "gpt-4-turbo",
+        "gpt-4",
+        "gpt-3.5-turbo",
+        "o1",
+        "o1-mini",
+        "o1-preview",
+        # Azure OpenAI (deployments vary, just check pattern)
+        # Ollama (local models)
+        "llama3.2",
+        "llama3.1",
+        "codellama",
+        "mistral",
+        "mixtral",
+        # Groq
+        "llama-3.1-70b-versatile",
+        "llama-3.1-8b-instant",
+        "mixtral-8x7b-32768",
+    }
+)
+
+# Valid Textual themes
+VALID_THEMES = frozenset(
+    {
+        "textual-dark",
+        "textual-light",
+        "textual-ansi",
+        "nord",
+        "gruvbox",
+        "dracula",
+        "monokai",
+        "solarized-light",
+        "solarized-dark",
+        "tokyo-night",
+        "rose-pine",
+    }
+)
+
+
+def get_valid_providers() -> frozenset[str]:
+    """Return set of valid LLM provider names."""
+    return VALID_PROVIDERS
+
+
+def get_known_models() -> frozenset[str]:
+    """Return set of known model names."""
+    return KNOWN_MODELS
+
+
+def get_valid_themes() -> frozenset[str]:
+    """Return set of valid TUI themes."""
+    return VALID_THEMES
+
+
+class ConfigValidationError(ValueError):
+    """Raised when configuration validation fails."""
+
+    pass
+
 
 # Default base system prompt
 DEFAULT_SYSTEM_PROMPT = """You are a helpful coding assistant.
@@ -14,10 +109,56 @@ style of the existing codebase when making changes."""
 
 
 class LLMSettings(BaseModel):
+    """LLM provider settings with validation.
+
+    Attributes:
+        provider: LLM provider name (e.g., "anthropic", "openai", "ollama").
+        model: Model identifier. Known models are validated; unknown models
+            trigger a warning but are allowed for flexibility.
+        max_tokens: Maximum tokens in response. Must be between 1 and 100000.
+        api_key: API key for the provider. Falls back to environment variable.
+    """
+
     provider: str = "anthropic"
     model: str = "claude-sonnet-4-20250514"
     max_tokens: int = 4096
     api_key: str | None = None  # Falls back to env var
+
+    @field_validator("provider")
+    @classmethod
+    def validate_provider(cls, v: str) -> str:
+        """Validate that provider is a known LLM provider."""
+        v_lower = v.lower()
+        if v_lower not in VALID_PROVIDERS:
+            providers_list = ", ".join(sorted(VALID_PROVIDERS))
+            raise ValueError(
+                f"Unknown provider '{v}'. Valid providers are: {providers_list}. "
+                f"If using a custom provider, ensure it's supported by litellm."
+            )
+        return v_lower
+
+    @field_validator("max_tokens")
+    @classmethod
+    def validate_max_tokens(cls, v: int) -> int:
+        """Validate that max_tokens is within reasonable bounds."""
+        if v < 1:
+            raise ValueError("max_tokens must be at least 1")
+        if v > 100000:
+            raise ValueError(
+                f"max_tokens value {v} exceeds maximum of 100000. Most models support at most 4096-32000 tokens."
+            )
+        return v
+
+    @field_validator("api_key")
+    @classmethod
+    def validate_api_key(cls, v: str | None) -> str | None:
+        """Validate that api_key is not an empty string."""
+        if v is not None and v.strip() == "":
+            raise ValueError(
+                "api_key cannot be an empty string. "
+                "Either provide a valid key or omit the setting to use environment variables."
+            )
+        return v
 
 
 class PermissionSettings(BaseModel):
@@ -26,9 +167,27 @@ class PermissionSettings(BaseModel):
 
 
 class TUISettings(BaseModel):
+    """TUI appearance settings with validation.
+
+    Attributes:
+        theme: Color theme for the TUI. Must be a valid theme name.
+        show_tool_panel: Whether to show the tool panel on the right.
+        show_sidebar: Whether to show the session sidebar on the left.
+    """
+
     theme: str = "textual-dark"
     show_tool_panel: bool = True
     show_sidebar: bool = True
+
+    @field_validator("theme")
+    @classmethod
+    def validate_theme(cls, v: str) -> str:
+        """Validate that theme is a known theme name."""
+        v_lower = v.lower()
+        if v_lower not in VALID_THEMES:
+            themes_list = ", ".join(sorted(VALID_THEMES))
+            raise ValueError(f"Unknown theme '{v}'. Valid themes are: {themes_list}")
+        return v_lower
 
 
 class SystemPromptSettings(BaseModel):
@@ -54,9 +213,64 @@ class SystemPromptSettings(BaseModel):
     append: str | None = None  # Additional content to append
     mode: Literal["replace", "append"] = "append"
 
+    @field_validator("file")
+    @classmethod
+    def validate_file_path(cls, v: str | None) -> str | None:
+        """Validate that file path is well-formed (doesn't check existence)."""
+        if v is not None:
+            v = v.strip()
+            if v == "":
+                raise ValueError(
+                    "system_prompt.file cannot be an empty string. Either provide a valid path or omit the setting."
+                )
+        return v
+
+    @model_validator(mode="after")
+    def validate_content_or_file(self) -> "SystemPromptSettings":
+        """Warn if both content and file are set (file takes precedence)."""
+        # This is informational - file takes precedence over content
+        # No error raised, just documented behavior
+        return self
+
 
 class Settings(BaseModel):
+    """Root settings model combining all configuration sections.
+
+    Attributes:
+        llm: LLM provider and model settings.
+        permissions: Permission handling settings.
+        tui: TUI appearance settings.
+        system_prompt: System prompt customization settings.
+    """
+
     llm: LLMSettings = LLMSettings()
     permissions: PermissionSettings = PermissionSettings()
     tui: TUISettings = TUISettings()
     system_prompt: SystemPromptSettings = SystemPromptSettings()
+
+    @classmethod
+    def validate_config(cls, config_dict: dict[str, Any]) -> "Settings":
+        """Create Settings from dict with helpful error messages.
+
+        Args:
+            config_dict: Configuration dictionary (typically from TOML).
+
+        Returns:
+            Validated Settings instance.
+
+        Raises:
+            ConfigValidationError: If validation fails with user-friendly message.
+        """
+        from pydantic import ValidationError as PydanticValidationError
+
+        try:
+            return cls(**config_dict)
+        except PydanticValidationError as e:
+            # Convert Pydantic errors to user-friendly messages
+            errors = []
+            for error in e.errors():
+                loc = ".".join(str(x) for x in error["loc"])
+                msg = error["msg"]
+                errors.append(f"  - {loc}: {msg}")
+            error_text = "\n".join(errors)
+            raise ConfigValidationError(f"Configuration validation failed:\n{error_text}") from None

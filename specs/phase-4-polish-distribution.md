@@ -594,6 +594,7 @@ __all__ = [
 - [x] Template variables work in prompts
 - [x] Environment variables override config files
 - [x] Config CLI commands functional
+- [x] Config validation with helpful error messages
 - [ ] Package installable from PyPI
 - [ ] Documentation complete and accurate
 - [ ] First-run experience smooth
