@@ -1100,3 +1100,19 @@
   - Phase 4 of Agent Loop Improvements complete
   - All 4 phases of AGENT_LOOP_IMPROVEMENTS.md now complete
   - Total: 1393 tests pass
+2026-01-19: Enhanced Test Coverage for Agent Loop Improvements (tests/test_core/test_loop.py):
+  - Improved loop.py coverage from 96% to 100%
+  - Added TestLoopSystemPrompt class with 3 tests:
+    * test_system_prompt_prepended_to_messages: Verifies system prompt is first message to LLM
+    * test_no_system_message_when_prompt_is_none: Verifies no system message when prompt is None
+    * test_system_prompt_preserved_across_iterations: Verifies system prompt in each iteration
+  - Added TestLoopCancellationAfterTools class with 3 tests:
+    * test_cancellation_after_tool_execution_appends_results: Verifies results preserved on cancel
+    * test_cancellation_after_tools_yields_correct_content: Verifies cancelled event content
+    * test_cancellation_after_tools_preserves_iteration_count: Verifies iteration/token tracking
+  - Learned: System prompt injection at conversation_loop level needs explicit testing
+  - Learned: Cancellation after tool execution is a distinct code path from iteration-start cancellation
+  - Learned: Message state preservation is critical for consistent conversation history
+  - Total test_loop.py: 36 tests (up from 30)
+  - Overall coverage: 96%
+  - Total: 1371 tests pass (some tests consolidated via parametrization in previous commit)

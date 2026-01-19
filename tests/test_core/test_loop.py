@@ -765,6 +765,246 @@ class TestLoopTokenTracking:
         assert events[-1].total_tokens == 0  # No tokens counted
 
 
+class TestLoopSystemPrompt:
+    """Test system prompt handling in conversation loop."""
+
+    @pytest.mark.asyncio
+    async def test_system_prompt_prepended_to_messages(self, mock_provider, mock_registry, mock_permissions, session):
+        """System prompt should be prepended as first message to LLM."""
+        mock_provider.complete.return_value = LLMResponse(
+            content=[ProvTextBlock(text="Response")],
+            stop_reason="end_turn",
+            usage=TokenUsage(prompt_tokens=50, completion_tokens=25, total_tokens=75),
+        )
+
+        agent = Agent(mock_provider, mock_registry, mock_permissions, session)
+        messages = [Message(role="user", content="Hello")]
+
+        events = []
+        async for event in conversation_loop(agent, messages, system_prompt="You are a helpful assistant."):
+            events.append(event)
+
+        # Verify provider was called with system message prepended
+        call_args = mock_provider.complete.call_args
+        llm_messages = call_args.kwargs.get("messages", call_args.args[0] if call_args.args else None)
+
+        assert llm_messages is not None
+        assert len(llm_messages) >= 2
+        assert llm_messages[0]["role"] == "system"
+        assert llm_messages[0]["content"] == "You are a helpful assistant."
+        assert llm_messages[1]["role"] == "user"
+        assert llm_messages[1]["content"] == "Hello"
+
+    @pytest.mark.asyncio
+    async def test_no_system_message_when_prompt_is_none(self, mock_provider, mock_registry, mock_permissions, session):
+        """When system_prompt is None, no system message should be added."""
+        mock_provider.complete.return_value = LLMResponse(
+            content=[ProvTextBlock(text="Response")],
+            stop_reason="end_turn",
+        )
+
+        agent = Agent(mock_provider, mock_registry, mock_permissions, session)
+        messages = [Message(role="user", content="Hello")]
+
+        events = []
+        async for event in conversation_loop(agent, messages, system_prompt=None):
+            events.append(event)
+
+        # Verify provider was called without system message
+        call_args = mock_provider.complete.call_args
+        llm_messages = call_args.kwargs.get("messages", call_args.args[0] if call_args.args else None)
+
+        assert llm_messages is not None
+        # First message should be user, not system
+        assert llm_messages[0]["role"] == "user"
+
+    @pytest.mark.asyncio
+    async def test_system_prompt_preserved_across_iterations(
+        self, mock_provider, mock_registry, mock_permissions, session
+    ):
+        """System prompt should be prepended to messages in each iteration."""
+
+        async def tool_fn(**kwargs):
+            return "result"
+
+        tool_def = ToolDefinition(
+            name="test_tool",
+            description="Test tool",
+            input_schema={},
+            risk=ToolRisk.LOW,
+            category=ToolCategory.SHELL,
+            function=tool_fn,
+        )
+        mock_registry.get.return_value = tool_def
+        mock_registry.list_definitions.return_value = [{"name": "test_tool"}]
+
+        # First call: tool use, Second call: done
+        mock_provider.complete.side_effect = [
+            LLMResponse(
+                content=[ProvToolUseBlock(id="call_1", name="test_tool", input={})],
+                stop_reason="tool_use",
+                usage=TokenUsage(prompt_tokens=50, completion_tokens=25, total_tokens=75),
+            ),
+            LLMResponse(
+                content=[ProvTextBlock(text="Done")],
+                stop_reason="end_turn",
+                usage=TokenUsage(prompt_tokens=50, completion_tokens=25, total_tokens=75),
+            ),
+        ]
+
+        agent = Agent(mock_provider, mock_registry, mock_permissions, session)
+        messages = [Message(role="user", content="Hello")]
+
+        events = []
+        async for event in conversation_loop(agent, messages, system_prompt="Custom system prompt"):
+            events.append(event)
+
+        # Verify both calls had system message
+        assert mock_provider.complete.call_count == 2
+
+        for call in mock_provider.complete.call_args_list:
+            llm_messages = call.kwargs.get("messages", call.args[0] if call.args else None)
+            assert llm_messages[0]["role"] == "system"
+            assert llm_messages[0]["content"] == "Custom system prompt"
+
+
+class TestLoopCancellationAfterTools:
+    """Test cancellation behavior after tool execution completes."""
+
+    @pytest.mark.asyncio
+    async def test_cancellation_after_tool_execution_appends_results(
+        self, mock_provider, mock_registry, mock_permissions, session
+    ):
+        """Cancellation after tools should still append results to messages."""
+        from pygent.core.cancellation import CancellationToken
+
+        async def slow_tool(**kwargs):
+            return "Tool result"
+
+        tool_def = ToolDefinition(
+            name="slow_tool",
+            description="A tool that runs",
+            input_schema={},
+            risk=ToolRisk.LOW,
+            category=ToolCategory.SHELL,
+            function=slow_tool,
+        )
+        mock_registry.get.return_value = tool_def
+        mock_registry.list_definitions.return_value = [{"name": "slow_tool"}]
+
+        mock_provider.complete.return_value = LLMResponse(
+            content=[ProvToolUseBlock(id="call_1", name="slow_tool", input={})],
+            stop_reason="tool_use",
+            usage=TokenUsage(prompt_tokens=50, completion_tokens=25, total_tokens=75),
+        )
+
+        agent = Agent(mock_provider, mock_registry, mock_permissions, session)
+        messages = [Message(role="user", content="Use slow tool")]
+
+        token = CancellationToken()
+        events = []
+
+        async for event in conversation_loop(agent, messages, cancellation_token=token):
+            events.append(event)
+            # Cancel after the tool_result event (tools have finished)
+            if event.type == "tool_result":
+                token.cancel(reason="Cancelled after tools")
+
+        # Should have cancelled event
+        event_types = [e.type for e in events]
+        assert "cancelled" in event_types
+
+        # Cancelled event should have the reason
+        cancelled_event = next(e for e in events if e.type == "cancelled")
+        assert cancelled_event.cancel_reason == "Cancelled after tools"
+
+        # Results should still be in messages (conversation state preserved)
+        assert len(messages) >= 3  # user, assistant (tool call), tool result
+
+    @pytest.mark.asyncio
+    async def test_cancellation_after_tools_yields_correct_content(
+        self, mock_provider, mock_registry, mock_permissions, session
+    ):
+        """Cancelled event after tools should have correct content message."""
+        from pygent.core.cancellation import CancellationToken
+
+        async def quick_tool(**kwargs):
+            return "Quick result"
+
+        tool_def = ToolDefinition(
+            name="quick_tool",
+            description="A quick tool",
+            input_schema={},
+            risk=ToolRisk.LOW,
+            category=ToolCategory.SHELL,
+            function=quick_tool,
+        )
+        mock_registry.get.return_value = tool_def
+        mock_registry.list_definitions.return_value = [{"name": "quick_tool"}]
+
+        mock_provider.complete.return_value = LLMResponse(
+            content=[ProvToolUseBlock(id="call_1", name="quick_tool", input={})],
+            stop_reason="tool_use",
+            usage=TokenUsage(prompt_tokens=50, completion_tokens=25, total_tokens=75),
+        )
+
+        agent = Agent(mock_provider, mock_registry, mock_permissions, session)
+        messages = [Message(role="user", content="Test")]
+
+        token = CancellationToken()
+        events = []
+
+        async for event in conversation_loop(agent, messages, cancellation_token=token):
+            events.append(event)
+            if event.type == "tool_result":
+                token.cancel(reason="User stopped")
+
+        cancelled_event = next(e for e in events if e.type == "cancelled")
+        assert "tool execution" in cancelled_event.content.lower()
+
+    @pytest.mark.asyncio
+    async def test_cancellation_after_tools_preserves_iteration_count(
+        self, mock_provider, mock_registry, mock_permissions, session
+    ):
+        """Cancelled event should have correct iteration count."""
+        from pygent.core.cancellation import CancellationToken
+
+        async def tool_fn(**kwargs):
+            return "done"
+
+        tool_def = ToolDefinition(
+            name="tool",
+            description="desc",
+            input_schema={},
+            risk=ToolRisk.LOW,
+            category=ToolCategory.SHELL,
+            function=tool_fn,
+        )
+        mock_registry.get.return_value = tool_def
+        mock_registry.list_definitions.return_value = [{"name": "tool"}]
+
+        mock_provider.complete.return_value = LLMResponse(
+            content=[ProvToolUseBlock(id="call_1", name="tool", input={})],
+            stop_reason="tool_use",
+            usage=TokenUsage(prompt_tokens=100, completion_tokens=50, total_tokens=150),
+        )
+
+        agent = Agent(mock_provider, mock_registry, mock_permissions, session)
+        messages = [Message(role="user", content="Test")]
+
+        token = CancellationToken()
+        events = []
+
+        async for event in conversation_loop(agent, messages, cancellation_token=token):
+            events.append(event)
+            if event.type == "tool_result":
+                token.cancel(reason="Stop")
+
+        cancelled_event = next(e for e in events if e.type == "cancelled")
+        assert cancelled_event.iteration == 1
+        assert cancelled_event.total_tokens == 150
+
+
 class TestLoopErrorHandling:
     """Test LLM error handling in conversation loop."""
 

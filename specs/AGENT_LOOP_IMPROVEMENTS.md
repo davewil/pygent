@@ -258,3 +258,20 @@ Four independent improvements to harden the agent loop for production use. Each 
 - **New Features:** CancellationToken class, Agent.cancel() method, "cancelled" LoopEvent type
 - **Tests Added:** 32 new tests for cancellation system
 - **Pattern:** Check cancellation at safe points (iteration start, between batches), let running operations complete
+
+### Test Coverage Enhancement (2026-01-19)
+- **loop.py coverage improved from 96% to 100%**
+- **6 new tests added** to test_loop.py:
+  - `TestLoopSystemPrompt`: 3 tests for system prompt handling
+    - Verifies system prompt prepended to LLM messages
+    - Verifies no system message when prompt is None
+    - Verifies system prompt preserved across multiple iterations
+  - `TestLoopCancellationAfterTools`: 3 tests for post-tool cancellation
+    - Verifies cancellation after tools still appends results to messages
+    - Verifies cancelled event content message
+    - Verifies iteration and token count in cancelled event
+- **Total test_loop.py tests:** 36 (up from 30)
+- **Learnings:**
+  - System prompt must be tested explicitly since it's injected at conversation_loop level
+  - Cancellation after tool execution is a distinct code path from cancellation at iteration start
+  - Testing message state preservation ensures consistent conversation history
