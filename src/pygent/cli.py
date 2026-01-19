@@ -386,7 +386,7 @@ def set_config(key: str, value: str, project: bool) -> None:
     if sys.version_info >= (3, 11):
         import tomllib
     else:
-        import tomli as tomllib  # type: ignore
+        import tomli as tomllib  # type: ignore[import-not-found,unused-ignore]
 
     if key not in VALID_CONFIG_KEYS:
         valid_keys = ", ".join(sorted(VALID_CONFIG_KEYS))
@@ -771,7 +771,7 @@ def setup() -> None:
             if sys.version_info >= (3, 11):
                 import tomllib
             else:
-                import tomli as tomllib  # type: ignore
+                import tomli as tomllib  # type: ignore[import-not-found,unused-ignore]
 
             existing: dict[str, Any] = {}
             if user_config.exists():
