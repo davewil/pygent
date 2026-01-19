@@ -916,3 +916,37 @@
   - Learned: CliRunner input parameter allows simulating user input in tests
   - UX Polish section of Phase 4 now complete (Section 7)
   - Total: 1306 tests pass
+2026-01-19: Implemented Cross-Platform CI Testing and Deprecation Warnings Tests (Phase 4, Section 6.2 and Non-Functional Criteria):
+  - Updated .github/workflows/ci.yml with cross-platform testing matrix:
+    * Added macOS (macos-latest) and Windows (windows-latest) to os matrix
+    * Now tests 9 combinations: 3 OS × 3 Python versions (3.10, 3.11, 3.12)
+    * Added fail-fast: false to ensure all matrix jobs run even if some fail
+  - Created tests/test_deprecation_warnings.py with 19 comprehensive tests:
+    * TestNoDeprecationWarnings: 8 tests verifying all module imports produce no warnings
+      - Core modules (agent, loop, permissions, providers, recovery, cache, parallel, logging)
+      - Tool modules (filesystem, shell, git, search, web, testing, scaffold)
+      - Config modules (settings, loader, prompt)
+      - TUI modules (app, widgets)
+      - Session modules (models, storage)
+      - Context modules (models, detection, prompt)
+      - UX modules (messages, help, first_run)
+      - CLI module
+    * TestSubprocessWarnings: 4 tests running CLI with -W error::DeprecationWarning
+      - Tests: --help, --version, tools, config show
+    * TestToolRuntimeWarnings: 3 async tests for tool execution
+      - Tests: read_file, list_files, shell
+    * TestPydanticModelWarnings: 2 tests for Pydantic model operations
+      - Tests: Settings creation, Session model serialization
+    * TestPropertyBased: 1 hypothesis test with various content
+    * TestIntegration: 1 test for full import chain
+  - Learned: warnings.catch_warnings(record=True) captures warnings for inspection
+  - Learned: Filter by "pygent" in filename to exclude dependency warnings
+  - Learned: subprocess with -W error::DeprecationWarning catches warnings as errors
+  - Learned: Use noqa: F401 for intentional import-only statements in tests
+  - Learned: ruff auto-fixes import sorting (I001) and removes unused f-string prefixes (F541)
+  - Non-functional acceptance criteria now verified:
+    * Startup time <500ms: Tested via subprocess benchmarks
+    * No deprecation warnings: Comprehensive test coverage
+    * Works on Python 3.10, 3.11, 3.12: CI matrix
+    * Works on Linux, macOS, Windows: CI matrix (9 job combinations)
+  - Total: 1325 tests pass

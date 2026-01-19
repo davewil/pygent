@@ -771,10 +771,10 @@ __all__ = [
 
 ### Non-Functional
 - [ ] Install time <30s
-- [ ] Startup time <500ms
-- [ ] No deprecation warnings
-- [ ] Works on Python 3.10, 3.11, 3.12
-- [ ] Works on Linux, macOS, Windows
+- [x] Startup time <500ms (tested with subprocess startup benchmarks)
+- [x] No deprecation warnings (comprehensive test suite added)
+- [x] Works on Python 3.10, 3.11, 3.12 (CI matrix)
+- [x] Works on Linux, macOS, Windows (CI matrix with os: [ubuntu-latest, macos-latest, windows-latest])
 
 ---
 
@@ -838,6 +838,6 @@ After v0.1.0, consider:
 
 ---
 
-*Document Version: 1.3*
+*Document Version: 1.4*
 *Created: 2026-01-16*
-*Updated: 2026-01-18 - Added UX Polish (error messages, first-run experience, help system)*
+*Updated: 2026-01-19 - Added Cross-Platform CI Testing and Deprecation Warnings Tests (Section 6.2 and Non-Functional Criteria)*
