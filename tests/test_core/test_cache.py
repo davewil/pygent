@@ -11,7 +11,6 @@ from hypothesis import strategies as st
 
 from pygent.core.cache import (
     DEFAULT_TOOL_TTL,
-    NON_CACHEABLE_TOOLS,
     CacheEntry,
     CacheStats,
     ToolCache,
@@ -67,31 +66,6 @@ class TestCacheStats:
         assert stats.misses == 2
         assert stats.evictions == 3
         assert stats.invalidations == 4
-
-
-class TestNonCacheableTools:
-    """Tests for NON_CACHEABLE_TOOLS constant."""
-
-    def test_mutation_tools_non_cacheable(self) -> None:
-        """Test that mutation tools are non-cacheable."""
-        mutation_tools = ["edit_file", "create_file", "delete_file", "move_file", "copy_file"]
-        for tool in mutation_tools:
-            assert tool in NON_CACHEABLE_TOOLS
-
-    def test_git_mutation_tools_non_cacheable(self) -> None:
-        """Test that git mutation tools are non-cacheable."""
-        git_mutation_tools = ["git_add", "git_commit", "git_push", "git_pull", "git_checkout"]
-        for tool in git_mutation_tools:
-            assert tool in NON_CACHEABLE_TOOLS
-
-    def test_shell_non_cacheable(self) -> None:
-        """Test that shell is non-cacheable."""
-        assert "shell" in NON_CACHEABLE_TOOLS
-
-    def test_scaffolding_tools_non_cacheable(self) -> None:
-        """Test that scaffolding tools are non-cacheable."""
-        assert "create_project" in NON_CACHEABLE_TOOLS
-        assert "add_component" in NON_CACHEABLE_TOOLS
 
 
 class TestDefaultToolTTL:
@@ -159,16 +133,16 @@ class TestToolCache:
 
     @pytest.mark.asyncio
     async def test_non_cacheable_tool_not_stored(self, cache: ToolCache) -> None:
-        """Test that non-cacheable tools are not cached."""
-        await cache.set("shell", {"command": "ls"}, "output")
-        result = await cache.get("shell", {"command": "ls"})
+        """Test that non-cacheable tools (cacheable=False) are not cached."""
+        await cache.set("shell", {"command": "ls"}, "output", cacheable=False)
+        result = await cache.get("shell", {"command": "ls"}, cacheable=False)
         assert result is None
         assert cache.size() == 0
 
     @pytest.mark.asyncio
     async def test_non_cacheable_tool_counts_miss(self, cache: ToolCache) -> None:
-        """Test that non-cacheable tools count as miss."""
-        await cache.get("shell", {"command": "ls"})
+        """Test that non-cacheable tools (cacheable=False) count as miss."""
+        await cache.get("shell", {"command": "ls"}, cacheable=False)
         assert cache.stats.misses == 1
 
     @pytest.mark.asyncio
@@ -391,18 +365,6 @@ class TestToolCacheTTL:
         ttl = cache._get_ttl("git_status")
         assert ttl == DEFAULT_TOOL_TTL["git_status"]
 
-    def test_is_cacheable_read_tools(self, cache: ToolCache) -> None:
-        """Test that read tools are cacheable."""
-        assert cache._is_cacheable("read_file") is True
-        assert cache._is_cacheable("list_files") is True
-        assert cache._is_cacheable("grep_search") is True
-
-    def test_is_cacheable_mutation_tools(self, cache: ToolCache) -> None:
-        """Test that mutation tools are not cacheable."""
-        assert cache._is_cacheable("edit_file") is False
-        assert cache._is_cacheable("shell") is False
-        assert cache._is_cacheable("git_commit") is False
-
 
 class TestToolCacheConcurrency:
     """Tests for concurrent access."""
@@ -469,16 +431,13 @@ class TestPropertyBased:
     )
     @pytest.mark.asyncio
     async def test_set_get_roundtrip(self, tool_name: str, path: str, content: str) -> None:
-        """Test that set followed by get returns the same value."""
-        # Skip non-cacheable tools
-        if tool_name in NON_CACHEABLE_TOOLS:
-            return
-
+        """Test that set followed by get returns the same value (cacheable=True)."""
         cache = ToolCache(max_size=100, default_ttl=300)
         args = {"path": path}
 
-        await cache.set(tool_name, args, content)
-        result = await cache.get(tool_name, args)
+        # With cacheable=True, should cache and retrieve
+        await cache.set(tool_name, args, content, cacheable=True)
+        result = await cache.get(tool_name, args, cacheable=True)
 
         assert result == content
 

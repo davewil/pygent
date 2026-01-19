@@ -15,30 +15,9 @@ from dataclasses import dataclass, field
 from fnmatch import fnmatch
 from typing import Any
 
-# Tools that should never be cached (have side effects)
-NON_CACHEABLE_TOOLS: frozenset[str] = frozenset(
-    {
-        # Filesystem mutation tools
-        "edit_file",
-        "create_file",
-        "delete_file",
-        "move_file",
-        "copy_file",
-        # Git mutation tools
-        "git_add",
-        "git_commit",
-        "git_push",
-        "git_pull",
-        "git_checkout",
-        # Shell (unknown side effects)
-        "shell",
-        # Test runner (may have side effects)
-        "run_tests",
-        # Scaffolding (creates files)
-        "create_project",
-        "add_component",
-    }
-)
+# Note: cacheable status is now determined by tool definition metadata (ToolDefinition.cacheable)
+# This is more maintainable than a hardcoded set, as new tools automatically get correct behavior.
+# The cache methods now accept an explicit `cacheable` parameter from the caller.
 
 # Default TTL values per tool (in seconds)
 DEFAULT_TOOL_TTL: dict[str, int] = {
@@ -135,17 +114,6 @@ class ToolCache:
         args_hash = hashlib.sha256(args_json.encode()).hexdigest()[:16]
         return f"{tool_name}:{args_hash}"
 
-    def _is_cacheable(self, tool_name: str) -> bool:
-        """Check if a tool's results can be cached.
-
-        Args:
-            tool_name: Name of the tool.
-
-        Returns:
-            True if the tool can be cached, False otherwise.
-        """
-        return tool_name not in NON_CACHEABLE_TOOLS
-
     def _get_ttl(self, tool_name: str) -> int:
         """Get the TTL for a specific tool.
 
@@ -168,17 +136,24 @@ class ToolCache:
         """
         return time.time() > entry.expires_at
 
-    async def get(self, tool_name: str, args: dict[str, Any]) -> str | None:
+    async def get(
+        self,
+        tool_name: str,
+        args: dict[str, Any],
+        cacheable: bool = True,
+    ) -> str | None:
         """Get a cached result if available and not expired.
 
         Args:
             tool_name: Name of the tool.
             args: Dictionary of tool arguments.
+            cacheable: Whether this tool's results can be cached.
+                Pass the tool definition's cacheable property.
 
         Returns:
             Cached result string, or None if not cached or expired.
         """
-        if not self._is_cacheable(tool_name):
+        if not cacheable:
             self.stats.misses += 1
             return None
 
@@ -207,6 +182,7 @@ class ToolCache:
         args: dict[str, Any],
         value: str,
         ttl: int | None = None,
+        cacheable: bool = True,
     ) -> None:
         """Cache a tool result.
 
@@ -215,8 +191,10 @@ class ToolCache:
             args: Dictionary of tool arguments.
             value: The result to cache.
             ttl: Optional TTL override in seconds.
+            cacheable: Whether this tool's results can be cached.
+                Pass the tool definition's cacheable property.
         """
-        if not self._is_cacheable(tool_name):
+        if not cacheable:
             return
 
         key = self._generate_key(tool_name, args)

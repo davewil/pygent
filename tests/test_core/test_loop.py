@@ -7,8 +7,8 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from pygent.core.agent import Agent
-from pygent.core.loop import _convert_to_llm_messages, conversation_loop
-from pygent.core.providers import LLMResponse
+from pygent.core.loop import DEFAULT_MAX_ITERATIONS, _convert_to_llm_messages, conversation_loop
+from pygent.core.providers import LLMResponse, TokenUsage
 from pygent.core.providers import TextBlock as ProvTextBlock
 from pygent.core.providers import ToolUseBlock as ProvToolUseBlock
 from pygent.session.models import Message, Session, TextBlock, ToolResultBlock, ToolUseBlock
@@ -474,3 +474,292 @@ class TestLoopPropertyBased:
 
         assert len(tool_calls) == n
         assert len(tool_results) == n
+
+
+class TestLoopIterationLimit:
+    """Test iteration limit functionality."""
+
+    @pytest.mark.asyncio
+    async def test_iteration_limit_triggers_event(self, mock_provider, mock_registry, mock_permissions, session):
+        """When max_iterations is reached, yield iteration_limit_reached event."""
+
+        # LLM keeps calling tools endlessly
+        async def endless_tool(**kwargs):
+            return "Keep going"
+
+        tool_def = ToolDefinition(
+            name="endless_tool",
+            description="A tool that runs forever",
+            input_schema={},
+            risk=ToolRisk.LOW,
+            category=ToolCategory.SHELL,
+            function=endless_tool,
+        )
+        mock_registry.get.return_value = tool_def
+        mock_registry.list_definitions.return_value = [{"name": "endless_tool"}]
+
+        # Provider always returns tool call
+        mock_provider.complete.return_value = LLMResponse(
+            content=[ProvToolUseBlock(id="call_1", name="endless_tool", input={})],
+            stop_reason="tool_use",
+            usage=TokenUsage(prompt_tokens=10, completion_tokens=5, total_tokens=15),
+        )
+
+        agent = Agent(mock_provider, mock_registry, mock_permissions, session)
+        messages = [Message(role="user", content="Run forever")]
+
+        events = []
+        async for event in conversation_loop(agent, messages, max_iterations=3):
+            events.append(event)
+
+        event_types = [e.type for e in events]
+        assert "iteration_limit_reached" in event_types
+
+        # Find the limit event
+        limit_event = next(e for e in events if e.type == "iteration_limit_reached")
+        assert "3" in limit_event.content
+        assert limit_event.iteration == 3
+
+        # Should end with finished
+        assert events[-1].type == "finished"
+
+    @pytest.mark.asyncio
+    async def test_iteration_limit_default_value(self):
+        """Default max_iterations should be DEFAULT_MAX_ITERATIONS."""
+        assert DEFAULT_MAX_ITERATIONS == 50
+
+    @pytest.mark.asyncio
+    async def test_no_limit_reached_when_under_max(self, mock_provider, mock_registry, mock_permissions, session):
+        """When iterations are under max, no limit event should be yielded."""
+        mock_provider.complete.return_value = LLMResponse(
+            content=[ProvTextBlock(text="Done")],
+            stop_reason="end_turn",
+            usage=TokenUsage(prompt_tokens=10, completion_tokens=5, total_tokens=15),
+        )
+
+        agent = Agent(mock_provider, mock_registry, mock_permissions, session)
+        messages = [Message(role="user", content="Simple task")]
+
+        events = []
+        async for event in conversation_loop(agent, messages, max_iterations=10):
+            events.append(event)
+
+        event_types = [e.type for e in events]
+        assert "iteration_limit_reached" not in event_types
+        assert events[-1].type == "finished"
+
+
+class TestLoopTokenLimit:
+    """Test token limit functionality."""
+
+    @pytest.mark.asyncio
+    async def test_token_limit_triggers_event(self, mock_provider, mock_registry, mock_permissions, session):
+        """When max_tokens is exceeded, yield token_limit_reached event."""
+
+        async def token_heavy_tool(**kwargs):
+            return "Heavy result"
+
+        tool_def = ToolDefinition(
+            name="heavy_tool",
+            description="A token-heavy tool",
+            input_schema={},
+            risk=ToolRisk.LOW,
+            category=ToolCategory.SHELL,
+            function=token_heavy_tool,
+        )
+        mock_registry.get.return_value = tool_def
+        mock_registry.list_definitions.return_value = [{"name": "heavy_tool"}]
+
+        # Each response uses 100 tokens
+        mock_provider.complete.return_value = LLMResponse(
+            content=[ProvToolUseBlock(id="call_1", name="heavy_tool", input={})],
+            stop_reason="tool_use",
+            usage=TokenUsage(prompt_tokens=70, completion_tokens=30, total_tokens=100),
+        )
+
+        agent = Agent(mock_provider, mock_registry, mock_permissions, session)
+        messages = [Message(role="user", content="Use tokens")]
+
+        events = []
+        # Limit to 250 tokens - should trigger after 3rd iteration (300 tokens)
+        async for event in conversation_loop(agent, messages, max_tokens=250):
+            events.append(event)
+
+        event_types = [e.type for e in events]
+        assert "token_limit_reached" in event_types
+
+        # Find the limit event
+        limit_event = next(e for e in events if e.type == "token_limit_reached")
+        assert "250" in limit_event.content  # Max tokens mentioned
+        assert limit_event.total_tokens > 250  # Exceeded the limit
+
+        # Should end with finished
+        assert events[-1].type == "finished"
+
+    @pytest.mark.asyncio
+    async def test_token_limit_none_means_unlimited(self, mock_provider, mock_registry, mock_permissions, session):
+        """When max_tokens is None, no token limit is enforced."""
+
+        async def tool_fn(**kwargs):
+            return "result"
+
+        tool_def = ToolDefinition(
+            name="tool",
+            description="desc",
+            input_schema={},
+            risk=ToolRisk.LOW,
+            category=ToolCategory.SHELL,
+            function=tool_fn,
+        )
+        mock_registry.get.return_value = tool_def
+        mock_registry.list_definitions.return_value = [{"name": "tool"}]
+
+        # Use lots of tokens but with a normal flow (tool then done)
+        mock_provider.complete.side_effect = [
+            LLMResponse(
+                content=[ProvToolUseBlock(id="call_1", name="tool", input={})],
+                stop_reason="tool_use",
+                usage=TokenUsage(prompt_tokens=5000, completion_tokens=5000, total_tokens=10000),
+            ),
+            LLMResponse(
+                content=[ProvTextBlock(text="Done")],
+                stop_reason="end_turn",
+                usage=TokenUsage(prompt_tokens=5000, completion_tokens=5000, total_tokens=10000),
+            ),
+        ]
+
+        agent = Agent(mock_provider, mock_registry, mock_permissions, session)
+        messages = [Message(role="user", content="Test")]
+
+        events = []
+        async for event in conversation_loop(agent, messages, max_tokens=None):
+            events.append(event)
+
+        event_types = [e.type for e in events]
+        assert "token_limit_reached" not in event_types
+        assert events[-1].type == "finished"
+
+    @pytest.mark.asyncio
+    async def test_no_token_limit_reached_when_under_max(self, mock_provider, mock_registry, mock_permissions, session):
+        """When tokens are under max, no limit event should be yielded."""
+        mock_provider.complete.return_value = LLMResponse(
+            content=[ProvTextBlock(text="Done")],
+            stop_reason="end_turn",
+            usage=TokenUsage(prompt_tokens=50, completion_tokens=25, total_tokens=75),
+        )
+
+        agent = Agent(mock_provider, mock_registry, mock_permissions, session)
+        messages = [Message(role="user", content="Small task")]
+
+        events = []
+        async for event in conversation_loop(agent, messages, max_tokens=1000):
+            events.append(event)
+
+        event_types = [e.type for e in events]
+        assert "token_limit_reached" not in event_types
+        assert events[-1].type == "finished"
+
+
+class TestLoopTokenTracking:
+    """Test token usage tracking in events."""
+
+    @pytest.mark.asyncio
+    async def test_events_include_iteration_and_tokens(self, mock_provider, mock_registry, mock_permissions, session):
+        """Events should include iteration count and cumulative token usage."""
+        mock_provider.complete.return_value = LLMResponse(
+            content=[ProvTextBlock(text="Response")],
+            stop_reason="end_turn",
+            usage=TokenUsage(prompt_tokens=100, completion_tokens=50, total_tokens=150),
+        )
+
+        agent = Agent(mock_provider, mock_registry, mock_permissions, session)
+        messages = [Message(role="user", content="Test")]
+
+        events = []
+        async for event in conversation_loop(agent, messages):
+            events.append(event)
+
+        # Text event should have iteration and token info
+        text_event = next(e for e in events if e.type == "text")
+        assert text_event.iteration == 1
+        assert text_event.total_tokens == 150
+        assert text_event.usage is not None
+        assert text_event.usage.total_tokens == 150
+
+        # Finished event should have final counts
+        finished_event = events[-1]
+        assert finished_event.iteration == 1
+        assert finished_event.total_tokens == 150
+
+    @pytest.mark.asyncio
+    async def test_cumulative_token_tracking(self, mock_provider, mock_registry, mock_permissions, session):
+        """Token tracking should be cumulative across iterations."""
+
+        async def tool_fn(**kwargs):
+            return "result"
+
+        tool_def = ToolDefinition(
+            name="tool",
+            description="desc",
+            input_schema={},
+            risk=ToolRisk.LOW,
+            category=ToolCategory.SHELL,
+            function=tool_fn,
+        )
+        mock_registry.get.return_value = tool_def
+        mock_registry.list_definitions.return_value = [{"name": "tool"}]
+
+        # First call: tool use (100 tokens), Second call: done (50 tokens)
+        mock_provider.complete.side_effect = [
+            LLMResponse(
+                content=[ProvToolUseBlock(id="call_1", name="tool", input={})],
+                stop_reason="tool_use",
+                usage=TokenUsage(prompt_tokens=70, completion_tokens=30, total_tokens=100),
+            ),
+            LLMResponse(
+                content=[ProvTextBlock(text="Done")],
+                stop_reason="end_turn",
+                usage=TokenUsage(prompt_tokens=30, completion_tokens=20, total_tokens=50),
+            ),
+        ]
+
+        agent = Agent(mock_provider, mock_registry, mock_permissions, session)
+        messages = [Message(role="user", content="Test")]
+
+        events = []
+        async for event in conversation_loop(agent, messages):
+            events.append(event)
+
+        # First iteration events should show 100 tokens
+        tool_call_event = next(e for e in events if e.type == "tool_call")
+        assert tool_call_event.iteration == 1
+        assert tool_call_event.total_tokens == 100
+
+        # Second iteration events should show 150 tokens (cumulative)
+        text_event = next(e for e in events if e.type == "text")
+        assert text_event.iteration == 2
+        assert text_event.total_tokens == 150
+
+        # Final event should have full count
+        finished_event = events[-1]
+        assert finished_event.total_tokens == 150
+
+    @pytest.mark.asyncio
+    async def test_handles_missing_usage(self, mock_provider, mock_registry, mock_permissions, session):
+        """Loop should handle responses without usage information gracefully."""
+        mock_provider.complete.return_value = LLMResponse(
+            content=[ProvTextBlock(text="Response")],
+            stop_reason="end_turn",
+            usage=None,  # No usage info
+        )
+
+        agent = Agent(mock_provider, mock_registry, mock_permissions, session)
+        messages = [Message(role="user", content="Test")]
+
+        events = []
+        async for event in conversation_loop(agent, messages):
+            events.append(event)
+
+        # Should complete without error
+        assert events[-1].type == "finished"
+        assert events[-1].total_tokens == 0  # No tokens counted

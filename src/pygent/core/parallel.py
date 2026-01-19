@@ -16,30 +16,8 @@ if TYPE_CHECKING:
     from pygent.core.providers import ToolUseBlock
     from pygent.tools.base import ToolDefinition
 
-# Tools that are read-only and safe for parallel execution
-# This is the inverse of NON_CACHEABLE_TOOLS plus some that are cacheable
-# but still have potential side effects
-READ_ONLY_TOOLS: frozenset[str] = frozenset(
-    {
-        # Filesystem read operations
-        "read_file",
-        "list_files",
-        # Search operations
-        "grep_search",
-        "find_files",
-        "find_definition",
-        # Git read operations
-        "git_status",
-        "git_diff",
-        "git_log",
-        "git_branch",
-        # Web operations (no local side effects)
-        "web_fetch",
-        # Listing operations
-        "list_templates",
-        "list_components",
-    }
-)
+# Note: read_only status is now determined by tool definition metadata (ToolDefinition.read_only)
+# This is more maintainable than a hardcoded set, as new tools automatically get correct behavior.
 
 # Arguments that typically contain file paths for conflict detection
 PATH_ARGUMENTS: frozenset[str] = frozenset(
@@ -105,16 +83,16 @@ class ExecutionBatch:
     can_parallelize: bool
 
 
-def is_read_only_tool(tool_name: str) -> bool:
+def is_read_only_tool(tool_def: ToolDefinition) -> bool:
     """Check if a tool is read-only and safe for parallel execution.
 
     Args:
-        tool_name: Name of the tool to check.
+        tool_def: The tool definition to check.
 
     Returns:
         True if the tool is read-only, False otherwise.
     """
-    return tool_name in READ_ONLY_TOOLS
+    return tool_def.read_only
 
 
 def extract_affected_paths(tool_name: str, args: dict[str, Any]) -> set[str]:
@@ -185,7 +163,7 @@ def prepare_tool_execution(
     return ToolExecution(
         tool_use=tool_use,
         tool_def=tool_def,
-        is_read_only=is_read_only_tool(tool_use.name),
+        is_read_only=is_read_only_tool(tool_def),
         affected_paths=extract_affected_paths(tool_use.name, tool_use.input),
     )
 
@@ -292,8 +270,8 @@ async def execute_single_tool(
             is_error=True,
         )
 
-    # Check cache first
-    cached_result = await agent.tool_cache.get(tool_use.name, tool_use.input)
+    # Check cache first (only for cacheable tools)
+    cached_result = await agent.tool_cache.get(tool_use.name, tool_use.input, cacheable=tool_def.cacheable)
     if cached_result is not None:
         return ToolResult(
             tool_use_id=tool_use.id,
@@ -308,8 +286,8 @@ async def execute_single_tool(
         output = await tool_def.function(**tool_use.input)
         result = str(output)
 
-        # Cache the result
-        await agent.tool_cache.set(tool_use.name, tool_use.input, result)
+        # Cache the result (only for cacheable tools)
+        await agent.tool_cache.set(tool_use.name, tool_use.input, result, cacheable=tool_def.cacheable)
 
         return ToolResult(
             tool_use_id=tool_use.id,

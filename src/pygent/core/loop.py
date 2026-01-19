@@ -7,10 +7,13 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from pygent.core.parallel import execute_tools_parallel
-from pygent.core.providers import LLMResponse
+from pygent.core.providers import LLMResponse, TokenUsage
 from pygent.core.providers import TextBlock as ProvTextBlock
 from pygent.core.providers import ToolUseBlock as ProvToolUseBlock
 from pygent.session.models import ContentBlock, Message, TextBlock, ToolResultBlock, ToolUseBlock
+
+# Default limits
+DEFAULT_MAX_ITERATIONS = 50
 
 if TYPE_CHECKING:
     from pygent.core.agent import Agent
@@ -22,12 +25,16 @@ class LoopEvent:
 
     Attributes:
         type: Event type - "text", "tool_call", "tool_result", "param_error",
-              "permission_denied", "finished", "cache_hit".
+              "permission_denied", "finished", "cache_hit", "iteration_limit_reached",
+              "token_limit_reached".
         content: Event content (text or tool result).
         tool_name: Name of the tool involved (for tool events).
         tool_id: Unique ID of the tool call (for matching calls to results).
         cached: Whether the result came from cache.
         timestamp: When the event occurred (for progress tracking).
+        usage: Token usage for this iteration (for token tracking).
+        iteration: Current iteration number.
+        total_tokens: Cumulative total tokens used across all iterations.
     """
 
     type: str
@@ -36,6 +43,9 @@ class LoopEvent:
     tool_id: str | None = None
     cached: bool = False
     timestamp: datetime | None = None
+    usage: TokenUsage | None = None
+    iteration: int | None = None
+    total_tokens: int | None = None
 
 
 def _convert_to_llm_messages(messages: list[Message]) -> list[dict[str, Any]]:
@@ -86,6 +96,8 @@ async def conversation_loop(
     agent: Agent,
     messages: list[Message],
     system_prompt: str | None = None,
+    max_iterations: int = DEFAULT_MAX_ITERATIONS,
+    max_tokens: int | None = None,
 ) -> AsyncIterator[LoopEvent]:
     """Execute the agent loop until no more tool calls.
 
@@ -93,11 +105,28 @@ async def conversation_loop(
         agent: The agent instance with provider, tools, and permissions.
         messages: List of conversation messages.
         system_prompt: Optional system prompt to prepend to the conversation.
+        max_iterations: Maximum number of iterations before graceful exit (default: 50).
+        max_tokens: Maximum total tokens to use before graceful exit (None = unlimited).
 
     Yields:
         LoopEvent instances for each step of the conversation.
     """
+    iteration = 0
+    total_tokens_used = 0
+
     while True:
+        # Check iteration limit
+        if iteration >= max_iterations:
+            yield LoopEvent(
+                type="iteration_limit_reached",
+                content=f"Reached maximum iterations limit ({max_iterations})",
+                iteration=iteration,
+                total_tokens=total_tokens_used,
+                timestamp=datetime.now(),
+            )
+            break
+
+        iteration += 1
         # Convert messages for LLM
         llm_msgs = _convert_to_llm_messages(messages)
 
@@ -117,13 +146,37 @@ async def conversation_loop(
             tools=tool_list,
         )
 
+        # Track token usage
+        iteration_tokens = 0
+        if response.usage:
+            iteration_tokens = response.usage.total_tokens
+            total_tokens_used += iteration_tokens
+
+        # Check token limit (after response, before processing)
+        if max_tokens is not None and total_tokens_used > max_tokens:
+            yield LoopEvent(
+                type="token_limit_reached",
+                content=f"Reached maximum token limit ({max_tokens}). Used: {total_tokens_used}",
+                iteration=iteration,
+                total_tokens=total_tokens_used,
+                usage=response.usage,
+                timestamp=datetime.now(),
+            )
+            break
+
         # Process Response
         assistant_blocks: list[ContentBlock] = []
         tool_invocations = []
 
         for block in response.content:
             if isinstance(block, ProvTextBlock):
-                yield LoopEvent(type="text", content=block.text)
+                yield LoopEvent(
+                    type="text",
+                    content=block.text,
+                    iteration=iteration,
+                    total_tokens=total_tokens_used,
+                    usage=response.usage,
+                )
                 assistant_blocks.append(TextBlock(text=block.text))
 
             elif isinstance(block, ProvToolUseBlock):
@@ -132,6 +185,9 @@ async def conversation_loop(
                     tool_name=block.name,
                     tool_id=block.id,
                     timestamp=datetime.now(),
+                    iteration=iteration,
+                    total_tokens=total_tokens_used,
+                    usage=response.usage,
                 )
                 assistant_blocks.append(ToolUseBlock(id=block.id, name=block.name, input=block.input))
                 tool_invocations.append(block)
@@ -207,4 +263,9 @@ async def conversation_loop(
                 )
             )
 
-    yield LoopEvent(type="finished")
+    yield LoopEvent(
+        type="finished",
+        iteration=iteration,
+        total_tokens=total_tokens_used,
+        timestamp=datetime.now(),
+    )

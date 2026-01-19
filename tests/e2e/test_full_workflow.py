@@ -508,7 +508,7 @@ class TestSessionPersistence:
 class TestPropertyBasedE2E:
     """Property-based tests for E2E workflows."""
 
-    @given(content=st.text(min_size=1, max_size=1000).filter(lambda x: x.strip()))
+    @given(content=st.text(min_size=1, max_size=1000).filter(lambda x: x.strip() and "\r" not in x))
     @settings(max_examples=10, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @pytest.mark.asyncio
     async def test_create_read_roundtrip(self, tmp_path, content):

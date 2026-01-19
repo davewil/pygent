@@ -155,6 +155,7 @@ def _upgrade_to_https(url: str) -> str:
     description="Fetch content from a URL (HTTPS enforced)",
     risk=ToolRisk.HIGH,
     category=ToolCategory.WEB,
+    read_only=True,
 )
 async def web_fetch(
     url: str,

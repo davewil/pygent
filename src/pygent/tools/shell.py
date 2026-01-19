@@ -8,6 +8,7 @@ from pygent.tools.base import ToolCategory, ToolRisk, tool
     description="Execute a shell command and return output. Returns stdout and stderr combined.",
     risk=ToolRisk.HIGH,
     category=ToolCategory.SHELL,
+    cacheable=False,
 )
 async def shell(command: str, timeout: int = 60) -> str:
     """Execute shell command.

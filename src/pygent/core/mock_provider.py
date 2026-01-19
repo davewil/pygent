@@ -5,8 +5,12 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from pygent.core.providers import LLMProvider, LLMResponse, TextBlock, ToolUseBlock
+from pygent.core.providers import LLMProvider, LLMResponse, TextBlock, TokenUsage, ToolUseBlock
 from pygent.tools.base import ToolDefinition
+
+# Mock token counts (approximate)
+MOCK_PROMPT_TOKENS = 100
+MOCK_COMPLETION_TOKENS = 50
 
 
 @dataclass
@@ -15,11 +19,27 @@ class MockLLMProvider(LLMProvider):
 
     Attributes:
         delay: Optional delay in seconds before responses (for realistic feel).
+        tokens_per_response: Mock token count per response (for testing limits).
     """
 
-    def __init__(self, model: str = "mock", api_key: str | None = None, delay: float = 0.0) -> None:
+    def __init__(
+        self,
+        model: str = "mock",
+        api_key: str | None = None,
+        delay: float = 0.0,
+        tokens_per_response: int = MOCK_PROMPT_TOKENS + MOCK_COMPLETION_TOKENS,
+    ) -> None:
         super().__init__(model, api_key)
         self.delay = delay
+        self.tokens_per_response = tokens_per_response
+
+    def _mock_usage(self) -> TokenUsage:
+        """Generate mock token usage."""
+        return TokenUsage(
+            prompt_tokens=MOCK_PROMPT_TOKENS,
+            completion_tokens=MOCK_COMPLETION_TOKENS,
+            total_tokens=self.tokens_per_response,
+        )
 
     async def complete(
         self,
@@ -54,6 +74,7 @@ class MockLLMProvider(LLMProvider):
                     )
                 ],
                 stop_reason="end_turn",
+                usage=self._mock_usage(),
             )
 
         # Analyze user message for tool triggers
@@ -96,6 +117,7 @@ class MockLLMProvider(LLMProvider):
                         ToolUseBlock(id="mock_call_1", name="read_file", input={"path": filename}),
                     ],
                     stop_reason="tool_use",
+                    usage=self._mock_usage(),
                 )
 
         # Directory listing triggers
@@ -108,6 +130,7 @@ class MockLLMProvider(LLMProvider):
                         ToolUseBlock(id="mock_call_2", name="list_files", input={"path": path, "recursive": False}),
                     ],
                     stop_reason="tool_use",
+                    usage=self._mock_usage(),
                 )
 
         # Edit file triggers
@@ -124,6 +147,7 @@ class MockLLMProvider(LLMProvider):
                         )
                     ],
                     stop_reason="end_turn",
+                    usage=self._mock_usage(),
                 )
 
         # Shell triggers
@@ -137,6 +161,7 @@ class MockLLMProvider(LLMProvider):
                         ToolUseBlock(id="mock_call_3", name="shell", input={"command": cmd}),
                     ],
                     stop_reason="tool_use",
+                    usage=self._mock_usage(),
                 )
 
         return None
@@ -159,6 +184,7 @@ What would you like me to help you with today?"""
                     )
                 ],
                 stop_reason="end_turn",
+                usage=self._mock_usage(),
             )
 
         # Help patterns
@@ -177,6 +203,7 @@ Just describe what you'd like to do in natural language!"""
                     )
                 ],
                 stop_reason="end_turn",
+                usage=self._mock_usage(),
             )
 
         # Default response
@@ -188,6 +215,7 @@ Just describe what you'd like to do in natural language!"""
         return LLMResponse(
             content=[TextBlock(text=default_text)],
             stop_reason="end_turn",
+            usage=self._mock_usage(),
         )
 
     def _extract_filename(self, message: str) -> str | None:

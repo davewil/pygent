@@ -65,6 +65,7 @@ async def _check_git_repo(cwd: str | None = None) -> None:
     description="Show the working tree status (modified, staged, untracked files)",
     risk=ToolRisk.LOW,
     category=ToolCategory.GIT,
+    read_only=True,
 )
 async def git_status(cwd: str | None = None) -> str:
     """Get git repository status.
@@ -94,6 +95,7 @@ async def git_status(cwd: str | None = None) -> str:
     description="Show changes between commits, commit and working tree, etc.",
     risk=ToolRisk.LOW,
     category=ToolCategory.GIT,
+    read_only=True,
 )
 async def git_diff(
     path: str | None = None,
@@ -142,6 +144,7 @@ async def git_diff(
     description="Show commit history",
     risk=ToolRisk.LOW,
     category=ToolCategory.GIT,
+    read_only=True,
 )
 async def git_log(
     count: int = 10,
@@ -187,6 +190,7 @@ async def git_log(
     description="List, create, or delete branches",
     risk=ToolRisk.LOW,
     category=ToolCategory.GIT,
+    read_only=True,
 )
 async def git_branch(
     name: str | None = None,
@@ -237,6 +241,7 @@ async def git_branch(
     description="Stage files for commit",
     risk=ToolRisk.MEDIUM,
     category=ToolCategory.GIT,
+    cacheable=False,
 )
 async def git_add(
     paths: list[str],
@@ -274,6 +279,7 @@ async def git_add(
     description="Create a new commit with staged changes",
     risk=ToolRisk.MEDIUM,
     category=ToolCategory.GIT,
+    cacheable=False,
 )
 async def git_commit(
     message: str,
@@ -309,6 +315,7 @@ async def git_commit(
     description="Switch branches or restore files",
     risk=ToolRisk.MEDIUM,
     category=ToolCategory.GIT,
+    cacheable=False,
 )
 async def git_checkout(
     branch: str | None = None,
@@ -362,6 +369,7 @@ async def git_checkout(
     description="Push commits to remote repository",
     risk=ToolRisk.HIGH,
     category=ToolCategory.GIT,
+    cacheable=False,
 )
 async def git_push(
     remote: str = "origin",
@@ -410,6 +418,7 @@ async def git_push(
     description="Fetch and integrate changes from remote",
     risk=ToolRisk.MEDIUM,
     category=ToolCategory.GIT,
+    cacheable=False,
 )
 async def git_pull(
     remote: str = "origin",

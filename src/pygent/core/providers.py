@@ -21,9 +21,25 @@ class ToolUseBlock:
 
 
 @dataclass
+class TokenUsage:
+    """Token usage statistics from an LLM response.
+
+    Attributes:
+        prompt_tokens: Number of tokens in the prompt.
+        completion_tokens: Number of tokens in the completion.
+        total_tokens: Total tokens used (prompt + completion).
+    """
+
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+
+
+@dataclass
 class LLMResponse:
     content: list[TextBlock | ToolUseBlock]
     stop_reason: str | None
+    usage: TokenUsage | None = None
 
 
 class LLMProvider:
@@ -100,4 +116,13 @@ class LLMProvider:
 
                 content.append(ToolUseBlock(id=tool_call.id, name=tool_call.function.name, input=args))
 
-        return LLMResponse(content=content, stop_reason=choice.finish_reason)
+        # Parse token usage from response
+        usage = None
+        if hasattr(response, "usage") and response.usage is not None:
+            usage = TokenUsage(
+                prompt_tokens=getattr(response.usage, "prompt_tokens", 0) or 0,
+                completion_tokens=getattr(response.usage, "completion_tokens", 0) or 0,
+                total_tokens=getattr(response.usage, "total_tokens", 0) or 0,
+            )
+
+        return LLMResponse(content=content, stop_reason=choice.finish_reason, usage=usage)

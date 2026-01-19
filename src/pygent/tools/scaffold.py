@@ -1068,6 +1068,7 @@ def _detect_project_name(path: Path) -> str | None:
     description="List available project templates",
     risk=ToolRisk.LOW,
     category=ToolCategory.PROJECT,
+    read_only=True,
 )
 async def list_templates() -> str:
     """List available project templates.
@@ -1102,6 +1103,7 @@ async def list_templates() -> str:
     description="Create a new project from a template",
     risk=ToolRisk.MEDIUM,
     category=ToolCategory.PROJECT,
+    cacheable=False,
 )
 async def create_project(
     name: str,
@@ -1210,6 +1212,7 @@ async def create_project(
     description="Add a component or feature to an existing project",
     risk=ToolRisk.MEDIUM,
     category=ToolCategory.PROJECT,
+    cacheable=False,
 )
 async def add_component(
     component: str,
@@ -1295,6 +1298,7 @@ async def add_component(
     description="List available components that can be added to projects",
     risk=ToolRisk.LOW,
     category=ToolCategory.PROJECT,
+    read_only=True,
 )
 async def list_components() -> str:
     """List available components.

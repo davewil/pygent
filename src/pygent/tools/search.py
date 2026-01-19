@@ -153,6 +153,7 @@ async def _grep_with_python(
     description="Search for patterns in files using regex. Returns matching lines with file path and line number.",
     risk=ToolRisk.LOW,
     category=ToolCategory.SEARCH,
+    read_only=True,
 )
 async def grep_search(
     pattern: str,
@@ -229,6 +230,7 @@ def _get_depth(path: Path, base_path: Path) -> int:
     description="Find files and directories matching a glob pattern. Returns a list of matching paths.",
     risk=ToolRisk.LOW,
     category=ToolCategory.SEARCH,
+    read_only=True,
 )
 async def find_files(
     pattern: str,
@@ -440,6 +442,7 @@ def _compile_patterns_for_symbol(symbol: str, language: str) -> list[tuple[re.Pa
     description="Find where a symbol (function, class, variable) is defined in the codebase",
     risk=ToolRisk.LOW,
     category=ToolCategory.SEARCH,
+    read_only=True,
 )
 async def find_definition(
     symbol: str,

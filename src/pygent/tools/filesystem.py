@@ -16,6 +16,7 @@ from pygent.tools.base import ToolCategory, ToolRisk, tool
     description="Read the contents of a file at the given path",
     risk=ToolRisk.LOW,
     category=ToolCategory.FILESYSTEM,
+    read_only=True,
 )
 async def read_file(path: str) -> str:
     """Read file contents.
@@ -46,6 +47,7 @@ async def read_file(path: str) -> str:
     description="List files and directories at the given path",
     risk=ToolRisk.LOW,
     category=ToolCategory.FILESYSTEM,
+    read_only=True,
 )
 async def list_files(path: str = ".", recursive: bool = False) -> str:
     """List directory contents.
@@ -92,6 +94,7 @@ def _path_to_entry(path: Path, root: Path) -> dict[str, Any]:
     description="Edit a file by replacing old_str with new_str",
     risk=ToolRisk.MEDIUM,
     category=ToolCategory.FILESYSTEM,
+    cacheable=False,
 )
 async def edit_file(path: str, old_str: str, new_str: str) -> str:
     """Edit file via string replacement.
@@ -127,6 +130,7 @@ async def edit_file(path: str, old_str: str, new_str: str) -> str:
     description="Create a new file with content",
     risk=ToolRisk.MEDIUM,
     category=ToolCategory.FILESYSTEM,
+    cacheable=False,
 )
 async def create_file(path: str, content: str) -> str:
     """Create a new file.
@@ -160,6 +164,7 @@ async def create_file(path: str, content: str) -> str:
     description="Delete a file",
     risk=ToolRisk.HIGH,
     category=ToolCategory.FILESYSTEM,
+    cacheable=False,
 )
 async def delete_file(path: str) -> str:
     """Delete a file.
@@ -195,6 +200,7 @@ async def delete_file(path: str) -> str:
     description="Move or rename a file",
     risk=ToolRisk.MEDIUM,
     category=ToolCategory.FILESYSTEM,
+    cacheable=False,
 )
 async def move_file(source: str, destination: str) -> str:
     """Move or rename a file.
@@ -236,6 +242,7 @@ async def move_file(source: str, destination: str) -> str:
     description="Copy a file to a new location",
     risk=ToolRisk.MEDIUM,
     category=ToolCategory.FILESYSTEM,
+    cacheable=False,
 )
 async def copy_file(source: str, destination: str) -> str:
     """Copy a file.

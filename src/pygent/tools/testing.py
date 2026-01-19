@@ -689,6 +689,7 @@ def _format_summary(summary: TestSummary) -> str:
     description="Run project tests using the appropriate test framework",
     risk=ToolRisk.MEDIUM,
     category=ToolCategory.TESTING,
+    cacheable=False,
 )
 async def run_tests(
     path: str | None = None,

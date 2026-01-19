@@ -13,7 +13,6 @@ from hypothesis import strategies as st
 
 from pygent.core.parallel import (
     PATH_ARGUMENTS,
-    READ_ONLY_TOOLS,
     ExecutionBatch,
     ToolExecution,
     ToolResult,
@@ -57,8 +56,12 @@ def make_tool_def(
     risk: ToolRisk = ToolRisk.LOW,
     category: ToolCategory = ToolCategory.FILESYSTEM,
     return_value: str = "success",
+    read_only: bool = False,
+    cacheable: bool | None = None,
 ) -> ToolDefinition:
     """Create a mock tool definition."""
+    # Default cacheable based on read_only if not explicitly set
+    effective_cacheable = cacheable if cacheable is not None else read_only
 
     async def mock_func(**kwargs: Any) -> str:
         return return_value
@@ -70,6 +73,8 @@ def make_tool_def(
         risk=risk,
         category=category,
         function=mock_func,
+        read_only=read_only,
+        cacheable=effective_cacheable,
     )
 
 
@@ -87,11 +92,13 @@ def make_mock_agent(
     agent.permissions = MagicMock()
     agent.permissions.check = check_permission
 
-    # Mock cache
-    async def cache_get(tool_name: str, args: dict[str, Any]) -> str | None:
+    # Mock cache (with cacheable parameter)
+    async def cache_get(tool_name: str, args: dict[str, Any], cacheable: bool = True) -> str | None:
+        if not cacheable:
+            return None
         return cached_result
 
-    async def cache_set(tool_name: str, args: dict[str, Any], result: str) -> None:
+    async def cache_set(tool_name: str, args: dict[str, Any], result: str, cacheable: bool = True) -> None:
         pass
 
     agent.tool_cache = MagicMock()
@@ -104,35 +111,6 @@ def make_mock_agent(
 # =============================================================================
 # Test Constants
 # =============================================================================
-
-
-class TestReadOnlyTools:
-    """Tests for READ_ONLY_TOOLS constant."""
-
-    def test_contains_filesystem_read_tools(self) -> None:
-        """Read-only tools should include filesystem read operations."""
-        assert "read_file" in READ_ONLY_TOOLS
-        assert "list_files" in READ_ONLY_TOOLS
-
-    def test_contains_search_tools(self) -> None:
-        """Read-only tools should include search operations."""
-        assert "grep_search" in READ_ONLY_TOOLS
-        assert "find_files" in READ_ONLY_TOOLS
-        assert "find_definition" in READ_ONLY_TOOLS
-
-    def test_contains_git_read_tools(self) -> None:
-        """Read-only tools should include git read operations."""
-        assert "git_status" in READ_ONLY_TOOLS
-        assert "git_diff" in READ_ONLY_TOOLS
-        assert "git_log" in READ_ONLY_TOOLS
-        assert "git_branch" in READ_ONLY_TOOLS
-
-    def test_excludes_write_tools(self) -> None:
-        """Read-only tools should not include write operations."""
-        assert "edit_file" not in READ_ONLY_TOOLS
-        assert "delete_file" not in READ_ONLY_TOOLS
-        assert "shell" not in READ_ONLY_TOOLS
-        assert "git_commit" not in READ_ONLY_TOOLS
 
 
 class TestPathArguments:
@@ -155,21 +133,20 @@ class TestPathArguments:
 class TestIsReadOnlyTool:
     """Tests for is_read_only_tool function."""
 
-    def test_read_file_is_read_only(self) -> None:
-        """read_file should be read-only."""
-        assert is_read_only_tool("read_file") is True
+    def test_read_only_tool_is_read_only(self) -> None:
+        """Tool with read_only=True should be identified as read-only."""
+        tool_def = make_tool_def("read_file", read_only=True)
+        assert is_read_only_tool(tool_def) is True
 
-    def test_edit_file_is_not_read_only(self) -> None:
-        """edit_file should not be read-only."""
-        assert is_read_only_tool("edit_file") is False
+    def test_write_tool_is_not_read_only(self) -> None:
+        """Tool with read_only=False should not be identified as read-only."""
+        tool_def = make_tool_def("edit_file", read_only=False)
+        assert is_read_only_tool(tool_def) is False
 
-    def test_shell_is_not_read_only(self) -> None:
-        """shell should not be read-only."""
-        assert is_read_only_tool("shell") is False
-
-    def test_unknown_tool_is_not_read_only(self) -> None:
-        """Unknown tools should be treated as not read-only."""
-        assert is_read_only_tool("unknown_tool") is False
+    def test_default_is_not_read_only(self) -> None:
+        """Tool with default read_only should not be read-only."""
+        tool_def = make_tool_def("unknown_tool")
+        assert is_read_only_tool(tool_def) is False
 
 
 class TestExtractAffectedPaths:
@@ -355,7 +332,7 @@ class TestPrepareToolExecution:
     def test_prepares_read_only_tool(self) -> None:
         """Should identify read-only tools."""
         tool_use = make_tool_use("read_file", path="/tmp/test.txt")
-        tool_def = make_tool_def("read_file")
+        tool_def = make_tool_def("read_file", read_only=True)
 
         exec_item = prepare_tool_execution(tool_use, tool_def)
 
@@ -365,7 +342,7 @@ class TestPrepareToolExecution:
     def test_prepares_write_tool(self) -> None:
         """Should identify write tools."""
         tool_use = make_tool_use("edit_file", file_path="/tmp/test.txt")
-        tool_def = make_tool_def("edit_file")
+        tool_def = make_tool_def("edit_file", read_only=False)
 
         exec_item = prepare_tool_execution(tool_use, tool_def)
 
@@ -551,7 +528,7 @@ class TestExecuteSingleTool:
     async def test_cached_result(self) -> None:
         """Should return cached result when available."""
         tool_use = make_tool_use("read_file", path="/tmp/test.txt")
-        tool_def = make_tool_def("read_file")
+        tool_def = make_tool_def("read_file", read_only=True, cacheable=True)
         exec_item = ToolExecution(
             tool_use=tool_use,
             tool_def=tool_def,
@@ -825,18 +802,12 @@ class TestPropertyBased:
         if path_set:  # Non-empty
             assert paths_conflict(path_set, path_set) is True
 
-    @given(
-        tool_names=st.lists(
-            st.sampled_from(list(READ_ONLY_TOOLS)),
-            min_size=1,
-            max_size=10,
-        )
-    )
-    @settings(max_examples=50)
-    def test_read_only_tools_are_read_only(self, tool_names: list[str]) -> None:
-        """All read-only tools should be identified as read-only."""
-        for name in tool_names:
-            assert is_read_only_tool(name) is True
+    @given(read_only=st.booleans())
+    @settings(max_examples=10)
+    def test_read_only_flag_respected(self, read_only: bool) -> None:
+        """Tool read_only flag should be respected by is_read_only_tool."""
+        tool_def = make_tool_def("test_tool", read_only=read_only)
+        assert is_read_only_tool(tool_def) is read_only
 
     @given(
         args=st.fixed_dictionaries(
@@ -867,7 +838,7 @@ class TestIntegration:
         tools = []
         for i in range(3):
             tool_use = make_tool_use("read_file", path=f"/tmp/file{i}.txt")
-            tool_def = make_tool_def("read_file", return_value=f"content_{i}")
+            tool_def = make_tool_def("read_file", return_value=f"content_{i}", read_only=True)
             tools.append((tool_use, tool_def))
 
         agent = make_mock_agent(allowed=True)
@@ -913,6 +884,8 @@ class TestIntegration:
                 risk=ToolRisk.LOW,
                 category=ToolCategory.FILESYSTEM,
                 function=slow_func,
+                read_only=True,
+                cacheable=True,
             )
             tools.append((tool_use, tool_def))
 

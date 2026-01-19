@@ -950,3 +950,68 @@
     * Works on Python 3.10, 3.11, 3.12: CI matrix
     * Works on Linux, macOS, Windows: CI matrix (9 job combinations)
   - Total: 1325 tests pass
+2026-01-19: Implemented Agent Loop Improvements - Phase 1: Tool Definition Metadata (AGENT_LOOP_IMPROVEMENTS.md):
+  - Updated ToolDefinition dataclass (tools/base.py) with new fields:
+    * read_only: bool = False - marks tools that don't modify state
+    * cacheable: bool = True - controls whether results can be cached (defaults True if read_only=True)
+  - Updated @tool decorator to accept read_only and cacheable parameters
+  - Marked all read-only tools with read_only=True:
+    * filesystem.py: read_file, list_files
+    * search.py: grep_search, find_files, find_definition
+    * git.py: git_status, git_diff, git_log, git_branch
+    * web.py: web_fetch
+    * scaffold.py: list_templates, list_components
+  - Marked all mutation tools with cacheable=False:
+    * filesystem.py: edit_file, create_file, delete_file, move_file, copy_file
+    * shell.py: shell
+    * git.py: git_add, git_commit, git_checkout, git_push, git_pull
+    * testing.py: run_tests
+    * scaffold.py: create_project, add_component
+  - Refactored parallel.py to use tool definition metadata:
+    * Removed READ_ONLY_TOOLS hardcoded set
+    * Updated is_read_only_tool() to check tool_def.read_only
+    * Updated execute_single_tool() to pass cacheable=tool_def.cacheable to cache
+  - Refactored cache.py to accept cacheable parameter:
+    * Removed NON_CACHEABLE_TOOLS hardcoded set
+    * Removed _is_cacheable() method
+    * Updated get() and set() methods to accept cacheable: bool = True parameter
+  - Updated tests for new decorator parameters and removed references to deleted constants
+  - Learned: Adding metadata to tool definitions is cleaner than maintaining separate hardcoded sets
+  - Learned: Default cacheable=True when read_only=True provides sensible behavior without explicit configuration
+  - Phase 1 of Agent Loop Improvements complete
+  - Total: 1323 tests pass
+2026-01-19: Implemented Agent Loop Improvements - Phase 2: Max Iterations & Token Budget Guard (AGENT_LOOP_IMPROVEMENTS.md):
+  - Added TokenUsage dataclass to providers.py:
+    * prompt_tokens, completion_tokens, total_tokens fields
+    * Parsed from litellm response.usage object
+  - Added usage field to LLMResponse dataclass
+  - Updated LiteLLMProvider.complete() to extract token usage from response
+  - Added limit parameters to conversation_loop() (loop.py):
+    * max_iterations: int = DEFAULT_MAX_ITERATIONS (50) - prevents runaway loops
+    * max_tokens: int | None = None - optional token budget (None = unlimited)
+  - Added iteration and token tracking to conversation_loop:
+    * Tracks iteration count and cumulative total_tokens_used
+    * Checks iteration limit at start of each loop
+    * Checks token limit after each LLM response
+  - Added new LoopEvent types:
+    * iteration_limit_reached - emitted when max_iterations exceeded
+    * token_limit_reached - emitted when max_tokens exceeded
+  - Enhanced LoopEvent dataclass with new fields:
+    * usage: TokenUsage | None - token usage for current iteration
+    * iteration: int | None - current iteration number
+    * total_tokens: int | None - cumulative tokens used
+  - All events now include iteration and token tracking info
+  - Added limit parameters to Agent.__init__() and Agent.run()
+  - Updated MockLLMProvider to return usage in all LLMResponse returns:
+    * Added _mock_usage() helper method
+    * Added MOCK_PROMPT_TOKENS and MOCK_COMPLETION_TOKENS constants
+  - Added 11 comprehensive tests for limits (test_loop.py):
+    * TestLoopIterationLimit: 3 tests for iteration limit functionality
+    * TestLoopTokenLimit: 4 tests for token limit functionality
+    * TestLoopTokenTracking: 4 tests for usage tracking in events
+  - Learned: Token limit check should happen after response (to include that response's tokens) but before processing
+  - Learned: Iteration limit check should happen at start of loop (before making LLM call)
+  - Learned: Events should include both per-iteration usage and cumulative totals for flexibility
+  - Learned: MockLLMProvider needs consistent usage returns for testing limit scenarios
+  - Phase 2 of Agent Loop Improvements complete
+  - Total: 1323 tests pass

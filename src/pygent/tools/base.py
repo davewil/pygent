@@ -51,6 +51,8 @@ class ToolDefinition:
         risk: Risk level for permission system.
         category: Tool category for organization.
         function: The actual async function to execute.
+        read_only: If True, tool has no side effects and can run in parallel.
+        cacheable: If True, results can be cached (default True for read-only tools).
     """
 
     name: str
@@ -59,6 +61,8 @@ class ToolDefinition:
     risk: ToolRisk
     category: ToolCategory
     function: Callable[..., Awaitable[Any]]
+    read_only: bool = False
+    cacheable: bool = True
 
 
 def _generate_schema(func: Callable[..., Any]) -> dict[str, Any]:
@@ -103,6 +107,8 @@ def tool(
     description: str,
     risk: ToolRisk = ToolRisk.LOW,
     category: ToolCategory = ToolCategory.SHELL,
+    read_only: bool = False,
+    cacheable: bool | None = None,
 ) -> Callable[[Callable[P, Awaitable[R]]], ToolFunction[P, R]]:
     """Decorator to register a function as an agent tool.
 
@@ -113,7 +119,12 @@ def tool(
         description: What the tool does (shown to LLM).
         risk: Risk level for permission system.
         category: Tool category for organization.
+        read_only: If True, tool has no side effects and can safely run in parallel.
+        cacheable: If True, results can be cached. Defaults to True for read_only tools,
+            False otherwise. Explicitly set to override this default.
     """
+    # Default cacheable based on read_only if not explicitly set
+    effective_cacheable = cacheable if cacheable is not None else read_only
 
     def decorator(func: Callable[P, Awaitable[R]]) -> ToolFunction[P, R]:
         # Generate schema
@@ -127,6 +138,8 @@ def tool(
             risk=risk,
             category=category,
             function=func,
+            read_only=read_only,
+            cacheable=effective_cacheable,
         )
 
         # Store definition on the function wrapper for registry discovery
