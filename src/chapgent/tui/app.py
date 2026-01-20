@@ -327,14 +327,14 @@ class ChapgentApp(App[None]):
 
         # Show help for a specific command
         topic = args[0]
-        help_text = get_command_help(topic)
+        topic_help = get_command_help(topic)
 
-        if help_text is None:
+        if topic_help is None:
             self.notify(f"Unknown help topic: {topic}", severity="warning")
             self.notify("Type /help for available commands.", severity="information")
             return
 
-        self.query_one(ConversationPanel).append_assistant_message(help_text)
+        self.query_one(ConversationPanel).append_assistant_message(topic_help)
 
     async def _handle_config_command(self, args: list[str]) -> None:
         """Handle the /config command.
