@@ -1389,3 +1389,28 @@
   - Learned: Rich's Syntax class wraps Pygments and handles theme application
   - Learned: Hypothesis strategies st.text() with alphabet categories controls unicode generation
   - Total: 1384 tests pass (89 highlighter tests added)
+2026-01-20: Phase 6 - Syntax Highlighting (Phase 2: Markdown Renderer):
+  - Created src/chapgent/tui/markdown.py with MarkdownRenderer and MarkdownMessage
+    * MarkdownConfig dataclass: code_theme, show_line_numbers, code_block_padding, inline_code_theme, header/blockquote/link styles
+    * MarkdownRenderer: uses Rich's Markdown class with SyntaxHighlighter for code blocks
+    * render() method: produces RichMarkdown renderable from markdown string
+    * render_code_block() method: produces Panel with highlighted code and language label
+    * MarkdownMessage widget: subclass of Static for TUI display
+    * Role-based styling: user-message and agent-message CSS classes
+    * Content updates: update_content() method for streaming support
+    * Embedded DEFAULT_CSS for widget styling
+  - Created tests/test_tui/test_markdown.py:
+    * 35 behavioral tests across 7 test classes
+    * TestMarkdownConfig: default and custom config values
+    * TestMarkdownRenderer: render markdown, headers, code blocks, lists, themes, standalone code blocks
+    * TestMarkdownMessage: role classes, content/role properties, update_content, render output
+    * TestPropertyBased: Hypothesis tests for render, message, and code block robustness
+    * TestEdgeCases: empty, whitespace, unicode, special chars, nested code, long content
+    * TestIntegration: full markdown document rendering, message rendering cycle
+  - Updated src/chapgent/tui/__init__.py: exported MarkdownConfig, MarkdownMessage, MarkdownRenderer
+  - Learned: Rich's Markdown class uses inline_code_theme (not inline_code_style) parameter
+  - Learned: Rich's Markdown class accepts code_theme for fenced code blocks
+  - Learned: Role-based CSS classes allow different styling for user vs agent messages
+  - Learned: Textual widget DEFAULT_CSS provides embedded styling without external TCSS
+  - Phase 2 of Phase 6 Syntax Highlighting complete (MarkdownRenderer and MarkdownMessage)
+  - Total: 1419 tests pass (35 markdown tests added)

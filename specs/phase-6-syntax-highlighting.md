@@ -930,10 +930,11 @@ uv run pytest tests/test_tui/test_markdown.py tests/test_tui/test_highlighter.py
    - Implemented `PygmentsHighlighter` with language alias normalization
    - Added 89 behavioral tests (unit + property-based with Hypothesis)
 
-2. **Phase 2: Markdown Renderer**
-   - Create `markdown.py` with `MarkdownRenderer`
-   - Create `MarkdownMessage` widget
-   - Add unit tests
+2. **Phase 2: Markdown Renderer** ✓ COMPLETE
+   - Created `markdown.py` with `MarkdownRenderer` and `MarkdownConfig`
+   - Created `MarkdownMessage` widget with role-based styling
+   - Added 35 behavioral tests (unit + property-based with Hypothesis)
+   - Exports added to `tui/__init__.py`
 
 3. **Phase 3: Theme Integration**
    - Create `themes/syntax.py`
@@ -975,6 +976,6 @@ uv run pytest tests/test_tui/test_markdown.py tests/test_tui/test_highlighter.py
 
 ---
 
-*Document Version: 1.1*
+*Document Version: 1.2*
 *Created: 2026-01-20*
-*Updated: 2026-01-20* - Phase 1 complete
+*Updated: 2026-01-20* - Phase 2 complete

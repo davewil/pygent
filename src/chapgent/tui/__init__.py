@@ -7,6 +7,11 @@ from chapgent.tui.highlighter import (
     SyntaxHighlighter,
     get_highlighter,
 )
+from chapgent.tui.markdown import (
+    MarkdownConfig,
+    MarkdownMessage,
+    MarkdownRenderer,
+)
 from chapgent.tui.commands import (
     SLASH_COMMANDS,
     SlashCommand,
@@ -45,6 +50,10 @@ __all__ = [
     "PygmentsHighlighter",
     "SyntaxHighlighter",
     "get_highlighter",
+    # Markdown
+    "MarkdownConfig",
+    "MarkdownMessage",
+    "MarkdownRenderer",
     # Commands
     "SLASH_COMMANDS",
     "SlashCommand",

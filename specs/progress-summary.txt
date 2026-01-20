@@ -1,5 +1,6 @@
 # Chapgent Development Progress Summary
 # Generated: 2026-01-20
+# Last Updated: 2026-01-20
 
 ## Project Overview
 
@@ -213,7 +214,7 @@ Google-style docstrings, ruff linting/formatting, and >80% test coverage.
 
 | Metric | Value |
 |--------|-------|
-| Total Tests | 1,295 |
+| Total Tests | 1,419 |
 | Test Coverage | ~96% |
 | Production Lines | ~12,831 |
 | Test Lines | ~17,914 |
@@ -265,13 +266,33 @@ Environment Variables > Project Config (.chapgent.toml) > User Config (~/.config
 
 ---
 
-## Upcoming Work (Phase 6)
+## Phase 6: Syntax Highlighting (2026-01-20) 🚧 IN PROGRESS
 
-### Syntax Highlighting & Markdown Rendering
-- MarkdownRenderer with Rich/Pygments
-- SyntaxHighlighter abstraction (future tree-sitter support)
-- MarkdownMessage widget replacing Static
-- Theme integration (syntax colors match TUI themes)
+### Phase 1: Highlighter Abstraction ✓
+- **HighlightedCode** dataclass: text (Rich Text), language, line_count
+- **SyntaxHighlighter** ABC: highlight(), supports_language(), detect_language()
+- **PygmentsHighlighter**: default implementation using Rich's Syntax class
+  - 22+ language aliases (py→python, js→javascript, ts→typescript, etc.)
+  - Graceful fallback to "text" for unknown languages
+  - Language detection from shebang or filename
+- **TreeSitterHighlighter**: stub for future streaming support
+- **get_highlighter()** factory function
+- 89 behavioral tests added
+
+### Phase 2: Markdown Renderer ✓
+- **MarkdownConfig** dataclass for rendering configuration
+- **MarkdownRenderer** class using Rich's Markdown with SyntaxHighlighter
+- **MarkdownMessage** widget with role-based styling (user/agent)
+- 35 behavioral tests added
+
+### Phase 3: Theme Integration (Pending)
+- Syntax themes mapped to Textual themes
+
+### Phase 4: Widget Integration (Pending)
+- ConversationPanel using MarkdownMessage
+
+### Phase 5: Styles & Polish (Pending)
+- TCSS styles for markdown elements
 
 ---
 
