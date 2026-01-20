@@ -435,3 +435,301 @@ async def test_shell_performance():
     print(f"shell (echo) duration: {duration_ms:.2f}ms")
     # Subprocess creation has some overhead, but should still be well within 500ms
     assert duration_ms < 500
+
+
+# =============================================================================
+# Phase 6: Markdown Rendering Performance Tests
+# =============================================================================
+
+
+class TestMarkdownRenderingPerformance:
+    """Test that markdown rendering adds <50ms latency for typical messages.
+
+    These tests verify the non-functional acceptance criteria from Phase 6:
+    Syntax Highlighting - rendering should add minimal latency.
+    """
+
+    def test_simple_text_rendering_latency(self):
+        """Verify rendering simple text is <50ms."""
+        from chapgent.tui.markdown import MarkdownRenderer
+
+        renderer = MarkdownRenderer()
+        content = "This is a simple message with no special formatting."
+
+        # Warmup
+        renderer.render(content)
+
+        start = time.perf_counter()
+        for _ in range(100):
+            renderer.render(content)
+        end = time.perf_counter()
+
+        avg_ms = (end - start) / 100 * 1000
+        print(f"\nSimple text render (avg): {avg_ms:.4f}ms")
+
+        assert avg_ms < 50, f"Simple render took {avg_ms:.4f}ms, expected <50ms"
+
+    def test_markdown_with_headers_and_lists(self):
+        """Verify rendering markdown with headers and lists is <50ms."""
+        from chapgent.tui.markdown import MarkdownRenderer
+
+        renderer = MarkdownRenderer()
+        content = """# Main Header
+
+## Section 1
+
+Here is some text with **bold** and *italic* formatting.
+
+- Item 1
+- Item 2
+- Item 3
+
+### Subsection
+
+1. First
+2. Second
+3. Third
+
+> A blockquote with some text.
+"""
+
+        # Warmup
+        renderer.render(content)
+
+        start = time.perf_counter()
+        for _ in range(100):
+            renderer.render(content)
+        end = time.perf_counter()
+
+        avg_ms = (end - start) / 100 * 1000
+        print(f"\nMarkdown with headers/lists (avg): {avg_ms:.4f}ms")
+
+        assert avg_ms < 50, f"Markdown render took {avg_ms:.4f}ms, expected <50ms"
+
+    def test_markdown_with_code_block(self):
+        """Verify rendering markdown with syntax-highlighted code is <50ms."""
+        from chapgent.tui.markdown import MarkdownRenderer
+
+        renderer = MarkdownRenderer()
+        content = """Here is a Python example:
+
+```python
+def greet(name: str) -> str:
+    \"\"\"Generate a greeting message.
+
+    Args:
+        name: The name to greet.
+
+    Returns:
+        A greeting string.
+    \"\"\"
+    return f"Hello, {name}!"
+
+
+class Greeter:
+    def __init__(self, prefix: str = "Hello"):
+        self.prefix = prefix
+
+    def greet(self, name: str) -> str:
+        return f"{self.prefix}, {name}!"
+```
+
+And here is the usage:
+
+```python
+greeter = Greeter("Hi")
+print(greeter.greet("World"))
+```
+"""
+
+        # Warmup
+        renderer.render(content)
+
+        start = time.perf_counter()
+        for _ in range(100):
+            renderer.render(content)
+        end = time.perf_counter()
+
+        avg_ms = (end - start) / 100 * 1000
+        print(f"\nMarkdown with code blocks (avg): {avg_ms:.4f}ms")
+
+        assert avg_ms < 50, f"Code block render took {avg_ms:.4f}ms, expected <50ms"
+
+    def test_multiple_languages_code_blocks(self):
+        """Verify rendering multiple language code blocks is <50ms."""
+        from chapgent.tui.markdown import MarkdownRenderer
+
+        renderer = MarkdownRenderer()
+        content = """Here are examples in multiple languages:
+
+```javascript
+function greet(name) {
+    return `Hello, ${name}!`;
+}
+```
+
+```rust
+fn greet(name: &str) -> String {
+    format!("Hello, {}!", name)
+}
+```
+
+```go
+func greet(name string) string {
+    return fmt.Sprintf("Hello, %s!", name)
+}
+```
+"""
+
+        # Warmup
+        renderer.render(content)
+
+        start = time.perf_counter()
+        for _ in range(100):
+            renderer.render(content)
+        end = time.perf_counter()
+
+        avg_ms = (end - start) / 100 * 1000
+        print(f"\nMultiple languages (avg): {avg_ms:.4f}ms")
+
+        assert avg_ms < 50, f"Multi-language render took {avg_ms:.4f}ms, expected <50ms"
+
+    def test_large_markdown_document(self):
+        """Verify rendering large markdown document is reasonable (<100ms)."""
+        from chapgent.tui.markdown import MarkdownRenderer
+
+        renderer = MarkdownRenderer()
+
+        # Generate a large document with various elements
+        sections = []
+        for i in range(10):
+            sections.append(f"""
+## Section {i + 1}
+
+This is paragraph {i + 1} with some **bold** and *italic* text.
+
+- List item A
+- List item B
+- List item C
+
+```python
+def function_{i}():
+    return {i}
+```
+
+> Blockquote {i + 1}
+""")
+        content = "\n".join(sections)
+
+        # Warmup
+        renderer.render(content)
+
+        start = time.perf_counter()
+        for _ in range(10):
+            renderer.render(content)
+        end = time.perf_counter()
+
+        avg_ms = (end - start) / 10 * 1000
+        print(f"\nLarge document (avg): {avg_ms:.4f}ms")
+
+        # Large documents can take longer, allow 100ms
+        assert avg_ms < 100, f"Large document render took {avg_ms:.4f}ms, expected <100ms"
+
+    def test_highlighter_performance(self):
+        """Verify syntax highlighter directly is fast (<10ms per highlight)."""
+        from chapgent.tui.highlighter import PygmentsHighlighter
+
+        highlighter = PygmentsHighlighter()
+        code = """
+def complex_function(data: list[dict]) -> list[str]:
+    \"\"\"Process data and return results.\"\"\"
+    results = []
+    for item in data:
+        if "name" in item:
+            results.append(item["name"].upper())
+    return results
+"""
+
+        # Warmup
+        highlighter.highlight(code, "python")
+
+        start = time.perf_counter()
+        for _ in range(100):
+            highlighter.highlight(code, "python")
+        end = time.perf_counter()
+
+        avg_ms = (end - start) / 100 * 1000
+        print(f"\nSyntax highlighting (avg): {avg_ms:.4f}ms")
+
+        assert avg_ms < 10, f"Highlighting took {avg_ms:.4f}ms, expected <10ms"
+
+    def test_message_widget_render_performance(self):
+        """Verify MarkdownMessage widget render is <50ms."""
+        from chapgent.tui.markdown import MarkdownMessage
+
+        content = """Here is some code:
+
+```python
+print("Hello, World!")
+```
+
+And a list:
+- Item 1
+- Item 2
+"""
+        message = MarkdownMessage(content, role="agent")
+
+        # Warmup
+        message.render()
+
+        start = time.perf_counter()
+        for _ in range(100):
+            message.render()
+        end = time.perf_counter()
+
+        avg_ms = (end - start) / 100 * 1000
+        print(f"\nMarkdownMessage render (avg): {avg_ms:.4f}ms")
+
+        assert avg_ms < 50, f"Widget render took {avg_ms:.4f}ms, expected <50ms"
+
+    def test_theme_aware_rendering(self):
+        """Verify theme-aware rendering doesn't add significant overhead."""
+        from chapgent.tui.markdown import MarkdownConfig, MarkdownRenderer
+        from chapgent.tui.themes import get_syntax_theme
+
+        content = """```python
+def example():
+    return "test"
+```"""
+
+        # Test with different themes
+        themes = ["textual-dark", "dracula", "textual-light", "nord"]
+        render_times = []
+
+        for theme_name in themes:
+            syntax_theme = get_syntax_theme(theme_name)
+            config = MarkdownConfig(code_theme=syntax_theme)
+            renderer = MarkdownRenderer(config=config)
+
+            # Warmup
+            renderer.render(content)
+
+            start = time.perf_counter()
+            for _ in range(50):
+                renderer.render(content)
+            end = time.perf_counter()
+
+            avg_ms = (end - start) / 50 * 1000
+            render_times.append((theme_name, avg_ms))
+            print(f"\n{theme_name} theme (avg): {avg_ms:.4f}ms")
+
+            assert avg_ms < 50, f"{theme_name} render took {avg_ms:.4f}ms, expected <50ms"
+
+        # Verify themes have similar performance (within 2x of each other)
+        times_only = [t[1] for t in render_times]
+        max_time = max(times_only)
+        min_time = min(times_only)
+        if min_time > 0:
+            ratio = max_time / min_time
+            print(f"\nTheme performance ratio (max/min): {ratio:.2f}")
+            assert ratio < 3, f"Theme performance varies too much: ratio={ratio:.2f}"

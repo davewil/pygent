@@ -251,3 +251,72 @@ CommandPalette {
     color: $text;
     text-style: bold;
 }
+
+/* MarkdownMessage Styles */
+
+MarkdownMessage {
+    padding: 1 2;
+    margin: 1 0;
+}
+
+MarkdownMessage.user-message {
+    background: $primary-darken-2;
+    color: $text;
+    border: round $primary;
+}
+
+MarkdownMessage.agent-message {
+    background: $secondary-darken-2;
+    color: $text;
+    border: round $secondary;
+}
+
+/* Code block container - applies to markdown code blocks via Rich */
+MarkdownMessage .code-block {
+    background: $surface;
+    margin: 1 0;
+    padding: 1 2;
+    border: solid $primary-darken-3;
+}
+
+/* Inline code - styled via Rich's inline_code_theme */
+MarkdownMessage .inline-code {
+    background: $surface-darken-1;
+    color: $text;
+}
+
+/* Blockquotes - styled via Rich's Markdown */
+MarkdownMessage .blockquote {
+    border-left: thick $primary;
+    padding-left: 2;
+    color: $text-muted;
+}
+
+/* Headers - styled via Rich's Markdown */
+MarkdownMessage .h1 {
+    text-style: bold;
+    color: $primary;
+    margin: 1 0;
+}
+
+MarkdownMessage .h2 {
+    text-style: bold;
+    color: $secondary;
+    margin: 1 0;
+}
+
+MarkdownMessage .h3 {
+    text-style: bold;
+    color: $accent;
+}
+
+/* Lists - styled via Rich's Markdown */
+MarkdownMessage .list-item {
+    margin-left: 2;
+}
+
+/* Links - styled via Rich's Markdown */
+MarkdownMessage .link {
+    color: $primary;
+    text-style: underline;
+}

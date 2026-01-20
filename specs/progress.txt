@@ -1477,3 +1477,39 @@
   - Learned: Theme-aware renderer should use try/except for self.app.theme access (may not be mounted yet)
   - Phase 4 of Phase 6 Syntax Highlighting complete (Widget Integration)
   - Total: 1467 tests pass (12 widget tests added)
+2026-01-20: Phase 6 - Syntax Highlighting (Phase 5: Styles & Polish) COMPLETE:
+  - Added TCSS styles for markdown elements in src/chapgent/tui/styles.tcss:
+    * MarkdownMessage base styles (padding, margin)
+    * Role-based styling (.user-message, .agent-message with distinct colors)
+    * Code block container styles (.code-block)
+    * Inline code styles (.inline-code)
+    * Blockquote styles (.blockquote with left border)
+    * Header styles (.h1, .h2, .h3 with distinct colors)
+    * List item styles (.list-item)
+    * Link styles (.link with underline)
+  - Added 8 performance benchmark tests in tests/test_performance.py:
+    * TestMarkdownRenderingPerformance class with comprehensive latency tests
+    * test_simple_text_rendering_latency: verifies <50ms for plain text
+    * test_markdown_with_headers_and_lists: verifies <50ms for structured markdown
+    * test_markdown_with_code_block: verifies <50ms for Python code blocks
+    * test_multiple_languages_code_blocks: verifies <50ms for JS/Rust/Go code
+    * test_large_markdown_document: verifies <100ms for 10-section documents
+    * test_highlighter_performance: verifies <10ms for direct Pygments highlighting
+    * test_message_widget_render_performance: verifies <50ms for MarkdownMessage widget
+    * test_theme_aware_rendering: verifies consistent performance across 4 themes
+  - Updated specs/phase-6-syntax-highlighting.md:
+    * Marked Phase 5 as COMPLETE
+    * Updated non-functional acceptance criteria (rendering <50ms verified)
+    * Updated test count (180 total Phase 6 tests)
+    * Updated document version to 1.5
+  - Learned: Rich's Markdown class handles internal styling via themes, not Textual CSS
+    * TCSS styles apply to the MarkdownMessage widget container
+    * Code highlighting colors come from Pygments themes (monokai, dracula, etc.)
+    * Rich handles markdown elements (headers, lists, blockquotes) internally
+  - Learned: Performance testing with warmup runs gives more consistent results
+    * First render often slower due to module imports and caching
+    * Averaging over 100 iterations reduces variance
+  - Learned: Theme performance should be similar across themes (within 3x ratio)
+    * If performance varies too much, indicates theme-specific issues
+  - Phase 6 Syntax Highlighting COMPLETE (all 5 phases done)
+  - Total: 1475 tests pass (8 performance tests added)
