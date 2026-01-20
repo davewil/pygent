@@ -1357,3 +1357,35 @@
   - Learned: Mock side_effect with lambda functions is more flexible than lists for complex scenarios
   - Learned: conversation_loop catches LLM errors and yields llm_error events, doesn't raise
   - Total: 1295 tests pass
+
+2026-01-20: Phase 6 - Syntax Highlighting (Phase 1: Highlighter Abstraction):
+  - Created src/chapgent/tui/highlighter.py with SyntaxHighlighter abstraction
+    * HighlightedCode dataclass: text (Rich Text), language, line_count
+    * SyntaxHighlighter ABC: highlight(), supports_language(), detect_language()
+    * PygmentsHighlighter: default implementation using Rich's Syntax class
+    * TreeSitterHighlighter: stub for future streaming support
+    * get_highlighter() factory function
+  - PygmentsHighlighter features:
+    * Language alias normalization (py→python, js→javascript, ts→typescript, etc.)
+    * 22+ language aliases in LANGUAGE_ALIASES dict
+    * Graceful fallback to "text" for unknown languages
+    * Language detection from code content (shebang) or filename
+  - Created tests/test_tui/test_highlighter.py:
+    * 89 behavioral tests across 10 test classes
+    * TestHighlightedCode: dataclass creation
+    * TestPygmentsHighlighter: highlighting Python, JS, Rust, Go, multiline
+    * TestLanguageAliases: parametrized tests for 14 common aliases
+    * TestLanguageSupport: parametrized tests for 22 languages
+    * TestLanguageDetection: shebang, filename, fallback behavior
+    * TestGetHighlighter: factory function behavior
+    * TestTreeSitterHighlighter: NotImplementedError for stub
+    * TestPropertyBased: Hypothesis tests for robustness (highlight, supports_language, normalize_language, detect_language)
+    * TestEdgeCases: unicode, special chars, long lines, blank lines, tabs/spaces, empty language
+    * TestIntegrationBehaviors: roundtrip detection, instance reuse, different themes
+  - Updated src/chapgent/tui/__init__.py: exported HighlightedCode, PygmentsHighlighter, SyntaxHighlighter, get_highlighter
+  - Learned: Pygments lexers module re-exports ClassNotFound from pygments.util
+  - Learned: Pygments guess_lexer is unreliable for short snippets without shebangs
+  - Learned: type: ignore[import-untyped] only needed once per module due to mypy caching
+  - Learned: Rich's Syntax class wraps Pygments and handles theme application
+  - Learned: Hypothesis strategies st.text() with alphabet categories controls unicode generation
+  - Total: 1384 tests pass (89 highlighter tests added)

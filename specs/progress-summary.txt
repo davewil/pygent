@@ -1,0 +1,298 @@
+# Chapgent Development Progress Summary
+# Generated: 2026-01-20
+
+## Project Overview
+
+Chapgent is a Python-based AI agent CLI tool with a TUI (Text User Interface) for interactive
+development workflows. The project follows strict development practices: full type hints (mypy strict),
+Google-style docstrings, ruff linting/formatting, and >80% test coverage.
+
+---
+
+## Phase 1: MVP (2026-01-16) ✓ COMPLETE
+
+### Core Infrastructure
+- **Tool System**: ToolDefinition dataclass, @tool decorator, ToolRegistry with category support
+- **Agent Core**: LLMProvider (LiteLLM), PermissionManager, Agent class, conversation loop
+- **Configuration**: Settings models (Pydantic), priority-based config loading (env > project > user > defaults)
+- **Session Management**: Session/SessionSummary models, async SessionStorage with index tracking
+
+### Filesystem Tools
+- `read_file`: Async file reading with line limits
+- `list_files`: Directory listing with glob pattern support
+- `edit_file`: String replacement in files
+
+### Shell Tool
+- Async subprocess execution with timeout handling, output capturing
+
+### TUI Components
+- ChapgentApp main application
+- ConversationPanel, ToolPanel, PermissionPrompt widgets
+- CSS styling via styles.tcss
+
+### CLI
+- Entry point with `chat`, `sessions`, `resume`, `config` commands
+- Mock LLM provider for testing without API keys
+
+---
+
+## Phase 2: Extended Tools (2026-01-16 to 2026-01-17) ✓ COMPLETE
+
+### Search Tools
+- `grep_search`: Regex pattern matching with ripgrep backend or Python fallback
+- `find_files`: Glob pattern file discovery with depth/type filtering
+- `find_definition`: Multi-language symbol definition finder (Python, JS, TS, Go, Rust, Java, C/C++)
+
+### Additional File Tools
+- `create_file`: Create new files with auto-directory creation
+- `delete_file`: Single file deletion
+- `move_file`: Move/rename files with destination directory creation
+- `copy_file`: Copy files preserving metadata (shutil.copy2)
+
+### Git Tools (9 tools)
+- Read: `git_status`, `git_diff`, `git_log`, `git_branch`
+- Write: `git_add`, `git_commit`, `git_checkout`, `git_push`, `git_pull`
+
+### Web Tools
+- `web_fetch`: HTTPS fetching with HTML-to-text conversion, JSON pretty-printing, size limits
+
+### Tool Categories & Discovery
+- ToolCategory enum: FILESYSTEM, GIT, SEARCH, WEB, SHELL, TESTING, PROJECT
+- `chapgent tools` CLI command with category filtering
+
+---
+
+## Phase 3: Advanced Features (2026-01-17) ✓ COMPLETE
+
+### Context Awareness (src/chapgent/context/)
+- ProjectType/TestFramework enums
+- GitInfo, ProjectContext models
+- Auto-detection from config files (pyproject.toml, package.json, go.mod, Cargo.toml)
+- GitIgnoreFilter for path filtering
+- build_system_prompt() with language-specific conventions
+
+### Test Runner Integration
+- `run_tests` tool with framework auto-detection
+- Output parsers for: pytest, unittest, jest, vitest, go test, cargo test, mocha
+- TestResult/TestSummary models
+
+### Project Scaffolding
+- ProjectTemplate, ComponentTemplate models
+- Built-in templates: python-cli, python-lib, fastapi
+- Built-in components: model, service, test, cli_command, route
+- `list_templates`, `create_project`, `list_components`, `add_component` tools
+
+### Error Recovery (src/chapgent/core/recovery.py)
+- ErrorType enum with 15 classifications
+- RecoveryAction with suggestions and retry info
+- Exception class and message pattern matching
+
+### Tool Result Caching (src/chapgent/core/cache.py)
+- LRU eviction with TTL-based expiration
+- Per-tool TTL defaults
+- Pattern-based invalidation
+
+### Parallel Tool Execution (src/chapgent/core/parallel.py)
+- Read operations parallelized via asyncio.gather()
+- Write operations sequential with path conflict detection
+- Batch grouping with can_parallelize flag
+
+### TUI Enhancements
+- **Session Sidebar**: Collapsible session list with active highlighting, ctrl+b toggle
+- **Command Palette**: Fuzzy search, keyboard navigation, ctrl+shift+p (later changed to ctrl+p)
+- **Tool Progress**: ToolStatus enum, live elapsed time updates, status icons
+
+---
+
+## Phase 4: Polish & Distribution (2026-01-17 to 2026-01-19) ✓ COMPLETE
+
+### System Prompt Customization (src/chapgent/config/prompt.py)
+- Template variables: {project_name}, {project_type}, {current_dir}, {git_branch}, {date}, {os}
+- Prompt file loading with ~ expansion
+- Mode: replace/append
+
+### Environment Variable Support
+- CHAPGENT_MODEL, CHAPGENT_API_KEY, CHAPGENT_MAX_TOKENS, CHAPGENT_PROVIDER
+- API key fallbacks: ANTHROPIC_API_KEY, OPENAI_API_KEY
+- Type conversion for env values
+
+### Config CLI Commands
+- `config show`: Display current config
+- `config path`: Show config file paths with existence status
+- `config edit`: Open in $EDITOR
+- `config init`: Create default config
+- `config set KEY VALUE`: Set config values with type conversion
+
+### Config Validation
+- VALID_PROVIDERS: 16 providers (anthropic, openai, azure, bedrock, etc.)
+- VALID_THEMES: 11 themes including rose-pine
+- Pydantic validators for all settings
+- ConfigValidationError with user-friendly messages
+
+### Logging Infrastructure (loguru)
+- File-based logging (no TUI interference)
+- Rotation, retention, compression
+- Sensitive data redaction (API keys, home paths)
+- `chapgent logs` and `chapgent report` commands
+
+### Quality Assurance
+- Performance benchmarks (<500ms startup, <1ms tool dispatch)
+- Large file handling tests (10MB)
+- E2E workflow tests (create/edit/commit, search/refactor, session persistence)
+
+### UX Polish (src/chapgent/ux/)
+- **Error Messages**: 19 user-friendly error templates with suggestions
+- **Help System**: 8 help topics (tools, config, shortcuts, permissions, sessions, prompts, quickstart, troubleshooting)
+- **First-Run Experience**: Setup wizard, API key validation, welcome messages
+- `chapgent help` and `chapgent setup` commands
+
+### Cross-Platform CI
+- Matrix: 3 OS (Linux, macOS, Windows) × 3 Python versions (3.10, 3.11, 3.12)
+- Deprecation warning tests for all modules
+
+---
+
+## Agent Loop Improvements (2026-01-19) ✓ COMPLETE
+
+### Phase 1: Tool Definition Metadata
+- Added `read_only` and `cacheable` fields to ToolDefinition
+- Refactored parallel.py and cache.py to use metadata instead of hardcoded sets
+
+### Phase 2: Max Iterations & Token Budget
+- TokenUsage dataclass with prompt/completion/total tracking
+- max_iterations (default 50) and max_tokens limits
+- New events: iteration_limit_reached, token_limit_reached
+
+### Phase 3: LLM Error Handling
+- Exception hierarchy: LLMError, RateLimitError, NetworkError, AuthenticationError, etc.
+- classify_llm_error() function with litellm integration
+- llm_error events with retryable flag
+
+### Phase 4: Cancellation Support
+- CancellationToken class with async event coordination
+- Agent.cancel() method for external cancellation
+- Graceful cancellation between batches (lets tools complete)
+
+---
+
+## Phase 5: TUI Enhancements (2026-01-19 to 2026-01-20) ✓ PARTIAL
+
+### Phase 1: Infrastructure ✓
+- **Config Writer Module** (src/chapgent/config/writer.py): Extracted from cli.py
+- **Slash Commands** (src/chapgent/tui/commands.py): 14 commands (/help, /theme, /model, etc.)
+
+### Phase 2: Settings Screens ✓
+- **ThemePickerScreen**: Grid of theme buttons with live preview, save/cancel
+- **LLMSettingsScreen**: Provider dropdown, model input, max_tokens with validation
+
+### Phase 3: Help & Tools Screens ✓
+- **HelpScreen**: Topic list/content navigation, back button
+- **ToolsScreen**: Search/filter, category dropdown, risk level badges
+
+---
+
+## Test Refactoring (2026-01-20) ✓ COMPLETE
+
+### Focus: Behavioral Tests Over Implementation Details
+- Goal: Reduce test-to-production ratio from 1.7:1 toward 0.5-1:1
+- Achievement: 1.4:1 ratio (3,908 lines removed, 18% reduction)
+- Tests reduced: 1386 → 1295 (91 tests consolidated)
+
+### Files Refactored
+| File | Before | After | Reduction |
+|------|--------|-------|-----------|
+| test_screens.py | 1,709 lines / 87 tests | 448 lines / 25 tests | 74% |
+| test_search.py | 1,256 lines / 65 tests | 389 lines / 29 tests | 69% |
+| test_loop.py | 1,196 lines / 36 tests | ~500 lines / 14 tests | 58% |
+| test_parallel.py | 936 lines / 53 tests | 316 lines / 10 tests | 66% |
+| test_testing.py | 1,073 lines / 72 tests | 313 lines / 24 tests | 71% |
+
+---
+
+## Current Statistics
+
+| Metric | Value |
+|--------|-------|
+| Total Tests | 1,295 |
+| Test Coverage | ~96% |
+| Production Lines | ~12,831 |
+| Test Lines | ~17,914 |
+| Test:Production Ratio | 1.4:1 |
+| Python Versions | 3.10, 3.11, 3.12 |
+| Platforms | Linux, macOS, Windows |
+
+---
+
+## Key Dependencies
+
+- **LLM**: litellm (multi-provider support)
+- **TUI**: textual, rich
+- **Config**: pydantic (v2)
+- **Logging**: loguru
+- **Testing**: pytest, pytest-asyncio, hypothesis
+- **HTTP**: httpx
+
+---
+
+## Architecture Highlights
+
+### Tool System
+```
+@tool decorator → ToolDefinition → ToolRegistry
+                      ↓
+              category, risk_level, read_only, cacheable
+```
+
+### Agent Loop
+```
+User Input → Agent.run() → conversation_loop()
+                               ↓
+                    LLMProvider.complete()
+                               ↓
+                    Tool Execution (parallel.py)
+                               ↓
+                    Cache Check (cache.py)
+                               ↓
+                    Permission Check
+                               ↓
+                    LoopEvent stream
+```
+
+### Configuration Priority
+```
+Environment Variables > Project Config (.chapgent.toml) > User Config (~/.config/chapgent/config.toml) > Defaults
+```
+
+---
+
+## Upcoming Work (Phase 6)
+
+### Syntax Highlighting & Markdown Rendering
+- MarkdownRenderer with Rich/Pygments
+- SyntaxHighlighter abstraction (future tree-sitter support)
+- MarkdownMessage widget replacing Static
+- Theme integration (syntax colors match TUI themes)
+
+---
+
+## Lessons Learned
+
+### Testing
+- Behavioral tests > implementation tests
+- Property-based tests best for fuzz testing, not internal helpers
+- Test consolidation improves maintainability without sacrificing coverage
+
+### Async Patterns
+- asyncio.gather() for parallel operations
+- asyncio.Event for cancellation coordination
+- asyncio.to_thread() for blocking shutil operations
+
+### Textual/TUI
+- push_screen callback pattern (not push_screen_wait) for actions
+- Modal screens need careful sizing for test viewports
+- Input events fire per keystroke, useful for validation feedback
+
+### Configuration
+- Pydantic v2 validators use @field_validator + @classmethod
+- frozenset for immutable validation sets
+- TOML writing needs custom implementation (tomllib is read-only)

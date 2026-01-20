@@ -1,6 +1,12 @@
 """TUI module for Chapgent."""
 
 from chapgent.tui.app import ChapgentApp
+from chapgent.tui.highlighter import (
+    HighlightedCode,
+    PygmentsHighlighter,
+    SyntaxHighlighter,
+    get_highlighter,
+)
 from chapgent.tui.commands import (
     SLASH_COMMANDS,
     SlashCommand,
@@ -34,6 +40,11 @@ from chapgent.tui.widgets import (
 __all__ = [
     # App
     "ChapgentApp",
+    # Highlighter
+    "HighlightedCode",
+    "PygmentsHighlighter",
+    "SyntaxHighlighter",
+    "get_highlighter",
     # Commands
     "SLASH_COMMANDS",
     "SlashCommand",
