@@ -1190,6 +1190,43 @@
   - Learned: frozenset is immutable and faster for membership testing than set
   - Phase 1 of Phase 5 TUI Enhancements complete (Infrastructure)
   - Total: 1439 tests pass
+2026-01-20: Implemented Phase 5 TUI Enhancements - Phase 2.2: LLMSettingsScreen (specs/phase-5-tui-enhancements.md):
+  - Created LLMSettingsScreen modal in src/chapgent/tui/screens.py:
+    * Select widget for provider (from VALID_PROVIDERS - 16 providers)
+    * Input for model name with validation (cannot be empty)
+    * Input for max_tokens with validation (1-100000 range)
+    * Error message display area for validation feedback
+    * Save button: validates and persists settings to config
+    * Cancel button: discards changes
+    * Escape key binding for cancel action
+    * CSS styles embedded in screen class for modal layout
+  - Updated src/chapgent/tui/app.py:
+    * Added action_show_llm_settings() method
+    * Imports LLMSettingsScreen from screens module
+    * Callback persists all three settings (provider, model, max_tokens) to config
+    * Updates app.settings on save for immediate effect
+    * Displays notification on save/error
+  - Updated src/chapgent/tui/widgets.py:
+    * Added "LLM Settings" command to DEFAULT_COMMANDS
+    * id="show_llm_settings", name="LLM Settings"
+  - Updated src/chapgent/tui/__init__.py:
+    * Added LLMSettingsScreen to exports
+  - Created 26 tests in tests/test_tui/test_screens.py:
+    * TestLLMSettingsScreen: 4 tests for modal creation and compose
+    * TestLLMSettingsValidation: 5 tests for input validation (empty model, non-numeric, min/max bounds)
+    * TestLLMSettingsDismissal: 3 tests for save/cancel/escape behavior
+    * TestLLMSettingsAppIntegration: 5 tests for app integration
+    * TestLLMSettingsPropertyBased: 3 tests using hypothesis
+    * TestLLMSettingsEdgeCases: 4 tests for edge cases
+    * TestLLMSettingsIntegration: 2 end-to-end tests
+  - Learned: Textual's Select widget requires options as list of (display, value) tuples
+  - Learned: Validation errors should be displayed inline in the modal rather than notifications
+  - Learned: Input event handlers (on_input_changed) fire for each keystroke, good for clearing errors
+  - Learned: Select.Changed event's value can be Select.BLANK when no selection; must check before using
+  - Learned: Saving multiple config values in sequence works well without batching
+  - Phase 2.2 of Phase 5 TUI Enhancements complete (LLMSettingsScreen)
+  - Total: 1492 tests pass (1491 + 1 new, excluding pre-existing scaffold property test failure)
+
 2026-01-20: Implemented Phase 5 TUI Enhancements - Phase 2.1: ThemePickerScreen (specs/phase-5-tui-enhancements.md):
   - Created src/chapgent/tui/screens.py module:
     * ThemePickerScreen modal for selecting TUI themes

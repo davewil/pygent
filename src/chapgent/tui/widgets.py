@@ -141,6 +141,11 @@ DEFAULT_COMMANDS: list[PaletteCommand] = [
         description="Select a color theme for the TUI",
     ),
     PaletteCommand(
+        id="show_llm_settings",
+        name="LLM Settings",
+        description="Configure LLM provider, model, and max tokens",
+    ),
+    PaletteCommand(
         id="quit",
         name="Quit",
         description="Exit the application",

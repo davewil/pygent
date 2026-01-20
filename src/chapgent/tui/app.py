@@ -10,7 +10,7 @@ from chapgent.core.agent import Agent
 from chapgent.session.models import Session
 from chapgent.session.storage import SessionStorage
 from chapgent.tui.commands import format_command_list, get_command_help, parse_slash_command
-from chapgent.tui.screens import ThemePickerScreen
+from chapgent.tui.screens import LLMSettingsScreen, ThemePickerScreen
 from chapgent.tui.widgets import (
     CommandPalette,
     ConversationPanel,
@@ -269,6 +269,48 @@ class ChapgentApp(App[None]):
 
         current_theme = self.theme if hasattr(self, "theme") else None
         self.push_screen(ThemePickerScreen(current_theme=current_theme), callback=handle_theme)
+
+    def action_show_llm_settings(self) -> None:
+        """Show the LLM settings modal."""
+
+        def handle_llm_settings(result: dict[str, Any] | None) -> None:
+            """Handle the LLM settings from the modal."""
+            if result is not None:
+                # Persist settings to config
+                try:
+                    from chapgent.config.writer import save_config_value
+
+                    # Save each setting
+                    save_config_value("llm.provider", result["provider"])
+                    save_config_value("llm.model", result["model"])
+                    save_config_value("llm.max_tokens", str(result["max_tokens"]))
+
+                    self.notify(
+                        f"LLM settings updated: {result['provider']}/{result['model']}",
+                        severity="information",
+                    )
+
+                    # Update settings if available
+                    if self.settings:
+                        self.settings.llm.provider = result["provider"]
+                        self.settings.llm.model = result["model"]
+                        self.settings.llm.max_tokens = result["max_tokens"]
+                except Exception as e:
+                    self.notify(f"Error saving LLM settings: {e}", severity="error")
+
+        # Get current settings
+        current_provider = self.settings.llm.provider if self.settings else None
+        current_model = self.settings.llm.model if self.settings else None
+        current_max_tokens = self.settings.llm.max_tokens if self.settings else None
+
+        self.push_screen(
+            LLMSettingsScreen(
+                current_provider=current_provider,
+                current_model=current_model,
+                current_max_tokens=current_max_tokens,
+            ),
+            callback=handle_llm_settings,
+        )
 
     async def _populate_sessions_sidebar(self) -> None:
         """Populate the sessions sidebar with saved sessions."""

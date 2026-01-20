@@ -8,9 +8,9 @@ from hypothesis import given
 from hypothesis import settings as hypothesis_settings
 from hypothesis import strategies as st
 
-from chapgent.config.settings import VALID_THEMES
+from chapgent.config.settings import VALID_PROVIDERS, VALID_THEMES
 from chapgent.tui.app import ChapgentApp
-from chapgent.tui.screens import ThemePickerScreen
+from chapgent.tui.screens import LLMSettingsScreen, ThemePickerScreen
 from chapgent.tui.widgets import DEFAULT_COMMANDS
 
 # =============================================================================
@@ -506,3 +506,518 @@ class TestIntegration:
 
             # Theme should be reverted
             assert app.theme == original_theme
+
+
+# =============================================================================
+# LLMSettingsScreen Tests
+# =============================================================================
+
+
+class TestLLMSettingsScreen:
+    """Tests for the LLMSettingsScreen modal."""
+
+    def test_llm_settings_creation_defaults(self):
+        """Test creating LLMSettingsScreen with defaults."""
+        screen = LLMSettingsScreen()
+        assert screen.original_provider == "anthropic"
+        assert screen.original_model == "claude-sonnet-4-20250514"
+        assert screen.original_max_tokens == 4096
+
+    def test_llm_settings_creation_with_values(self):
+        """Test creating LLMSettingsScreen with custom values."""
+        screen = LLMSettingsScreen(
+            current_provider="openai",
+            current_model="gpt-4o",
+            current_max_tokens=8192,
+        )
+        assert screen.original_provider == "openai"
+        assert screen.original_model == "gpt-4o"
+        assert screen.original_max_tokens == 8192
+        assert screen.selected_provider == "openai"
+        assert screen.selected_model == "gpt-4o"
+        assert screen.selected_max_tokens == 8192
+
+    @pytest.mark.asyncio
+    async def test_llm_settings_compose(self):
+        """Test that LLM settings screen composes correctly."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(LLMSettingsScreen())
+            await pilot.pause()
+
+            assert isinstance(app.screen, LLMSettingsScreen)
+            screen = app.screen
+
+            # Check for title
+            title = screen.query_one("#llm-settings-title")
+            assert title is not None
+
+            # Check for provider select
+            provider_select = screen.query_one("#llm-provider-select")
+            assert provider_select is not None
+
+            # Check for model input
+            model_input = screen.query_one("#llm-model-input")
+            assert model_input is not None
+
+            # Check for max_tokens input
+            max_tokens_input = screen.query_one("#llm-max-tokens-input")
+            assert max_tokens_input is not None
+
+            # Check for buttons
+            save_btn = screen.query_one("#btn-save")
+            cancel_btn = screen.query_one("#btn-cancel")
+            assert save_btn is not None
+            assert cancel_btn is not None
+
+    @pytest.mark.asyncio
+    async def test_llm_settings_has_all_providers(self):
+        """Test that all valid providers are available in select."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(LLMSettingsScreen())
+            await pilot.pause()
+
+            screen = app.screen
+            from textual.widgets import Select
+
+            provider_select = screen.query_one("#llm-provider-select", Select)
+            # The select should have options for all providers
+            assert provider_select is not None
+
+
+class TestLLMSettingsValidation:
+    """Tests for LLM settings validation."""
+
+    @pytest.mark.asyncio
+    async def test_validation_empty_model(self):
+        """Test validation rejects empty model name."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(LLMSettingsScreen())
+            await pilot.pause()
+
+            screen = app.screen
+
+            # Clear the model input
+            from textual.widgets import Input
+
+            model_input = screen.query_one("#llm-model-input", Input)
+            model_input.value = ""
+            await pilot.pause()
+
+            # Try to validate
+            result = screen._validate_and_get_values()
+            assert result is None
+            assert "empty" in screen.error_message.lower()
+
+    @pytest.mark.asyncio
+    async def test_validation_non_numeric_max_tokens(self):
+        """Test validation rejects non-numeric max_tokens."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(LLMSettingsScreen())
+            await pilot.pause()
+
+            screen = app.screen
+
+            from textual.widgets import Input
+
+            max_tokens_input = screen.query_one("#llm-max-tokens-input", Input)
+            max_tokens_input.value = "not_a_number"
+            await pilot.pause()
+
+            result = screen._validate_and_get_values()
+            assert result is None
+            assert "number" in screen.error_message.lower()
+
+    @pytest.mark.asyncio
+    async def test_validation_max_tokens_below_minimum(self):
+        """Test validation rejects max_tokens below 1."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(LLMSettingsScreen())
+            await pilot.pause()
+
+            screen = app.screen
+
+            from textual.widgets import Input
+
+            max_tokens_input = screen.query_one("#llm-max-tokens-input", Input)
+            max_tokens_input.value = "0"
+            await pilot.pause()
+
+            result = screen._validate_and_get_values()
+            assert result is None
+            assert "at least 1" in screen.error_message.lower()
+
+    @pytest.mark.asyncio
+    async def test_validation_max_tokens_above_maximum(self):
+        """Test validation rejects max_tokens above 100000."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(LLMSettingsScreen())
+            await pilot.pause()
+
+            screen = app.screen
+
+            from textual.widgets import Input
+
+            max_tokens_input = screen.query_one("#llm-max-tokens-input", Input)
+            max_tokens_input.value = "200000"
+            await pilot.pause()
+
+            result = screen._validate_and_get_values()
+            assert result is None
+            assert "100000" in screen.error_message
+
+    @pytest.mark.asyncio
+    async def test_validation_success(self):
+        """Test validation succeeds with valid values."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(LLMSettingsScreen())
+            await pilot.pause()
+
+            screen = app.screen
+
+            from textual.widgets import Input
+
+            model_input = screen.query_one("#llm-model-input", Input)
+            model_input.value = "gpt-4"
+
+            max_tokens_input = screen.query_one("#llm-max-tokens-input", Input)
+            max_tokens_input.value = "8192"
+            await pilot.pause()
+
+            result = screen._validate_and_get_values()
+            assert result is not None
+            assert result["provider"] == "anthropic"
+            assert result["model"] == "gpt-4"
+            assert result["max_tokens"] == 8192
+
+
+class TestLLMSettingsDismissal:
+    """Tests for LLM settings dismissal behavior."""
+
+    @pytest.mark.asyncio
+    async def test_save_returns_values(self):
+        """Test that save button returns the settings dict."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            result_holder = {"result": "not_set"}
+
+            def on_dismiss(result):
+                result_holder["result"] = result
+
+            app.push_screen(LLMSettingsScreen(), callback=on_dismiss)
+            await pilot.pause()
+
+            screen = app.screen
+
+            # Simulate save button press
+            save_btn = screen.query_one("#btn-save")
+            save_btn.press()
+            await asyncio.sleep(0.2)
+            await pilot.pause()
+
+            assert result_holder["result"] is not None
+            assert "provider" in result_holder["result"]
+            assert "model" in result_holder["result"]
+            assert "max_tokens" in result_holder["result"]
+
+    @pytest.mark.asyncio
+    async def test_cancel_returns_none(self):
+        """Test that cancel button returns None."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            result_holder = {"result": "not_set"}
+
+            def on_dismiss(result):
+                result_holder["result"] = result
+
+            app.push_screen(LLMSettingsScreen(), callback=on_dismiss)
+            await pilot.pause()
+
+            # Simulate cancel button press
+            cancel_btn = app.screen.query_one("#btn-cancel")
+            cancel_btn.press()
+            await asyncio.sleep(0.2)
+            await pilot.pause()
+
+            assert result_holder["result"] is None
+
+    @pytest.mark.asyncio
+    async def test_escape_dismisses_with_none(self):
+        """Test that escape dismisses without saving."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            result_holder = {"result": "not_set"}
+
+            def on_dismiss(result):
+                result_holder["result"] = result
+
+            app.push_screen(LLMSettingsScreen(), callback=on_dismiss)
+            await pilot.pause()
+
+            # Press escape
+            await pilot.press("escape")
+            await asyncio.sleep(0.2)
+            await pilot.pause()
+
+            assert result_holder["result"] is None
+
+
+class TestLLMSettingsAppIntegration:
+    """Tests for LLM settings integration with ChapgentApp."""
+
+    @pytest.mark.asyncio
+    async def test_action_show_llm_settings(self):
+        """Test action_show_llm_settings opens the settings screen."""
+        app = ChapgentApp()
+        async with app.run_test() as pilot:
+            app.action_show_llm_settings()
+            await pilot.pause()
+
+            assert isinstance(app.screen, LLMSettingsScreen)
+
+    @pytest.mark.asyncio
+    async def test_slash_command_opens_llm_settings(self):
+        """Test /model slash command opens the settings screen."""
+        app = ChapgentApp()
+        async with app.run_test() as pilot:
+            input_widget = app.query_one("#input")
+            input_widget.value = "/model"
+            await pilot.press("enter")
+            await pilot.pause()
+
+            assert isinstance(app.screen, LLMSettingsScreen)
+
+    @pytest.mark.asyncio
+    async def test_slash_command_llm_alias(self):
+        """Test /llm alias opens the settings screen."""
+        app = ChapgentApp()
+        async with app.run_test() as pilot:
+            input_widget = app.query_one("#input")
+            input_widget.value = "/llm"
+            await pilot.press("enter")
+            await pilot.pause()
+
+            assert isinstance(app.screen, LLMSettingsScreen)
+
+    def test_llm_settings_in_command_palette(self):
+        """Test LLM settings can be opened from command palette."""
+        llm_cmd = next((c for c in DEFAULT_COMMANDS if c.id == "show_llm_settings"), None)
+        assert llm_cmd is not None
+        assert llm_cmd.name == "LLM Settings"
+
+    @pytest.mark.asyncio
+    async def test_llm_settings_saves_to_config(self):
+        """Test that saving LLM settings persists to config."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            with patch("chapgent.config.writer.save_config_value") as mock_save:
+                # Open LLM settings via action
+                app.action_show_llm_settings()
+                await pilot.pause()
+
+                assert isinstance(app.screen, LLMSettingsScreen)
+                screen = app.screen
+
+                # Simulate save button press
+                save_btn = screen.query_one("#btn-save")
+                save_btn.press()
+                await asyncio.sleep(0.5)
+                await pilot.pause()
+
+                # Should have called save_config_value for each setting
+                assert mock_save.call_count == 3
+
+
+# =============================================================================
+# LLMSettingsScreen Property-Based Tests
+# =============================================================================
+
+
+class TestLLMSettingsPropertyBased:
+    """Property-based tests for LLM settings using hypothesis."""
+
+    @given(provider=st.sampled_from(list(VALID_PROVIDERS)))
+    @hypothesis_settings(max_examples=10)
+    def test_llm_settings_accepts_any_valid_provider(self, provider):
+        """Test LLMSettingsScreen accepts any valid provider."""
+        screen = LLMSettingsScreen(current_provider=provider)
+        assert screen.original_provider == provider
+        assert screen.selected_provider == provider
+
+    @given(max_tokens=st.integers(min_value=1, max_value=100000))
+    @hypothesis_settings(max_examples=10)
+    def test_llm_settings_accepts_valid_max_tokens(self, max_tokens):
+        """Test LLMSettingsScreen accepts valid max_tokens values."""
+        screen = LLMSettingsScreen(current_max_tokens=max_tokens)
+        assert screen.original_max_tokens == max_tokens
+        assert screen.selected_max_tokens == max_tokens
+
+    @given(model=st.text(min_size=1, max_size=50))
+    @hypothesis_settings(max_examples=10)
+    def test_llm_settings_accepts_any_model_name(self, model):
+        """Test LLMSettingsScreen accepts any non-empty model name."""
+        screen = LLMSettingsScreen(current_model=model)
+        assert screen.original_model == model
+        assert screen.selected_model == model
+
+
+# =============================================================================
+# LLMSettingsScreen Edge Cases
+# =============================================================================
+
+
+class TestLLMSettingsEdgeCases:
+    """Tests for edge cases and error handling."""
+
+    @pytest.mark.asyncio
+    async def test_llm_settings_none_values(self):
+        """Test LLM settings with None values uses defaults."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(
+                LLMSettingsScreen(
+                    current_provider=None,
+                    current_model=None,
+                    current_max_tokens=None,
+                )
+            )
+            await pilot.pause()
+
+            screen = app.screen
+            assert screen.original_provider == "anthropic"
+            assert screen.original_model == "claude-sonnet-4-20250514"
+            assert screen.original_max_tokens == 4096
+
+    @pytest.mark.asyncio
+    async def test_llm_settings_boundary_max_tokens(self):
+        """Test boundary values for max_tokens."""
+        # Test minimum boundary
+        screen_min = LLMSettingsScreen(current_max_tokens=1)
+        assert screen_min.original_max_tokens == 1
+
+        # Test maximum boundary
+        screen_max = LLMSettingsScreen(current_max_tokens=100000)
+        assert screen_max.original_max_tokens == 100000
+
+    @pytest.mark.asyncio
+    async def test_llm_settings_save_error_handling(self):
+        """Test handling of config save errors."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            with patch("chapgent.config.writer.save_config_value", side_effect=Exception("Write error")):
+                app.action_show_llm_settings()
+                await pilot.pause()
+
+                screen = app.screen
+
+                # Simulate save button press
+                save_btn = screen.query_one("#btn-save")
+                save_btn.press()
+                await asyncio.sleep(0.3)
+                await pilot.pause()
+
+                # Should not crash, error notification shown
+
+    @pytest.mark.asyncio
+    async def test_error_message_clears_on_input_change(self):
+        """Test that error message clears when input changes."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(LLMSettingsScreen())
+            await pilot.pause()
+
+            screen = app.screen
+            from textual.widgets import Input
+
+            # Trigger validation error
+            max_tokens_input = screen.query_one("#llm-max-tokens-input", Input)
+            max_tokens_input.value = "invalid"
+            await pilot.pause()
+
+            screen._validate_and_get_values()
+            assert screen.error_message != ""
+
+            # Change input - error should clear
+            max_tokens_input.value = "8192"
+            await pilot.pause()
+
+            assert screen.error_message == ""
+
+
+# =============================================================================
+# LLMSettingsScreen Integration Tests
+# =============================================================================
+
+
+class TestLLMSettingsIntegration:
+    """End-to-end integration tests for LLM settings."""
+
+    @pytest.mark.asyncio
+    async def test_full_llm_settings_flow(self):
+        """Test complete flow: open -> modify -> save."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            with patch("chapgent.config.writer.save_config_value") as mock_save:
+                # Open via slash command
+                input_widget = app.query_one("#input")
+                input_widget.value = "/model"
+                await pilot.press("enter")
+                await pilot.pause()
+
+                assert isinstance(app.screen, LLMSettingsScreen)
+                screen = app.screen
+
+                # Modify model
+                from textual.widgets import Input
+
+                model_input = screen.query_one("#llm-model-input", Input)
+                model_input.value = "gpt-4o"
+
+                max_tokens_input = screen.query_one("#llm-max-tokens-input", Input)
+                max_tokens_input.value = "16000"
+                await pilot.pause()
+
+                # Simulate save button press
+                save_btn = screen.query_one("#btn-save")
+                save_btn.press()
+                await asyncio.sleep(0.3)
+                await pilot.pause()
+
+                # Verify save calls
+                assert mock_save.call_count == 3
+
+    @pytest.mark.asyncio
+    async def test_llm_settings_cancel_flow(self):
+        """Test complete flow: open -> modify -> cancel."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            with patch("chapgent.config.writer.save_config_value") as mock_save:
+                # Open via slash command
+                input_widget = app.query_one("#input")
+                input_widget.value = "/llm"
+                await pilot.press("enter")
+                await pilot.pause()
+
+                screen = app.screen
+
+                # Modify model
+                from textual.widgets import Input
+
+                model_input = screen.query_one("#llm-model-input", Input)
+                model_input.value = "gpt-4o"
+                await pilot.pause()
+
+                # Cancel
+                cancel_btn = screen.query_one("#btn-cancel")
+                cancel_btn.press()
+                await asyncio.sleep(0.2)
+                await pilot.pause()
+
+                # Should not have saved
+                mock_save.assert_not_called()

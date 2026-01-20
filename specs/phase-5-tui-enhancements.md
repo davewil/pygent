@@ -275,9 +275,16 @@ These reuse existing `action_*` methods - just wire up slash commands:
      - `src/chapgent/tui/app.py` (action_show_theme_picker, import ThemePickerScreen)
      - `src/chapgent/tui/widgets.py` (added "Change Theme" to DEFAULT_COMMANDS)
 
-3. **Phase 2.2**: LLM Settings (core functionality)
-   - Create `LLMSettingsScreen`
-   - Wire up `/model` command
+3. **Phase 2.2**: LLM Settings (core functionality) ✅ COMPLETE
+   - Create `LLMSettingsScreen` ✅
+   - Wire up `/model` command ✅
+   - Add "LLM Settings" to command palette ✅
+   - **Files modified:**
+     - `src/chapgent/tui/screens.py` (added LLMSettingsScreen class)
+     - `src/chapgent/tui/__init__.py` (exports)
+     - `src/chapgent/tui/app.py` (action_show_llm_settings, import LLMSettingsScreen)
+     - `src/chapgent/tui/widgets.py` (added "LLM Settings" to DEFAULT_COMMANDS)
+     - `tests/test_tui/test_screens.py` (added 26 tests for LLMSettingsScreen)
 
 4. **Phase 3**: Help & Tools
    - Create `HelpScreen` and `ToolsScreen`

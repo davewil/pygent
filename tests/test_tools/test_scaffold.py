@@ -613,13 +613,13 @@ class TestPropertyBasedScaffold:
     @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     @given(
         template=st.text(min_size=1, max_size=100),
-        value=st.text(min_size=1, max_size=20),
+        value=st.text(min_size=1, max_size=20).filter(lambda v: "{name}" not in v),
     )
     def test_prop_render_replaces_placeholder(self, template: str, value: str) -> None:
         """Property: render replaces {name} with value."""
         content = "prefix {name} suffix"
         result = _render_template(content, {"name": value})
-        # The placeholder should be replaced
+        # The placeholder should be replaced (filter excludes values containing {name})
         assert "{name}" not in result
         assert value in result
 
