@@ -98,37 +98,46 @@ class ChapgentApp(App[None]):
         if not self.agent:
             return
 
-        async for event in self.agent.run(user_input):
-            if event.type == "text" and event.content:
-                self.query_one(ConversationPanel).append_assistant_message(event.content)
-            elif event.type == "tool_call" and event.tool_name and event.tool_id:
-                try:
-                    self.query_one(ToolPanel).append_tool_call(
-                        tool_name=event.tool_name,
-                        tool_id=event.tool_id,
-                        start_time=event.timestamp,
-                    )
-                except Exception:
-                    pass  # ToolPanel might not be present
-            elif event.type == "tool_result" and event.tool_name and event.tool_id and event.content is not None:
-                try:
-                    self.query_one(ToolPanel).update_tool_result(
-                        tool_id=event.tool_id,
-                        tool_name=event.tool_name,
-                        result=event.content,
-                        is_error=False,
-                        cached=event.cached,
-                    )
-                except Exception:
-                    pass  # ToolPanel might not be present
-            elif event.type == "permission_denied" and event.tool_name:
-                try:
-                    self.query_one(ToolPanel).update_permission_denied(
-                        tool_id=event.tool_id or "",
-                        tool_name=event.tool_name,
-                    )
-                except Exception:
-                    pass  # ToolPanel might not be present
+        try:
+            async for event in self.agent.run(user_input):
+                if event.type == "text" and event.content:
+                    self.query_one(ConversationPanel).append_assistant_message(event.content)
+                elif event.type == "llm_error":
+                    error_msg = f"LLM Error: {event.error_message or event.content or 'Unknown error'}"
+                    self.query_one(ConversationPanel).append_assistant_message(error_msg)
+                    self.notify(error_msg, severity="error")
+                elif event.type == "tool_call" and event.tool_name and event.tool_id:
+                    try:
+                        self.query_one(ToolPanel).append_tool_call(
+                            tool_name=event.tool_name,
+                            tool_id=event.tool_id,
+                            start_time=event.timestamp,
+                        )
+                    except Exception:
+                        pass  # ToolPanel might not be present
+                elif event.type == "tool_result" and event.tool_name and event.tool_id and event.content is not None:
+                    try:
+                        self.query_one(ToolPanel).update_tool_result(
+                            tool_id=event.tool_id,
+                            tool_name=event.tool_name,
+                            result=event.content,
+                            is_error=False,
+                            cached=event.cached,
+                        )
+                    except Exception:
+                        pass  # ToolPanel might not be present
+                elif event.type == "permission_denied" and event.tool_name:
+                    try:
+                        self.query_one(ToolPanel).update_permission_denied(
+                            tool_id=event.tool_id or "",
+                            tool_name=event.tool_name,
+                        )
+                    except Exception:
+                        pass  # ToolPanel might not be present
+        except Exception as e:
+            error_msg = f"Agent error: {e}"
+            self.query_one(ConversationPanel).append_assistant_message(error_msg)
+            self.notify(error_msg, severity="error")
 
     async def get_permission(self, tool_name: str, args: dict[str, Any]) -> bool:
         """Prompt user for permission to execute a tool."""
