@@ -9,7 +9,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.ux.first_run import (
+from chapgent.ux.first_run import (
     SetupStatus,
     check_api_key,
     check_setup_status,
@@ -71,10 +71,10 @@ class TestGetConfigPath:
         result = get_config_path()
         assert result.name == "config.toml"
 
-    def test_path_includes_pygent(self) -> None:
-        """Path should include pygent directory."""
+    def test_path_includes_chapgent(self) -> None:
+        """Path should include chapgent directory."""
         result = get_config_path()
-        assert "pygent" in str(result)
+        assert "chapgent" in str(result)
 
     def test_path_is_in_home(self) -> None:
         """Path should be under home directory."""
@@ -90,14 +90,14 @@ class TestCheckApiKey:
         """Should return False when no API key env vars are set."""
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("PYGENT_API_KEY", raising=False)
+        monkeypatch.delenv("CHAPGENT_API_KEY", raising=False)
         result = check_api_key()
         assert result is False
 
     def test_returns_true_with_anthropic_key(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Should return True when ANTHROPIC_API_KEY is set."""
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("PYGENT_API_KEY", raising=False)
+        monkeypatch.delenv("CHAPGENT_API_KEY", raising=False)
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-key")
         result = check_api_key()
         assert result is True
@@ -105,23 +105,23 @@ class TestCheckApiKey:
     def test_returns_true_with_openai_key(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Should return True when OPENAI_API_KEY is set."""
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-        monkeypatch.delenv("PYGENT_API_KEY", raising=False)
+        monkeypatch.delenv("CHAPGENT_API_KEY", raising=False)
         monkeypatch.setenv("OPENAI_API_KEY", "sk-test-key")
         result = check_api_key()
         assert result is True
 
-    def test_returns_true_with_pygent_key(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Should return True when PYGENT_API_KEY is set."""
+    def test_returns_true_with_chapgent_key(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Should return True when CHAPGENT_API_KEY is set."""
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.setenv("PYGENT_API_KEY", "custom-key")
+        monkeypatch.setenv("CHAPGENT_API_KEY", "custom-key")
         result = check_api_key()
         assert result is True
 
     def test_empty_string_is_not_valid(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Empty string env var should not count as valid."""
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("PYGENT_API_KEY", raising=False)
+        monkeypatch.delenv("CHAPGENT_API_KEY", raising=False)
         monkeypatch.setenv("ANTHROPIC_API_KEY", "")
         result = check_api_key()
         assert result is False
@@ -134,7 +134,7 @@ class TestCheckSetupStatus:
         """Should return a SetupStatus object."""
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("PYGENT_API_KEY", raising=False)
+        monkeypatch.delenv("CHAPGENT_API_KEY", raising=False)
 
         result = check_setup_status()
         assert isinstance(result, SetupStatus)
@@ -143,7 +143,7 @@ class TestCheckSetupStatus:
         """Should detect first run when no API key and no config."""
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("PYGENT_API_KEY", raising=False)
+        monkeypatch.delenv("CHAPGENT_API_KEY", raising=False)
 
         # Mock home to use tmp_path
         with patch.object(Path, "home", return_value=tmp_path):
@@ -215,10 +215,10 @@ class TestGetWelcomeMessage:
         result = get_welcome_message()
         assert "Welcome" in result or "welcome" in result
 
-    def test_contains_pygent(self) -> None:
-        """Should mention Pygent."""
+    def test_contains_chapgent(self) -> None:
+        """Should mention Chapgent."""
         result = get_welcome_message()
-        assert "Pygent" in result or "pygent" in result
+        assert "Chapgent" in result or "chapgent" in result
 
     def test_has_meaningful_length(self) -> None:
         """Should have meaningful content."""
@@ -325,7 +325,7 @@ class TestShouldShowFirstRunPrompt:
         """Should return True when no API key and no config."""
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("PYGENT_API_KEY", raising=False)
+        monkeypatch.delenv("CHAPGENT_API_KEY", raising=False)
 
         with patch.object(Path, "home", return_value=tmp_path):
             result = should_show_first_run_prompt()
@@ -339,7 +339,7 @@ class TestFirstRunMarker:
         """Should create marker file."""
         with patch.object(Path, "home", return_value=tmp_path):
             create_first_run_marker()
-            marker_path = tmp_path / ".local" / "share" / "pygent" / ".first_run_complete"
+            marker_path = tmp_path / ".local" / "share" / "chapgent" / ".first_run_complete"
             assert marker_path.exists()
 
     def test_has_completed_first_run_false_initially(self, tmp_path: Path) -> None:
@@ -415,7 +415,7 @@ class TestIntegration:
         # Clear env vars
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("PYGENT_API_KEY", raising=False)
+        monkeypatch.delenv("CHAPGENT_API_KEY", raising=False)
 
         with patch.object(Path, "home", return_value=tmp_path):
             # Should be first run

@@ -2,9 +2,9 @@
 
 import pytest
 
-from pygent.core.mock_provider import MockLLMProvider
-from pygent.core.providers import LLMResponse
-from pygent.tools.base import ToolCategory, ToolDefinition, ToolRisk
+from chapgent.core.mock_provider import MockLLMProvider
+from chapgent.core.providers import LLMResponse
+from chapgent.tools.base import ToolCategory, ToolDefinition, ToolRisk
 
 
 @pytest.fixture

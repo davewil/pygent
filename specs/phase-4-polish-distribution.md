@@ -2,7 +2,7 @@
 
 ## Objective
 
-Prepare pygent for public release: finalize customization features, comprehensive documentation, PyPI packaging, and distribution infrastructure. This phase transforms pygent from a working tool into a polished, distributable product.
+Prepare chapgent for public release: finalize customization features, comprehensive documentation, PyPI packaging, and distribution infrastructure. This phase transforms chapgent from a working tool into a polished, distributable product.
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ Prepare pygent for public release: finalize customization features, comprehensiv
 
 #### 1.1 User-Level Configuration
 ```toml
-# ~/.config/pygent/config.toml
+# ~/.config/chapgent/config.toml
 
 [system_prompt]
 # Base prompt (replaces default entirely)
@@ -30,7 +30,7 @@ Prefer simple solutions over complex ones.
 """
 
 # Or use a file reference
-# file = "~/.config/pygent/prompt.md"
+# file = "~/.config/chapgent/prompt.md"
 
 # Append to default prompt instead of replacing
 append = """
@@ -40,13 +40,13 @@ Additional context: I work primarily on Python and TypeScript projects.
 
 #### 1.2 Project-Level Overrides
 ```
-.pygent/
+.chapgent/
 ├── config.toml       # Project settings
 └── prompt.md         # Project-specific prompt
 ```
 
 ```toml
-# .pygent/config.toml
+# .chapgent/config.toml
 
 [system_prompt]
 # Project prompt appends to user prompt
@@ -55,11 +55,11 @@ mode = "append"  # or "replace"
 ```
 
 ```markdown
-<!-- .pygent/prompt.md -->
+<!-- .chapgent/prompt.md -->
 
-# Pygent Project Context
+# Chapgent Project Context
 
-This is the pygent project - an AI coding agent.
+This is the chapgent project - an AI coding agent.
 
 ## Architecture
 - Async Python with Textual TUI
@@ -73,9 +73,9 @@ This is the pygent project - an AI coding agent.
 - Use ruff for formatting
 
 ## Important Files
-- `src/pygent/core/agent.py` - Main agent loop
-- `src/pygent/tools/base.py` - Tool decorator
-- `src/pygent/tui/app.py` - TUI application
+- `src/chapgent/core/agent.py` - Main agent loop
+- `src/chapgent/tools/base.py` - Tool decorator
+- `src/chapgent/tui/app.py` - TUI application
 ```
 
 #### 1.3 Prompt Template Variables
@@ -171,9 +171,9 @@ def set(key: str, value: str):
 #### 2.3 Environment Variable Support
 ```python
 ENV_MAPPINGS = {
-    "PYGENT_MODEL": "llm.model",
-    "PYGENT_API_KEY": "llm.api_key",
-    "PYGENT_MAX_TOKENS": "llm.max_tokens",
+    "CHAPGENT_MODEL": "llm.model",
+    "CHAPGENT_API_KEY": "llm.api_key",
+    "CHAPGENT_MAX_TOKENS": "llm.max_tokens",
     "ANTHROPIC_API_KEY": "llm.api_key",  # Fallback
     "OPENAI_API_KEY": "llm.api_key",     # Alternative
 }
@@ -185,7 +185,7 @@ ENV_MAPPINGS = {
 
 #### 3.1 README.md
 ```markdown
-# Pygent
+# Chapgent
 
 AI-powered coding agent for the command line.
 
@@ -197,18 +197,18 @@ AI-powered coding agent for the command line.
 - Rich terminal UI
 
 ## Installation
-pip install pygent
+pip install chapgent
 # or
-uv install pygent
+uv install chapgent
 
 ## Quick Start
-pygent chat
+chapgent chat
 
 ## Configuration
 ...
 
 ## Documentation
-Full documentation at https://pygent.dev
+Full documentation at https://chapgent.dev
 ```
 
 #### 3.2 User Documentation (docs/)
@@ -270,7 +270,7 @@ uv run pytest
 #### 4.1 pyproject.toml Finalization
 ```toml
 [project]
-name = "pygent"
+name = "chapgent"
 version = "0.1.0"
 description = "AI-powered coding agent for the command line"
 readme = "README.md"
@@ -296,13 +296,13 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourname/pygent"
-Documentation = "https://pygent.dev"
-Repository = "https://github.com/yourname/pygent"
-Issues = "https://github.com/yourname/pygent/issues"
+Homepage = "https://github.com/yourname/chapgent"
+Documentation = "https://chapgent.dev"
+Repository = "https://github.com/yourname/chapgent"
+Issues = "https://github.com/yourname/chapgent/issues"
 
 [project.scripts]
-pygent = "pygent.cli:cli"
+chapgent = "chapgent.cli:cli"
 
 [build-system]
 requires = ["hatchling"]
@@ -311,11 +311,11 @@ build-backend = "hatchling.build"
 
 #### 4.2 Version Management
 ```python
-# src/pygent/__init__.py
+# src/chapgent/__init__.py
 __version__ = "0.1.0"
 
 # Accessed via:
-# pygent --version
+# chapgent --version
 ```
 
 #### 4.3 Build & Publish Workflow
@@ -354,7 +354,7 @@ uv build
 uv publish --repository testpypi
 
 # Verify installation
-pip install --index-url https://test.pypi.org/simple/ pygent
+pip install --index-url https://test.pypi.org/simple/ chapgent
 ```
 
 ---
@@ -408,7 +408,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - [ ] Create GitHub release with tag `vX.Y.Z`
 - [ ] Verify PyPI publish workflow triggered
 - [ ] Verify package on PyPI
-- [ ] Test installation: `pip install pygent`
+- [ ] Test installation: `pip install chapgent`
 
 ### Post-release
 - [ ] Announce on relevant channels
@@ -475,7 +475,7 @@ No API key configured.
 
 Set your API key in one of these ways:
 1. Environment variable: export ANTHROPIC_API_KEY=your-key
-2. Config file: pygent config set llm.api_key your-key
+2. Config file: chapgent config set llm.api_key your-key
 
 Get an API key at: https://console.anthropic.com/
 """,
@@ -561,7 +561,7 @@ enabled = false  # Opt-in, default off
 Add `loguru` dependency for file-based logging that doesn't interfere with the TUI.
 
 ```python
-# src/pygent/core/logging.py
+# src/chapgent/core/logging.py
 
 from pathlib import Path
 from loguru import logger
@@ -569,8 +569,8 @@ from loguru import logger
 # Remove default stderr handler (would corrupt TUI)
 logger.remove()
 
-LOG_DIR = Path("~/.local/share/pygent/logs").expanduser()
-LOG_FILE = LOG_DIR / "pygent.log"
+LOG_DIR = Path("~/.local/share/chapgent/logs").expanduser()
+LOG_FILE = LOG_DIR / "chapgent.log"
 
 def setup_logging(level: str = "DEBUG") -> None:
     """Configure logging to file with rotation.
@@ -594,11 +594,11 @@ def setup_logging(level: str = "DEBUG") -> None:
 #### 9.2 Configuration
 
 ```toml
-# ~/.config/pygent/config.toml
+# ~/.config/chapgent/config.toml
 
 [logging]
 level = "INFO"          # DEBUG, INFO, WARNING, ERROR
-# file = "~/.local/share/pygent/logs/pygent.log"  # Custom path
+# file = "~/.local/share/chapgent/logs/chapgent.log"  # Custom path
 ```
 
 ```python
@@ -660,7 +660,7 @@ def report(output: str | None, days: int) -> None:
     Creates a compressed archive of recent logs with sensitive
     data (API keys, absolute paths) redacted.
     """
-    log_dir = Path("~/.local/share/pygent/logs").expanduser()
+    log_dir = Path("~/.local/share/chapgent/logs").expanduser()
 
     if not log_dir.exists():
         click.echo("No logs found.")
@@ -668,7 +668,7 @@ def report(output: str | None, days: int) -> None:
 
     # Default output path
     if output is None:
-        output = f"pygent-report-{datetime.now():%Y%m%d-%H%M%S}.tar.gz"
+        output = f"chapgent-report-{datetime.now():%Y%m%d-%H%M%S}.tar.gz"
 
     # Collect and sanitize logs
     with tarfile.open(output, "w:gz") as tar:
@@ -715,9 +715,9 @@ def _redact_sensitive(content: str) -> str:
 def disable_logging():
     """Disable file logging during tests."""
     from loguru import logger
-    logger.disable("pygent")
+    logger.disable("chapgent")
     yield
-    logger.enable("pygent")
+    logger.enable("chapgent")
 ```
 
 ---
@@ -729,7 +729,7 @@ def disable_logging():
 # Placeholder for future plugin system
 
 class PluginBase(ABC):
-    """Base class for pygent plugins.
+    """Base class for chapgent plugins.
 
     Plugins can:
     - Register custom tools
@@ -738,7 +738,7 @@ class PluginBase(ABC):
     """
 
     @abstractmethod
-    def register(self, app: PygentApp) -> None: ...
+    def register(self, app: ChapgentApp) -> None: ...
 ```
 
 #### 10.2 API Stability
@@ -764,7 +764,7 @@ __all__ = [
 - [x] Config CLI commands functional
 - [x] Config validation with helpful error messages
 - [x] Logging infrastructure with Loguru (file-based, no TUI interference)
-- [x] Log report command for bug reporting (`pygent report`)
+- [x] Log report command for bug reporting (`chapgent report`)
 - [ ] Documentation complete and accurate
 - [x] First-run experience smooth
 - [ ] Package installable from PyPI (last step)
@@ -795,7 +795,7 @@ __all__ = [
    - Loguru setup with file rotation
    - Configuration integration
    - Add logging to core modules
-   - `pygent report` command
+   - `chapgent report` command
 
 4. **Documentation** (4 days)
    - README finalization

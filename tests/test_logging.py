@@ -11,8 +11,8 @@ from click.testing import CliRunner
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from pygent.cli import cli
-from pygent.core.logging import (
+from chapgent.cli import cli
+from chapgent.core.logging import (
     DEFAULT_LOG_DIR,
     DEFAULT_LOG_FILE,
     LOG_FORMAT,
@@ -40,8 +40,8 @@ class TestConstants:
         assert isinstance(DEFAULT_LOG_DIR, Path)
 
     def test_default_log_dir_in_local_share(self) -> None:
-        """DEFAULT_LOG_DIR should be in ~/.local/share/pygent/logs."""
-        assert "pygent" in str(DEFAULT_LOG_DIR)
+        """DEFAULT_LOG_DIR should be in ~/.local/share/chapgent/logs."""
+        assert "chapgent" in str(DEFAULT_LOG_DIR)
         assert "logs" in str(DEFAULT_LOG_DIR)
 
     def test_default_log_file_is_path(self) -> None:
@@ -50,7 +50,7 @@ class TestConstants:
 
     def test_default_log_file_ends_with_log(self) -> None:
         """DEFAULT_LOG_FILE should end with .log."""
-        assert str(DEFAULT_LOG_FILE).endswith("pygent.log")
+        assert str(DEFAULT_LOG_FILE).endswith("chapgent.log")
 
     def test_log_format_contains_required_parts(self) -> None:
         """LOG_FORMAT should contain time, level, name, and message."""
@@ -178,13 +178,13 @@ class TestSetupLogging:
 class TestDisableEnableLogging:
     """Tests for disable_logging and enable_logging functions."""
 
-    def test_disable_logging_disables_pygent(self) -> None:
-        """disable_logging disables the pygent logger."""
+    def test_disable_logging_disables_chapgent(self) -> None:
+        """disable_logging disables the chapgent logger."""
         # Should not raise
         disable_logging()
 
-    def test_enable_logging_enables_pygent(self) -> None:
-        """enable_logging enables the pygent logger."""
+    def test_enable_logging_enables_chapgent(self) -> None:
+        """enable_logging enables the chapgent logger."""
         disable_logging()
         # Should not raise
         enable_logging()
@@ -223,9 +223,9 @@ class TestRedactSensitive:
         assert "sk-proj-test1234" not in result
         assert "[REDACTED]" in result
 
-    def test_redacts_pygent_api_key(self) -> None:
-        """Redacts PYGENT_API_KEY env var."""
-        content = "PYGENT_API_KEY=my-secret-key"
+    def test_redacts_chapgent_api_key(self) -> None:
+        """Redacts CHAPGENT_API_KEY env var."""
+        content = "CHAPGENT_API_KEY=my-secret-key"
         result = redact_sensitive(content)
         assert "my-secret-key" not in result
         assert "[REDACTED]" in result
@@ -268,7 +268,7 @@ class TestGetLogFiles:
 
     def test_returns_empty_when_dir_not_exists(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
         """Returns empty list when log directory doesn't exist."""
-        monkeypatch.setattr("pygent.core.logging.get_log_dir", lambda: tmp_path / "nonexistent")
+        monkeypatch.setattr("chapgent.core.logging.get_log_dir", lambda: tmp_path / "nonexistent")
 
         result = get_log_files()
 
@@ -280,11 +280,11 @@ class TestGetLogFiles:
         log_dir.mkdir()
 
         # Create some log files
-        (log_dir / "pygent.log").write_text("log content")
-        (log_dir / "pygent.log.1").write_text("old log")
-        (log_dir / "pygent.log.2.gz").write_text("compressed")
+        (log_dir / "chapgent.log").write_text("log content")
+        (log_dir / "chapgent.log.1").write_text("old log")
+        (log_dir / "chapgent.log.2.gz").write_text("compressed")
 
-        monkeypatch.setattr("pygent.core.logging.get_log_dir", lambda: log_dir)
+        monkeypatch.setattr("chapgent.core.logging.get_log_dir", lambda: log_dir)
 
         result = get_log_files()
 
@@ -299,22 +299,22 @@ class TestGetLogFiles:
         log_dir.mkdir()
 
         # Create files with different modification times
-        file1 = log_dir / "pygent.log"
+        file1 = log_dir / "chapgent.log"
         file1.write_text("first")
 
         time.sleep(0.01)  # Small delay to ensure different mtime
 
-        file2 = log_dir / "pygent.log.1"
+        file2 = log_dir / "chapgent.log.1"
         file2.write_text("second")
 
-        monkeypatch.setattr("pygent.core.logging.get_log_dir", lambda: log_dir)
+        monkeypatch.setattr("chapgent.core.logging.get_log_dir", lambda: log_dir)
 
         result = get_log_files()
 
         assert len(result) == 2
         # Newest first
-        assert result[0].name == "pygent.log.1"
-        assert result[1].name == "pygent.log"
+        assert result[0].name == "chapgent.log.1"
+        assert result[1].name == "chapgent.log"
 
 
 class TestLoggingSettings:
@@ -322,21 +322,21 @@ class TestLoggingSettings:
 
     def test_default_level_is_info(self) -> None:
         """Default log level is INFO."""
-        from pygent.config.settings import LoggingSettings
+        from chapgent.config.settings import LoggingSettings
 
         settings = LoggingSettings()
         assert settings.level == "INFO"
 
     def test_default_file_is_none(self) -> None:
         """Default file path is None."""
-        from pygent.config.settings import LoggingSettings
+        from chapgent.config.settings import LoggingSettings
 
         settings = LoggingSettings()
         assert settings.file is None
 
     def test_accepts_valid_levels(self) -> None:
         """Accepts all valid log levels."""
-        from pygent.config.settings import LoggingSettings
+        from chapgent.config.settings import LoggingSettings
 
         for level in ["DEBUG", "INFO", "WARNING", "ERROR"]:
             settings = LoggingSettings(level=level)
@@ -346,7 +346,7 @@ class TestLoggingSettings:
         """Rejects empty string for file path."""
         from pydantic import ValidationError
 
-        from pygent.config.settings import LoggingSettings
+        from chapgent.config.settings import LoggingSettings
 
         with pytest.raises(ValidationError) as exc_info:
             LoggingSettings(file="")
@@ -355,18 +355,18 @@ class TestLoggingSettings:
 
     def test_accepts_file_path(self) -> None:
         """Accepts a valid file path."""
-        from pygent.config.settings import LoggingSettings
+        from chapgent.config.settings import LoggingSettings
 
         settings = LoggingSettings(file="~/custom/log.log")
         assert settings.file == "~/custom/log.log"
 
 
 class TestCLIReportCommand:
-    """Tests for the 'pygent report' CLI command."""
+    """Tests for the 'chapgent report' CLI command."""
 
     def test_report_no_logs_dir(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
         """Shows message when log directory doesn't exist."""
-        monkeypatch.setattr("pygent.core.logging.get_log_dir", lambda: tmp_path / "nonexistent")
+        monkeypatch.setattr("chapgent.core.logging.get_log_dir", lambda: tmp_path / "nonexistent")
 
         runner = CliRunner()
         result = runner.invoke(cli, ["report"])
@@ -379,8 +379,8 @@ class TestCLIReportCommand:
         log_dir = tmp_path / "logs"
         log_dir.mkdir()
 
-        monkeypatch.setattr("pygent.core.logging.get_log_dir", lambda: log_dir)
-        monkeypatch.setattr("pygent.core.logging.get_log_files", lambda days=7: [])
+        monkeypatch.setattr("chapgent.core.logging.get_log_dir", lambda: log_dir)
+        monkeypatch.setattr("chapgent.core.logging.get_log_files", lambda days=7: [])
 
         runner = CliRunner()
         result = runner.invoke(cli, ["report"])
@@ -394,11 +394,11 @@ class TestCLIReportCommand:
         log_dir.mkdir()
 
         # Create a log file
-        log_file = log_dir / "pygent.log"
+        log_file = log_dir / "chapgent.log"
         log_file.write_text("Test log content")
 
-        monkeypatch.setattr("pygent.core.logging.get_log_dir", lambda: log_dir)
-        monkeypatch.setattr("pygent.core.logging.get_log_files", lambda days=7: [log_file])
+        monkeypatch.setattr("chapgent.core.logging.get_log_dir", lambda: log_dir)
+        monkeypatch.setattr("chapgent.core.logging.get_log_files", lambda days=7: [log_file])
 
         runner = CliRunner()
         with runner.isolated_filesystem():
@@ -411,7 +411,7 @@ class TestCLIReportCommand:
             # Verify archive contents
             with tarfile.open("test-report.tar.gz", "r:gz") as tar:
                 names = tar.getnames()
-                assert "pygent.log" in names
+                assert "chapgent.log" in names
 
     def test_report_redacts_sensitive_data(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
         """Redacts sensitive data in the archive."""
@@ -419,11 +419,11 @@ class TestCLIReportCommand:
         log_dir.mkdir()
 
         # Create a log file with sensitive data
-        log_file = log_dir / "pygent.log"
+        log_file = log_dir / "chapgent.log"
         log_file.write_text("ANTHROPIC_API_KEY=sk-ant-secret123\nNormal log entry")
 
-        monkeypatch.setattr("pygent.core.logging.get_log_dir", lambda: log_dir)
-        monkeypatch.setattr("pygent.core.logging.get_log_files", lambda days=7: [log_file])
+        monkeypatch.setattr("chapgent.core.logging.get_log_dir", lambda: log_dir)
+        monkeypatch.setattr("chapgent.core.logging.get_log_files", lambda days=7: [log_file])
 
         runner = CliRunner()
         with runner.isolated_filesystem():
@@ -433,7 +433,7 @@ class TestCLIReportCommand:
 
             # Extract and check content is redacted
             with tarfile.open("test-report.tar.gz", "r:gz") as tar:
-                member = tar.extractfile("pygent.log")
+                member = tar.extractfile("chapgent.log")
                 assert member is not None
                 content = member.read().decode("utf-8")
                 assert "sk-ant-secret123" not in content
@@ -444,11 +444,11 @@ class TestCLIReportCommand:
         log_dir = tmp_path / "logs"
         log_dir.mkdir()
 
-        log_file = log_dir / "pygent.log"
+        log_file = log_dir / "chapgent.log"
         log_file.write_text("Log content")
 
-        monkeypatch.setattr("pygent.core.logging.get_log_dir", lambda: log_dir)
-        monkeypatch.setattr("pygent.core.logging.get_log_files", lambda days=7: [log_file])
+        monkeypatch.setattr("chapgent.core.logging.get_log_dir", lambda: log_dir)
+        monkeypatch.setattr("chapgent.core.logging.get_log_files", lambda days=7: [log_file])
 
         runner = CliRunner()
         with runner.isolated_filesystem():
@@ -459,7 +459,7 @@ class TestCLIReportCommand:
 
 
 class TestCLILogsCommand:
-    """Tests for the 'pygent logs' CLI command."""
+    """Tests for the 'chapgent logs' CLI command."""
 
     def test_logs_shows_path(self, monkeypatch: MonkeyPatch) -> None:
         """Shows log file path without options."""
@@ -486,9 +486,9 @@ class TestConfigSetLogging:
         config_file = tmp_path / "config.toml"
 
         def mock_get_config_paths() -> tuple[Path, Path]:
-            return config_file, tmp_path / ".pygent" / "config.toml"
+            return config_file, tmp_path / ".chapgent" / "config.toml"
 
-        monkeypatch.setattr("pygent.config.writer.get_config_paths", mock_get_config_paths)
+        monkeypatch.setattr("chapgent.config.writer.get_config_paths", mock_get_config_paths)
 
         runner = CliRunner()
         result = runner.invoke(cli, ["config", "set", "logging.level", "DEBUG"])
@@ -505,9 +505,9 @@ class TestConfigSetLogging:
         config_file = tmp_path / "config.toml"
 
         def mock_get_config_paths() -> tuple[Path, Path]:
-            return config_file, tmp_path / ".pygent" / "config.toml"
+            return config_file, tmp_path / ".chapgent" / "config.toml"
 
-        monkeypatch.setattr("pygent.config.writer.get_config_paths", mock_get_config_paths)
+        monkeypatch.setattr("chapgent.config.writer.get_config_paths", mock_get_config_paths)
 
         runner = CliRunner()
         result = runner.invoke(cli, ["config", "set", "logging.file", "/custom/path.log"])
@@ -520,9 +520,9 @@ class TestConfigSetLogging:
         config_file = tmp_path / "config.toml"
 
         def mock_get_config_paths() -> tuple[Path, Path]:
-            return config_file, tmp_path / ".pygent" / "config.toml"
+            return config_file, tmp_path / ".chapgent" / "config.toml"
 
-        monkeypatch.setattr("pygent.config.writer.get_config_paths", mock_get_config_paths)
+        monkeypatch.setattr("chapgent.config.writer.get_config_paths", mock_get_config_paths)
 
         runner = CliRunner()
         result = runner.invoke(cli, ["config", "set", "logging.level", "INVALID"])
@@ -614,17 +614,17 @@ class TestEdgeCases:
         log_dir.mkdir()
 
         # Create various files
-        (log_dir / "pygent.log").write_text("log")
+        (log_dir / "chapgent.log").write_text("log")
         (log_dir / "other.txt").write_text("not a log")
         (log_dir / "random.dat").write_text("data")
 
-        monkeypatch.setattr("pygent.core.logging.get_log_dir", lambda: log_dir)
+        monkeypatch.setattr("chapgent.core.logging.get_log_dir", lambda: log_dir)
 
         result = get_log_files()
 
-        # Only pygent.log should be included
+        # Only chapgent.log should be included
         assert len(result) == 1
-        assert result[0].name == "pygent.log"
+        assert result[0].name == "chapgent.log"
 
 
 class TestIntegration:
@@ -653,7 +653,7 @@ class TestIntegration:
 
     def test_settings_integration(self) -> None:
         """Test that LoggingSettings integrates with Settings."""
-        from pygent.config.settings import Settings
+        from chapgent.config.settings import Settings
 
         settings = Settings()
         assert hasattr(settings, "logging")
@@ -662,7 +662,7 @@ class TestIntegration:
 
     def test_settings_with_custom_logging(self) -> None:
         """Test Settings with custom logging configuration."""
-        from pygent.config.settings import Settings
+        from chapgent.config.settings import Settings
 
         settings = Settings(logging={"level": "DEBUG", "file": "~/custom.log"})
         assert settings.logging.level == "DEBUG"

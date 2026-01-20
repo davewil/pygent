@@ -3,15 +3,15 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from pygent.config.settings import Settings
-from pygent.core.agent import Agent
-from pygent.core.permissions import PermissionManager
-from pygent.core.providers import LLMProvider, LLMResponse, ToolUseBlock
-from pygent.session.models import Session
-from pygent.tools.base import ToolRisk, tool
-from pygent.tools.registry import ToolRegistry
-from pygent.tui.app import PygentApp
-from pygent.tui.widgets import MessageInput, PermissionPrompt, ToolProgressItem
+from chapgent.config.settings import Settings
+from chapgent.core.agent import Agent
+from chapgent.core.permissions import PermissionManager
+from chapgent.core.providers import LLMProvider, LLMResponse, ToolUseBlock
+from chapgent.session.models import Session
+from chapgent.tools.base import ToolRisk, tool
+from chapgent.tools.registry import ToolRegistry
+from chapgent.tui.app import ChapgentApp
+from chapgent.tui.widgets import MessageInput, PermissionPrompt, ToolProgressItem
 
 
 @tool(name="medium_risk_tool", description="A medium risk tool", risk=ToolRisk.MEDIUM)
@@ -56,7 +56,7 @@ def mock_agent():
 async def test_action_toggle_permissions(mock_agent):
     """Test that Ctrl+P toggles permission override and bypasses prompt."""
 
-    app = PygentApp(agent=mock_agent)
+    app = ChapgentApp(agent=mock_agent)
 
     async def prompt_callback(name, risk, args):
         return await app.get_permission(name, args)
@@ -111,7 +111,7 @@ async def test_action_toggle_permissions(mock_agent):
 async def test_action_new_session(mock_agent):
     """Test that Ctrl+N clears the UI and starts a new session."""
 
-    app = PygentApp(agent=mock_agent)
+    app = ChapgentApp(agent=mock_agent)
 
     async with app.run_test() as pilot:
         # Add some messages
@@ -134,8 +134,8 @@ async def test_settings_integration_no_tool_panel():
     settings = Settings()
     settings.tui.show_tool_panel = False
 
-    app = PygentApp(settings=settings)
+    app = ChapgentApp(settings=settings)
     async with app.run_test():
-        from pygent.tui.widgets import ToolPanel
+        from chapgent.tui.widgets import ToolPanel
 
         assert len(app.query(ToolPanel)) == 0

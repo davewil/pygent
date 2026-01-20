@@ -2,13 +2,13 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from pygent.core.agent import Agent
-from pygent.core.loop import conversation_loop
-from pygent.core.providers import LLMResponse
-from pygent.core.providers import TextBlock as ProvTextBlock
-from pygent.core.providers import ToolUseBlock as ProvToolUseBlock
-from pygent.session.models import Message, Session, ToolUseBlock
-from pygent.tools.base import ToolCategory, ToolDefinition, ToolRisk
+from chapgent.core.agent import Agent
+from chapgent.core.loop import conversation_loop
+from chapgent.core.providers import LLMResponse
+from chapgent.core.providers import TextBlock as ProvTextBlock
+from chapgent.core.providers import ToolUseBlock as ProvToolUseBlock
+from chapgent.session.models import Message, Session, ToolUseBlock
+from chapgent.tools.base import ToolCategory, ToolDefinition, ToolRisk
 
 
 @pytest.fixture

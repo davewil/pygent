@@ -1,7 +1,7 @@
 """Tests for git tools.
 
 This module contains comprehensive unit tests and property-based tests
-for the git tools in pygent.tools.git.
+for the git tools in chapgent.tools.git.
 """
 
 import subprocess
@@ -12,7 +12,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.tools.git import (
+from chapgent.tools.git import (
     GitError,
     _check_git_repo,
     _run_git_command,
@@ -444,7 +444,7 @@ async def test_git_push_mocked() -> None:
     mock_process.communicate = AsyncMock(return_value=(b"Everything up-to-date\n", b""))
     mock_process.returncode = 0
 
-    with patch("pygent.tools.git._run_git_command") as mock_run:
+    with patch("chapgent.tools.git._run_git_command") as mock_run:
         # First call checks if it's a git repo
         mock_run.side_effect = [
             (".", "", 0),  # _check_git_repo
@@ -459,7 +459,7 @@ async def test_git_push_mocked() -> None:
 @pytest.mark.asyncio
 async def test_git_push_with_options() -> None:
     """Test git_push with set_upstream and branch options."""
-    with patch("pygent.tools.git._run_git_command") as mock_run:
+    with patch("chapgent.tools.git._run_git_command") as mock_run:
         mock_run.side_effect = [
             (".", "", 0),  # _check_git_repo
             ("Branch 'feature' set up to track", "", 0),  # git push
@@ -475,7 +475,7 @@ async def test_git_push_with_options() -> None:
 @pytest.mark.asyncio
 async def test_git_push_failure() -> None:
     """Test git_push when push fails."""
-    with patch("pygent.tools.git._run_git_command") as mock_run:
+    with patch("chapgent.tools.git._run_git_command") as mock_run:
         mock_run.side_effect = [
             (".", "", 0),  # _check_git_repo
             ("", "fatal: No configured push destination.", 128),  # git push
@@ -498,7 +498,7 @@ async def test_git_push_not_a_repo(non_git_dir: Path) -> None:
 @pytest.mark.asyncio
 async def test_git_pull_mocked() -> None:
     """Test git_pull with mocked subprocess."""
-    with patch("pygent.tools.git._run_git_command") as mock_run:
+    with patch("chapgent.tools.git._run_git_command") as mock_run:
         mock_run.side_effect = [
             (".", "", 0),  # _check_git_repo
             ("Already up to date.", "", 0),  # git pull
@@ -512,7 +512,7 @@ async def test_git_pull_mocked() -> None:
 @pytest.mark.asyncio
 async def test_git_pull_with_branch() -> None:
     """Test git_pull with specific branch."""
-    with patch("pygent.tools.git._run_git_command") as mock_run:
+    with patch("chapgent.tools.git._run_git_command") as mock_run:
         mock_run.side_effect = [
             (".", "", 0),  # _check_git_repo
             ("Updating abc123..def456", "", 0),  # git pull
@@ -528,7 +528,7 @@ async def test_git_pull_with_branch() -> None:
 @pytest.mark.asyncio
 async def test_git_pull_failure() -> None:
     """Test git_pull when pull fails."""
-    with patch("pygent.tools.git._run_git_command") as mock_run:
+    with patch("chapgent.tools.git._run_git_command") as mock_run:
         mock_run.side_effect = [
             (".", "", 0),  # _check_git_repo
             ("", "fatal: couldn't find remote ref", 128),  # git pull
@@ -553,7 +553,7 @@ async def test_git_pull_not_a_repo(non_git_dir: Path) -> None:
 @pytest.mark.asyncio
 async def test_git_commit_message_handling(message: str) -> None:
     """Property: Any valid commit message should be passed correctly to git."""
-    with patch("pygent.tools.git._run_git_command") as mock_run:
+    with patch("chapgent.tools.git._run_git_command") as mock_run:
         mock_run.side_effect = [
             (".", "", 0),  # _check_git_repo
             (f"[main abc123] {message}", "", 0),  # git commit
@@ -571,7 +571,7 @@ async def test_git_commit_message_handling(message: str) -> None:
 @pytest.mark.asyncio
 async def test_git_log_count_parameter(count: int) -> None:
     """Property: git_log count should be correctly passed to git."""
-    with patch("pygent.tools.git._run_git_command") as mock_run:
+    with patch("chapgent.tools.git._run_git_command") as mock_run:
         mock_run.side_effect = [
             (".", "", 0),  # _check_git_repo
             ("abc123 Commit message\n" * min(count, 5), "", 0),  # git log
@@ -592,7 +592,7 @@ async def test_git_branch_name_handling(branch_name: str) -> None:
     if not branch_name.strip():
         return
 
-    with patch("pygent.tools.git._run_git_command") as mock_run:
+    with patch("chapgent.tools.git._run_git_command") as mock_run:
         mock_run.side_effect = [
             (".", "", 0),  # _check_git_repo
             ("", "", 0),  # git branch
@@ -610,7 +610,7 @@ async def test_git_branch_name_handling(branch_name: str) -> None:
 @pytest.mark.asyncio
 async def test_git_add_paths_handling(paths: list[str]) -> None:
     """Property: File paths should be correctly passed to git add."""
-    with patch("pygent.tools.git._run_git_command") as mock_run:
+    with patch("chapgent.tools.git._run_git_command") as mock_run:
         mock_run.side_effect = [
             (".", "", 0),  # _check_git_repo
             ("", "", 0),  # git add

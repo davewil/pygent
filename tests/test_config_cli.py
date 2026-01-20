@@ -12,8 +12,8 @@ from click.testing import CliRunner
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.cli import cli
-from pygent.config.writer import (
+from chapgent.cli import cli
+from chapgent.config.writer import (
     format_toml_value,
 )
 
@@ -41,14 +41,14 @@ class TestConfigPathCommand:
 
         assert result.exit_code == 0
         assert "Project config:" in result.output
-        assert ".pygent" in result.output
+        assert ".chapgent" in result.output
 
     def test_shows_exists_status(self, tmp_path, monkeypatch):
         """Test shows [exists] when config files exist."""
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         # Create user config
-        user_config = tmp_path / ".config" / "pygent" / "config.toml"
+        user_config = tmp_path / ".config" / "chapgent" / "config.toml"
         user_config.parent.mkdir(parents=True)
         user_config.write_text("[llm]\n")
 
@@ -89,7 +89,7 @@ class TestConfigInitCommand:
         assert result.exit_code == 0
         assert "Created user config" in result.output
 
-        user_config = tmp_path / ".config" / "pygent" / "config.toml"
+        user_config = tmp_path / ".config" / "chapgent" / "config.toml"
         assert user_config.exists()
 
     def test_creates_project_config_with_flag(self, tmp_path, monkeypatch):
@@ -102,7 +102,7 @@ class TestConfigInitCommand:
         assert result.exit_code == 0
         assert "Created project config" in result.output
 
-        project_config = tmp_path / ".pygent" / "config.toml"
+        project_config = tmp_path / ".chapgent" / "config.toml"
         assert project_config.exists()
 
     def test_fails_if_exists_without_force(self, tmp_path, monkeypatch):
@@ -110,7 +110,7 @@ class TestConfigInitCommand:
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         # Create existing config
-        user_config = tmp_path / ".config" / "pygent" / "config.toml"
+        user_config = tmp_path / ".config" / "chapgent" / "config.toml"
         user_config.parent.mkdir(parents=True)
         user_config.write_text("existing content")
 
@@ -125,7 +125,7 @@ class TestConfigInitCommand:
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         # Create existing config
-        user_config = tmp_path / ".config" / "pygent" / "config.toml"
+        user_config = tmp_path / ".config" / "chapgent" / "config.toml"
         user_config.parent.mkdir(parents=True)
         user_config.write_text("old content")
 
@@ -165,7 +165,7 @@ class TestConfigEditCommand:
         assert result.exit_code == 0
         assert "Created" in result.output
 
-        user_config = tmp_path / ".config" / "pygent" / "config.toml"
+        user_config = tmp_path / ".config" / "chapgent" / "config.toml"
         assert user_config.exists()
 
     def test_project_flag_edits_project_config(self, tmp_path, monkeypatch):
@@ -178,7 +178,7 @@ class TestConfigEditCommand:
 
         assert result.exit_code == 0
 
-        project_config = tmp_path / ".pygent" / "config.toml"
+        project_config = tmp_path / ".chapgent" / "config.toml"
         assert project_config.exists()
 
     def test_editor_not_found_error(self, tmp_path, monkeypatch):
@@ -218,7 +218,7 @@ class TestConfigSetCommand:
         assert "Set llm.model = claude-3-5-haiku" in result.output
 
         # Verify file was created and has correct value
-        config_path = tmp_path / ".config" / "pygent" / "config.toml"
+        config_path = tmp_path / ".config" / "chapgent" / "config.toml"
         assert config_path.exists()
 
         if sys.version_info >= (3, 11):
@@ -271,7 +271,7 @@ class TestConfigSetCommand:
         assert result.exit_code == 0
         assert "project config" in result.output
 
-        project_config = tmp_path / ".pygent" / "config.toml"
+        project_config = tmp_path / ".chapgent" / "config.toml"
         assert project_config.exists()
 
     def test_preserves_existing_values(self, tmp_path, monkeypatch):
@@ -279,7 +279,7 @@ class TestConfigSetCommand:
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         # Create existing config
-        config_path = tmp_path / ".config" / "pygent" / "config.toml"
+        config_path = tmp_path / ".config" / "chapgent" / "config.toml"
         config_path.parent.mkdir(parents=True)
         config_path.write_text('[llm]\nmodel = "existing"\n')
 
@@ -304,10 +304,10 @@ class TestConfigSetCommand:
 class TestConfigShowCommand:
     """Tests for 'config show' command."""
 
-    @patch("pygent.cli.load_config")
+    @patch("chapgent.cli.load_config")
     def test_shows_all_settings(self, mock_load_config):
         """Test shows all configuration settings."""
-        from pygent.config.settings import Settings
+        from chapgent.config.settings import Settings
 
         mock_load_config.return_value = Settings()
 
@@ -319,10 +319,10 @@ class TestConfigShowCommand:
         assert "Permissions" in result.output
         assert "TUI" in result.output
 
-    @patch("pygent.cli.load_config")
+    @patch("chapgent.cli.load_config")
     def test_shows_custom_values(self, mock_load_config):
         """Test shows custom configuration values."""
-        from pygent.config.settings import LLMSettings, Settings
+        from chapgent.config.settings import LLMSettings, Settings
 
         mock_load_config.return_value = Settings(llm=LLMSettings(model="custom-model", max_tokens=8192))
 
@@ -437,8 +437,8 @@ class TestIntegration:
         assert result.exit_code == 0
 
         # Show
-        with patch("pygent.cli.load_config") as mock_load:
-            from pygent.config.settings import LLMSettings, Settings
+        with patch("chapgent.cli.load_config") as mock_load:
+            from chapgent.config.settings import LLMSettings, Settings
 
             mock_load.return_value = Settings(llm=LLMSettings(model="test-model"))
             result = runner.invoke(cli, ["config", "show"])
@@ -458,7 +458,7 @@ class TestIntegration:
         runner.invoke(cli, ["config", "set", "tui.theme", "dark"])
 
         # Read back
-        config_path = tmp_path / ".config" / "pygent" / "config.toml"
+        config_path = tmp_path / ".config" / "chapgent" / "config.toml"
 
         if sys.version_info >= (3, 11):
             import tomllib

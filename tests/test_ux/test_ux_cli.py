@@ -10,14 +10,14 @@ from click.testing import CliRunner
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.cli import cli
+from chapgent.cli import cli
 
 
 class TestHelpCommand:
-    """Tests for 'pygent help' command."""
+    """Tests for 'chapgent help' command."""
 
     def test_help_no_args_lists_topics(self) -> None:
-        """'pygent help' should list all topics."""
+        """'chapgent help' should list all topics."""
         runner = CliRunner()
         result = runner.invoke(cli, ["help"])
 
@@ -28,7 +28,7 @@ class TestHelpCommand:
         assert "shortcuts" in result.output
 
     def test_help_tools_topic(self) -> None:
-        """'pygent help tools' should show tools help."""
+        """'chapgent help tools' should show tools help."""
         runner = CliRunner()
         result = runner.invoke(cli, ["help", "tools"])
 
@@ -37,7 +37,7 @@ class TestHelpCommand:
         assert "read_file" in result.output or "FILESYSTEM" in result.output
 
     def test_help_config_topic(self) -> None:
-        """'pygent help config' should show config help."""
+        """'chapgent help config' should show config help."""
         runner = CliRunner()
         result = runner.invoke(cli, ["help", "config"])
 
@@ -45,7 +45,7 @@ class TestHelpCommand:
         assert "config" in result.output.lower()
 
     def test_help_shortcuts_topic(self) -> None:
-        """'pygent help shortcuts' should show shortcuts help."""
+        """'chapgent help shortcuts' should show shortcuts help."""
         runner = CliRunner()
         result = runner.invoke(cli, ["help", "shortcuts"])
 
@@ -53,7 +53,7 @@ class TestHelpCommand:
         assert "Ctrl" in result.output or "ctrl" in result.output
 
     def test_help_permissions_topic(self) -> None:
-        """'pygent help permissions' should show permissions help."""
+        """'chapgent help permissions' should show permissions help."""
         runner = CliRunner()
         result = runner.invoke(cli, ["help", "permissions"])
 
@@ -61,7 +61,7 @@ class TestHelpCommand:
         assert "permission" in result.output.lower() or "risk" in result.output.lower()
 
     def test_help_sessions_topic(self) -> None:
-        """'pygent help sessions' should show sessions help."""
+        """'chapgent help sessions' should show sessions help."""
         runner = CliRunner()
         result = runner.invoke(cli, ["help", "sessions"])
 
@@ -69,7 +69,7 @@ class TestHelpCommand:
         assert "session" in result.output.lower()
 
     def test_help_prompts_topic(self) -> None:
-        """'pygent help prompts' should show prompts help."""
+        """'chapgent help prompts' should show prompts help."""
         runner = CliRunner()
         result = runner.invoke(cli, ["help", "prompts"])
 
@@ -77,7 +77,7 @@ class TestHelpCommand:
         assert "prompt" in result.output.lower()
 
     def test_help_quickstart_topic(self) -> None:
-        """'pygent help quickstart' should show quickstart guide."""
+        """'chapgent help quickstart' should show quickstart guide."""
         runner = CliRunner()
         result = runner.invoke(cli, ["help", "quickstart"])
 
@@ -85,7 +85,7 @@ class TestHelpCommand:
         assert "start" in result.output.lower() or "chat" in result.output.lower()
 
     def test_help_troubleshooting_topic(self) -> None:
-        """'pygent help troubleshooting' should show troubleshooting guide."""
+        """'chapgent help troubleshooting' should show troubleshooting guide."""
         runner = CliRunner()
         result = runner.invoke(cli, ["help", "troubleshooting"])
 
@@ -93,7 +93,7 @@ class TestHelpCommand:
         assert "issue" in result.output.lower() or "error" in result.output.lower()
 
     def test_help_invalid_topic(self) -> None:
-        """'pygent help invalid' should show error."""
+        """'chapgent help invalid' should show error."""
         runner = CliRunner()
         result = runner.invoke(cli, ["help", "nonexistent_topic"])
 
@@ -115,13 +115,13 @@ class TestHelpCommand:
 
 
 class TestSetupCommand:
-    """Tests for 'pygent setup' command."""
+    """Tests for 'chapgent setup' command."""
 
     def test_setup_shows_welcome(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """'pygent setup' should show welcome message."""
+        """'chapgent setup' should show welcome message."""
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("PYGENT_API_KEY", raising=False)
+        monkeypatch.delenv("CHAPGENT_API_KEY", raising=False)
 
         runner = CliRunner()
         with patch.object(Path, "home", return_value=tmp_path):
@@ -131,11 +131,11 @@ class TestSetupCommand:
         assert "Welcome" in result.output or "welcome" in result.output
 
     def test_setup_already_configured(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        """'pygent setup' should detect already configured state."""
+        """'chapgent setup' should detect already configured state."""
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-key")
 
         # Create config file
-        config_path = tmp_path / ".config" / "pygent" / "config.toml"
+        config_path = tmp_path / ".config" / "chapgent" / "config.toml"
         config_path.parent.mkdir(parents=True, exist_ok=True)
         config_path.write_text("[llm]\nmodel = 'test'")
 
@@ -147,10 +147,10 @@ class TestSetupCommand:
         assert "already set up" in result.output or "configured" in result.output.lower()
 
     def test_setup_asks_about_api_key(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """'pygent setup' should ask about API key when missing."""
+        """'chapgent setup' should ask about API key when missing."""
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("PYGENT_API_KEY", raising=False)
+        monkeypatch.delenv("CHAPGENT_API_KEY", raising=False)
 
         runner = CliRunner()
         with patch.object(Path, "home", return_value=tmp_path):
@@ -162,7 +162,7 @@ class TestSetupCommand:
         assert "API" in result.output
 
     def test_setup_creates_config(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """'pygent setup' should offer to create config file."""
+        """'chapgent setup' should offer to create config file."""
         monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-key")
 
         runner = CliRunner()
@@ -172,14 +172,14 @@ class TestSetupCommand:
 
         assert result.exit_code == 0
         # Config should be created
-        config_path = tmp_path / ".config" / "pygent" / "config.toml"
+        config_path = tmp_path / ".config" / "chapgent" / "config.toml"
         assert config_path.exists()
 
     def test_setup_validates_api_key(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """'pygent setup' should validate API key format."""
+        """'chapgent setup' should validate API key format."""
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("PYGENT_API_KEY", raising=False)
+        monkeypatch.delenv("CHAPGENT_API_KEY", raising=False)
 
         runner = CliRunner()
         with patch.object(Path, "home", return_value=tmp_path):
@@ -220,7 +220,7 @@ class TestPropertyBased:
     @given(st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=("Lu", "Ll"))))
     @settings(max_examples=30)
     def test_help_with_random_topic(self, topic: str) -> None:
-        """'pygent help' should handle random topic names gracefully."""
+        """'chapgent help' should handle random topic names gracefully."""
         runner = CliRunner()
         result = runner.invoke(cli, ["help", topic])
 
@@ -234,7 +234,7 @@ class TestEdgeCases:
     """Edge case tests."""
 
     def test_help_empty_topic(self) -> None:
-        """'pygent help \"\"' should handle empty string."""
+        """'chapgent help \"\"' should handle empty string."""
         runner = CliRunner()
         result = runner.invoke(cli, ["help", ""])
 
@@ -242,10 +242,10 @@ class TestEdgeCases:
         assert result.exit_code != 0
 
     def test_setup_noninteractive(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        """'pygent setup' should work with automatic 'no' responses."""
+        """'chapgent setup' should work with automatic 'no' responses."""
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("PYGENT_API_KEY", raising=False)
+        monkeypatch.delenv("CHAPGENT_API_KEY", raising=False)
 
         runner = CliRunner()
         with patch.object(Path, "home", return_value=tmp_path):
@@ -261,7 +261,7 @@ class TestIntegration:
         """Test running help then setup."""
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("PYGENT_API_KEY", raising=False)
+        monkeypatch.delenv("CHAPGENT_API_KEY", raising=False)
 
         runner = CliRunner()
 
@@ -277,7 +277,7 @@ class TestIntegration:
 
     def test_all_help_topics_work(self) -> None:
         """All documented help topics should work."""
-        from pygent.ux.help import get_topic_names
+        from chapgent.ux.help import get_topic_names
 
         runner = CliRunner()
 

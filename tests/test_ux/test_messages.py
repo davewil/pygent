@@ -6,7 +6,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.ux.messages import (
+from chapgent.ux.messages import (
     ERROR_MESSAGES,
     classify_error,
     format_error_message,

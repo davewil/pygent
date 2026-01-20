@@ -18,9 +18,9 @@ Deliver a functional coding agent with core capabilities: natural language inter
 
 #### 1.2 Project Structure
 ```
-pygent/
+chapgent/
 ├── src/
-│   └── pygent/
+│   └── chapgent/
 │       ├── __init__.py
 │       ├── cli.py
 │       ├── core/
@@ -353,8 +353,8 @@ async def load_config(
     """Load and merge configuration from multiple sources.
 
     Priority (highest to lowest):
-    1. Project config (.pygent/config.toml)
-    2. User config (~/.config/pygent/config.toml)
+    1. Project config (.chapgent/config.toml)
+    2. User config (~/.config/chapgent/config.toml)
     3. Defaults
 
     Args:
@@ -367,8 +367,8 @@ async def load_config(
 ```
 
 **Default Paths:**
-- User: `~/.config/pygent/config.toml`
-- Project: `./.pygent/config.toml`
+- User: `~/.config/chapgent/config.toml`
+- Project: `./.chapgent/config.toml`
 
 ---
 
@@ -405,7 +405,7 @@ class Session(BaseModel):
 class SessionStorage:
     """JSON-based session persistence.
 
-    Sessions stored at: ~/.local/share/pygent/sessions/
+    Sessions stored at: ~/.local/share/chapgent/sessions/
     """
 
     def __init__(self, storage_dir: Path | None = None) -> None: ...
@@ -418,7 +418,7 @@ class SessionStorage:
 
 **Storage Format:**
 ```
-~/.local/share/pygent/sessions/
+~/.local/share/chapgent/sessions/
 ├── abc123.json
 ├── def456.json
 └── index.json  # Quick lookup of session metadata
@@ -433,12 +433,12 @@ class SessionStorage:
 from textual.app import App
 from textual.widgets import Header, Footer
 
-class PygentApp(App):
+class ChapgentApp(App):
     """Main Textual application.
 
     Layout:
     ┌─────────────────────────────────────────┐
-    │ Header (Pygent - session name)          │
+    │ Header (Chapgent - session name)          │
     ├─────────────────────┬───────────────────┤
     │                     │                   │
     │   Conversation      │   Tool Activity   │
@@ -476,7 +476,7 @@ class PermissionPrompt(Widget):
 
 #### 6.3 Styles (`tui/styles.tcss`)
 ```css
-/* Textual CSS for pygent */
+/* Textual CSS for chapgent */
 
 Screen {
     layout: grid;
@@ -512,7 +512,7 @@ import click
 @click.group()
 @click.version_option()
 def cli():
-    """Pygent - AI-powered coding agent."""
+    """Chapgent - AI-powered coding agent."""
 
 @cli.command()
 @click.option("--session", "-s", help="Resume a session by ID")
@@ -611,7 +611,7 @@ jobs:
         run: uv run mypy src/
 
       - name: Run tests
-        run: uv run pytest --cov=pygent --cov-report=xml
+        run: uv run pytest --cov=chapgent --cov-report=xml
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -622,7 +622,7 @@ jobs:
 ## Acceptance Criteria
 
 ### Functional
-- [x] User can start pygent and enter natural language prompts
+- [x] User can start chapgent and enter natural language prompts
 - [x] Agent correctly calls tools based on user requests
 - [x] File read/list operations work correctly
 - [x] File edit operations perform exact string replacement

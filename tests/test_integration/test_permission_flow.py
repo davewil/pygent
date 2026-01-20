@@ -3,14 +3,14 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from pygent.core.agent import Agent
-from pygent.core.permissions import PermissionManager
-from pygent.core.providers import LLMProvider
-from pygent.session.models import Session
-from pygent.tools.base import ToolRisk, tool
-from pygent.tools.registry import ToolRegistry
-from pygent.tui.app import PygentApp
-from pygent.tui.widgets import MessageInput, PermissionPrompt, ToolProgressItem
+from chapgent.core.agent import Agent
+from chapgent.core.permissions import PermissionManager
+from chapgent.core.providers import LLMProvider
+from chapgent.session.models import Session
+from chapgent.tools.base import ToolRisk, tool
+from chapgent.tools.registry import ToolRegistry
+from chapgent.tui.app import ChapgentApp
+from chapgent.tui.widgets import MessageInput, PermissionPrompt, ToolProgressItem
 
 
 @tool(name="high_risk_tool", description="A high risk tool", risk=ToolRisk.HIGH)
@@ -22,7 +22,7 @@ async def high_risk_tool() -> str:
 def mock_agent():
     provider = AsyncMock(spec=LLMProvider)
     # Configure provider to return a tool call
-    from pygent.core.providers import LLMResponse, ToolUseBlock
+    from chapgent.core.providers import LLMResponse, ToolUseBlock
 
     response_tool = LLMResponse(
         content=[
@@ -58,7 +58,7 @@ async def test_permission_flow_allow(mock_agent):
     """Test that accepting the permission prompt executes the tool."""
 
     # Setup App with Agent
-    app = PygentApp(agent=mock_agent)
+    app = ChapgentApp(agent=mock_agent)
 
     # Callback to signal app to request permission
     async def prompt_callback(name, risk, args):
@@ -100,7 +100,7 @@ async def test_permission_flow_allow(mock_agent):
 async def test_permission_flow_deny(mock_agent):
     """Test that denying the permission prompt blocks execution."""
 
-    app = PygentApp(agent=mock_agent)
+    app = ChapgentApp(agent=mock_agent)
 
     async def prompt_callback(name, risk, args):
         return await app.get_permission(name, args)

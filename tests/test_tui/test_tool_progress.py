@@ -8,13 +8,13 @@ from hypothesis import given
 from hypothesis import settings as hypothesis_settings
 from hypothesis import strategies as st
 
-from pygent.core.agent import Agent
-from pygent.core.loop import LoopEvent
-from pygent.core.providers import LLMProvider, LLMResponse
-from pygent.session.models import Session
-from pygent.tools.registry import ToolRegistry
-from pygent.tui.app import PygentApp
-from pygent.tui.widgets import (
+from chapgent.core.agent import Agent
+from chapgent.core.loop import LoopEvent
+from chapgent.core.providers import LLMProvider, LLMResponse
+from chapgent.session.models import Session
+from chapgent.tools.registry import ToolRegistry
+from chapgent.tui.app import ChapgentApp
+from chapgent.tui.widgets import (
     STATUS_ICONS,
     ToolPanel,
     ToolProgressItem,
@@ -347,7 +347,7 @@ class TestToolPanel:
     @pytest.mark.asyncio
     async def test_tool_panel_compose(self):
         """Test that ToolPanel composes correctly."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
             scroll = panel.query_one("#tool-output")
@@ -356,7 +356,7 @@ class TestToolPanel:
     @pytest.mark.asyncio
     async def test_tool_panel_append_tool_call(self):
         """Test adding a tool call to the panel."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
 
@@ -375,7 +375,7 @@ class TestToolPanel:
     @pytest.mark.asyncio
     async def test_tool_panel_append_tool_call_with_timestamp(self):
         """Test adding a tool call with custom start time."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
             start_time = datetime(2026, 1, 17, 10, 0, 0)
@@ -392,7 +392,7 @@ class TestToolPanel:
     @pytest.mark.asyncio
     async def test_tool_panel_update_tool_result(self):
         """Test updating a tool call with its result."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
 
@@ -415,7 +415,7 @@ class TestToolPanel:
     @pytest.mark.asyncio
     async def test_tool_panel_update_tool_result_cached(self):
         """Test updating a tool call with cached result."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
 
@@ -433,7 +433,7 @@ class TestToolPanel:
     @pytest.mark.asyncio
     async def test_tool_panel_update_tool_result_error(self):
         """Test updating a tool call with error result."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
 
@@ -452,7 +452,7 @@ class TestToolPanel:
     @pytest.mark.asyncio
     async def test_tool_panel_update_permission_denied(self):
         """Test updating a tool call to permission denied."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
 
@@ -465,7 +465,7 @@ class TestToolPanel:
     @pytest.mark.asyncio
     async def test_tool_panel_update_result_without_call(self):
         """Test updating result for tool that wasn't tracked creates new item."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
 
@@ -484,7 +484,7 @@ class TestToolPanel:
     @pytest.mark.asyncio
     async def test_tool_panel_clear(self):
         """Test clearing the tool panel."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             panel = app.query_one(ToolPanel)
 
@@ -502,7 +502,7 @@ class TestToolPanel:
     @pytest.mark.asyncio
     async def test_tool_panel_get_running_count(self):
         """Test getting count of running tools."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
 
@@ -518,7 +518,7 @@ class TestToolPanel:
     @pytest.mark.asyncio
     async def test_tool_panel_refresh_running_tools(self):
         """Test refreshing running tools updates their display."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
 
@@ -530,7 +530,7 @@ class TestToolPanel:
     @pytest.mark.asyncio
     async def test_tool_panel_multiple_tools(self):
         """Test panel handles multiple tools correctly."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
 
@@ -562,7 +562,7 @@ class TestToolPanelLegacyMethod:
     @pytest.mark.asyncio
     async def test_legacy_append_tool_result(self):
         """Test legacy method still works."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
 
@@ -632,7 +632,7 @@ class TestToolProgressIntegration:
         )
 
         agent = Agent(provider, ToolRegistry(), None, session)
-        app = PygentApp(agent=agent)
+        app = ChapgentApp(agent=agent)
 
         async with app.run_test():
             panel = app.query_one(ToolPanel)
@@ -699,7 +699,7 @@ class TestPropertyBased:
     @hypothesis_settings(max_examples=10)
     async def test_tool_panel_multiple_tools_property(self, tool_count):
         """Test ToolPanel handles varying numbers of tools."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
 
@@ -722,7 +722,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_tool_panel_with_empty_tool_id(self):
         """Test panel handles empty tool_id."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
             panel.append_tool_call(tool_name="tool", tool_id="")
@@ -731,7 +731,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_tool_panel_with_very_long_tool_name(self):
         """Test panel handles very long tool names."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
             long_name = "a" * 200
@@ -742,7 +742,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_tool_panel_with_special_characters(self):
         """Test panel handles special characters in tool names."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
             special_name = "tool-<>\"'&;`$"
@@ -753,7 +753,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_tool_panel_update_same_tool_twice(self):
         """Test updating the same tool twice uses latest result."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
 
@@ -768,7 +768,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_tool_progress_newlines_in_result(self):
         """Test tool progress handles newlines in result."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ToolPanel)
 

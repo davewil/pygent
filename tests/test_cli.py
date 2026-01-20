@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, patch
 
 from click.testing import CliRunner
 
-from pygent.cli import cli
-from pygent.session.models import SessionSummary
+from chapgent.cli import cli
+from chapgent.session.models import SessionSummary
 
 
 def test_cli_structure():
@@ -12,19 +12,19 @@ def test_cli_structure():
     runner = CliRunner()
     result = runner.invoke(cli, ["--help"])
     assert result.exit_code == 0
-    assert "Pygent - AI-powered coding agent" in result.output
+    assert "Chapgent - AI-powered coding agent" in result.output
     assert "chat" in result.output
     assert "sessions" in result.output
     assert "resume" in result.output
     assert "config" in result.output
 
 
-@patch("pygent.cli.PygentApp")
-@patch("pygent.cli.Agent")
-@patch("pygent.cli.LLMProvider")
-@patch("pygent.cli.ToolRegistry")
-@patch("pygent.cli.SessionStorage")
-@patch("pygent.cli.PermissionManager")
+@patch("chapgent.cli.ChapgentApp")
+@patch("chapgent.cli.Agent")
+@patch("chapgent.cli.LLMProvider")
+@patch("chapgent.cli.ToolRegistry")
+@patch("chapgent.cli.SessionStorage")
+@patch("chapgent.cli.PermissionManager")
 def test_cli_chat_startup(mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app):
     """Test that the chat command initializes components and starts the app."""
     runner = CliRunner()
@@ -54,7 +54,7 @@ def test_cli_chat_startup(mock_permissions, mock_storage, mock_registry, mock_pr
 class TestSessionsCommand:
     """Tests for the sessions CLI command."""
 
-    @patch("pygent.cli.SessionStorage")
+    @patch("chapgent.cli.SessionStorage")
     def test_sessions_empty(self, mock_storage_class):
         """Test sessions command when no sessions exist."""
         mock_storage = mock_storage_class.return_value
@@ -66,7 +66,7 @@ class TestSessionsCommand:
         assert result.exit_code == 0
         assert "No sessions found" in result.output
 
-    @patch("pygent.cli.SessionStorage")
+    @patch("chapgent.cli.SessionStorage")
     def test_sessions_list(self, mock_storage_class):
         """Test sessions command lists sessions with proper formatting."""
         mock_storage = mock_storage_class.return_value
@@ -104,17 +104,17 @@ class TestSessionsCommand:
 class TestResumeCommand:
     """Tests for the resume CLI command."""
 
-    @patch("pygent.cli.PygentApp")
-    @patch("pygent.cli.Agent")
-    @patch("pygent.cli.LLMProvider")
-    @patch("pygent.cli.ToolRegistry")
-    @patch("pygent.cli.SessionStorage")
-    @patch("pygent.cli.PermissionManager")
+    @patch("chapgent.cli.ChapgentApp")
+    @patch("chapgent.cli.Agent")
+    @patch("chapgent.cli.LLMProvider")
+    @patch("chapgent.cli.ToolRegistry")
+    @patch("chapgent.cli.SessionStorage")
+    @patch("chapgent.cli.PermissionManager")
     def test_resume_session_found(
         self, mock_permissions, mock_storage_class, mock_registry, mock_provider, mock_agent, mock_app
     ):
         """Test resume command when session exists."""
-        from pygent.session.models import Session
+        from chapgent.session.models import Session
 
         mock_storage = mock_storage_class.return_value
         mock_storage.load = AsyncMock(
@@ -133,7 +133,7 @@ class TestResumeCommand:
         mock_storage.load.assert_called_with("abc123")
         mock_app.return_value.run.assert_called()
 
-    @patch("pygent.cli.SessionStorage")
+    @patch("chapgent.cli.SessionStorage")
     def test_resume_session_not_found(self, mock_storage_class):
         """Test resume command when session doesn't exist."""
         mock_storage = mock_storage_class.return_value
@@ -161,10 +161,10 @@ class TestConfigCommand:
         assert "init" in result.output
         assert "set" in result.output
 
-    @patch("pygent.cli.load_config")
+    @patch("chapgent.cli.load_config")
     def test_config_show(self, mock_load_config):
         """Test config show command displays current configuration."""
-        from pygent.config.settings import Settings
+        from chapgent.config.settings import Settings
 
         mock_load_config.return_value = Settings()
 
@@ -176,12 +176,12 @@ class TestConfigCommand:
         assert "llm" in result.output.lower() or "model" in result.output.lower()
 
 
-@patch("pygent.cli.PygentApp")
-@patch("pygent.cli.Agent")
-@patch("pygent.cli.LLMProvider")
-@patch("pygent.cli.ToolRegistry")
-@patch("pygent.cli.SessionStorage")
-@patch("pygent.cli.PermissionManager")
+@patch("chapgent.cli.ChapgentApp")
+@patch("chapgent.cli.Agent")
+@patch("chapgent.cli.LLMProvider")
+@patch("chapgent.cli.ToolRegistry")
+@patch("chapgent.cli.SessionStorage")
+@patch("chapgent.cli.PermissionManager")
 def test_cli_resume_not_found_raises(
     mock_permissions, mock_storage_class, mock_registry, mock_provider, mock_agent, mock_app
 ):

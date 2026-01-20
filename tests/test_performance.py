@@ -1,4 +1,4 @@
-"""Performance benchmarks for pygent (Section 6.3 of Phase 4).
+"""Performance benchmarks for chapgent (Section 6.3 of Phase 4).
 
 Tests verify non-functional acceptance criteria:
 - Startup time <500ms
@@ -15,12 +15,12 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.session.models import Message, Session
-from pygent.session.storage import SessionStorage
-from pygent.tools.base import ToolCategory, ToolDefinition, ToolRisk
-from pygent.tools.filesystem import create_file, edit_file, list_files, read_file
-from pygent.tools.registry import ToolRegistry
-from pygent.tools.shell import shell
+from chapgent.session.models import Message, Session
+from chapgent.session.storage import SessionStorage
+from chapgent.tools.base import ToolCategory, ToolDefinition, ToolRisk
+from chapgent.tools.filesystem import create_file, edit_file, list_files, read_file
+from chapgent.tools.registry import ToolRegistry
+from chapgent.tools.shell import shell
 
 # =============================================================================
 # Section 6.3: Performance Benchmarks
@@ -36,10 +36,10 @@ class TestStartupTime:
     """
 
     def test_cli_help_startup_time(self):
-        """Verify 'pygent --help' runs consistently."""
+        """Verify 'chapgent --help' runs consistently."""
         # Warmup run to ensure modules are cached
         subprocess.run(
-            [sys.executable, "-m", "pygent.cli", "--help"],
+            [sys.executable, "-m", "chapgent.cli", "--help"],
             capture_output=True,
             text=True,
         )
@@ -47,7 +47,7 @@ class TestStartupTime:
         # Measure actual run
         start = time.perf_counter()
         result = subprocess.run(
-            [sys.executable, "-m", "pygent.cli", "--help"],
+            [sys.executable, "-m", "chapgent.cli", "--help"],
             capture_output=True,
             text=True,
         )
@@ -61,17 +61,17 @@ class TestStartupTime:
         assert duration_ms < 3000, f"Startup took {duration_ms:.2f}ms, expected <3000ms"
 
     def test_cli_version_startup_time(self):
-        """Verify 'pygent --version' runs consistently."""
+        """Verify 'chapgent --version' runs consistently."""
         # Warmup
         subprocess.run(
-            [sys.executable, "-m", "pygent.cli", "--version"],
+            [sys.executable, "-m", "chapgent.cli", "--version"],
             capture_output=True,
             text=True,
         )
 
         start = time.perf_counter()
         result = subprocess.run(
-            [sys.executable, "-m", "pygent.cli", "--version"],
+            [sys.executable, "-m", "chapgent.cli", "--version"],
             capture_output=True,
             text=True,
         )
@@ -87,12 +87,12 @@ class TestStartupTime:
     def test_module_import_incremental(self):
         """Verify importing additional modules after initial load is fast."""
         # First, ensure base modules are loaded
-        import pygent.tools.base  # noqa: F401
+        import chapgent.tools.base  # noqa: F401
 
         # Now measure incremental imports (should be faster)
         start = time.perf_counter()
-        import pygent.session.models  # noqa: F401
-        import pygent.tools.registry  # noqa: F401
+        import chapgent.session.models  # noqa: F401
+        import chapgent.tools.registry  # noqa: F401
 
         end = time.perf_counter()
 

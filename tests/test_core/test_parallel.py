@@ -11,7 +11,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.core.parallel import (
+from chapgent.core.parallel import (
     PATH_ARGUMENTS,
     ExecutionBatch,
     ToolExecution,
@@ -26,7 +26,7 @@ from pygent.core.parallel import (
     paths_conflict,
     prepare_tool_execution,
 )
-from pygent.tools.base import ToolCategory, ToolDefinition, ToolRisk
+from chapgent.tools.base import ToolCategory, ToolDefinition, ToolRisk
 
 # =============================================================================
 # Test Fixtures

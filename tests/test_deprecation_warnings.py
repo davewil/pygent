@@ -1,6 +1,6 @@
-"""Deprecation warnings tests for pygent (Phase 4 Non-Functional Criteria).
+"""Deprecation warnings tests for chapgent (Phase 4 Non-Functional Criteria).
 
-These tests verify that pygent code runs cleanly without deprecation warnings.
+These tests verify that chapgent code runs cleanly without deprecation warnings.
 Tests are run with warnings treated as errors to catch any issues.
 """
 
@@ -22,17 +22,17 @@ class TestNoDeprecationWarnings:
             warnings.simplefilter("always", DeprecationWarning)
 
             # Import all core modules
-            import pygent.core.agent  # noqa: F401
-            import pygent.core.cache  # noqa: F401
-            import pygent.core.logging  # noqa: F401
-            import pygent.core.loop  # noqa: F401
-            import pygent.core.parallel  # noqa: F401
-            import pygent.core.permissions  # noqa: F401
-            import pygent.core.providers  # noqa: F401
-            import pygent.core.recovery  # noqa: F401
+            import chapgent.core.agent  # noqa: F401
+            import chapgent.core.cache  # noqa: F401
+            import chapgent.core.logging  # noqa: F401
+            import chapgent.core.loop  # noqa: F401
+            import chapgent.core.parallel  # noqa: F401
+            import chapgent.core.permissions  # noqa: F401
+            import chapgent.core.providers  # noqa: F401
+            import chapgent.core.recovery  # noqa: F401
 
             # Filter to only our deprecation warnings (not from dependencies)
-            our_warnings = [w for w in caught_warnings if "pygent" in str(w.filename).lower()]
+            our_warnings = [w for w in caught_warnings if "chapgent" in str(w.filename).lower()]
 
             if our_warnings:
                 warning_msgs = [f"{w.filename}:{w.lineno}: {w.message}" for w in our_warnings]
@@ -43,17 +43,17 @@ class TestNoDeprecationWarnings:
         with warnings.catch_warnings(record=True) as caught_warnings:
             warnings.simplefilter("always", DeprecationWarning)
 
-            import pygent.tools.base  # noqa: F401
-            import pygent.tools.filesystem  # noqa: F401
-            import pygent.tools.git  # noqa: F401
-            import pygent.tools.registry  # noqa: F401
-            import pygent.tools.scaffold  # noqa: F401
-            import pygent.tools.search  # noqa: F401
-            import pygent.tools.shell  # noqa: F401
-            import pygent.tools.testing  # noqa: F401
-            import pygent.tools.web  # noqa: F401
+            import chapgent.tools.base  # noqa: F401
+            import chapgent.tools.filesystem  # noqa: F401
+            import chapgent.tools.git  # noqa: F401
+            import chapgent.tools.registry  # noqa: F401
+            import chapgent.tools.scaffold  # noqa: F401
+            import chapgent.tools.search  # noqa: F401
+            import chapgent.tools.shell  # noqa: F401
+            import chapgent.tools.testing  # noqa: F401
+            import chapgent.tools.web  # noqa: F401
 
-            our_warnings = [w for w in caught_warnings if "pygent" in str(w.filename).lower()]
+            our_warnings = [w for w in caught_warnings if "chapgent" in str(w.filename).lower()]
 
             if our_warnings:
                 warning_msgs = [f"{w.filename}:{w.lineno}: {w.message}" for w in our_warnings]
@@ -64,11 +64,11 @@ class TestNoDeprecationWarnings:
         with warnings.catch_warnings(record=True) as caught_warnings:
             warnings.simplefilter("always", DeprecationWarning)
 
-            import pygent.config.loader  # noqa: F401
-            import pygent.config.prompt  # noqa: F401
-            import pygent.config.settings  # noqa: F401
+            import chapgent.config.loader  # noqa: F401
+            import chapgent.config.prompt  # noqa: F401
+            import chapgent.config.settings  # noqa: F401
 
-            our_warnings = [w for w in caught_warnings if "pygent" in str(w.filename).lower()]
+            our_warnings = [w for w in caught_warnings if "chapgent" in str(w.filename).lower()]
 
             if our_warnings:
                 warning_msgs = [f"{w.filename}:{w.lineno}: {w.message}" for w in our_warnings]
@@ -79,10 +79,10 @@ class TestNoDeprecationWarnings:
         with warnings.catch_warnings(record=True) as caught_warnings:
             warnings.simplefilter("always", DeprecationWarning)
 
-            import pygent.tui.app  # noqa: F401
-            import pygent.tui.widgets  # noqa: F401
+            import chapgent.tui.app  # noqa: F401
+            import chapgent.tui.widgets  # noqa: F401
 
-            our_warnings = [w for w in caught_warnings if "pygent" in str(w.filename).lower()]
+            our_warnings = [w for w in caught_warnings if "chapgent" in str(w.filename).lower()]
 
             if our_warnings:
                 warning_msgs = [f"{w.filename}:{w.lineno}: {w.message}" for w in our_warnings]
@@ -93,10 +93,10 @@ class TestNoDeprecationWarnings:
         with warnings.catch_warnings(record=True) as caught_warnings:
             warnings.simplefilter("always", DeprecationWarning)
 
-            import pygent.session.models  # noqa: F401
-            import pygent.session.storage  # noqa: F401
+            import chapgent.session.models  # noqa: F401
+            import chapgent.session.storage  # noqa: F401
 
-            our_warnings = [w for w in caught_warnings if "pygent" in str(w.filename).lower()]
+            our_warnings = [w for w in caught_warnings if "chapgent" in str(w.filename).lower()]
 
             if our_warnings:
                 warning_msgs = [f"{w.filename}:{w.lineno}: {w.message}" for w in our_warnings]
@@ -107,11 +107,11 @@ class TestNoDeprecationWarnings:
         with warnings.catch_warnings(record=True) as caught_warnings:
             warnings.simplefilter("always", DeprecationWarning)
 
-            import pygent.context.detection  # noqa: F401
-            import pygent.context.models  # noqa: F401
-            import pygent.context.prompt  # noqa: F401
+            import chapgent.context.detection  # noqa: F401
+            import chapgent.context.models  # noqa: F401
+            import chapgent.context.prompt  # noqa: F401
 
-            our_warnings = [w for w in caught_warnings if "pygent" in str(w.filename).lower()]
+            our_warnings = [w for w in caught_warnings if "chapgent" in str(w.filename).lower()]
 
             if our_warnings:
                 warning_msgs = [f"{w.filename}:{w.lineno}: {w.message}" for w in our_warnings]
@@ -122,11 +122,11 @@ class TestNoDeprecationWarnings:
         with warnings.catch_warnings(record=True) as caught_warnings:
             warnings.simplefilter("always", DeprecationWarning)
 
-            import pygent.ux.first_run  # noqa: F401
-            import pygent.ux.help  # noqa: F401
-            import pygent.ux.messages  # noqa: F401
+            import chapgent.ux.first_run  # noqa: F401
+            import chapgent.ux.help  # noqa: F401
+            import chapgent.ux.messages  # noqa: F401
 
-            our_warnings = [w for w in caught_warnings if "pygent" in str(w.filename).lower()]
+            our_warnings = [w for w in caught_warnings if "chapgent" in str(w.filename).lower()]
 
             if our_warnings:
                 warning_msgs = [f"{w.filename}:{w.lineno}: {w.message}" for w in our_warnings]
@@ -137,9 +137,9 @@ class TestNoDeprecationWarnings:
         with warnings.catch_warnings(record=True) as caught_warnings:
             warnings.simplefilter("always", DeprecationWarning)
 
-            import pygent.cli  # noqa: F401
+            import chapgent.cli  # noqa: F401
 
-            our_warnings = [w for w in caught_warnings if "pygent" in str(w.filename).lower()]
+            our_warnings = [w for w in caught_warnings if "chapgent" in str(w.filename).lower()]
 
             if our_warnings:
                 warning_msgs = [f"{w.filename}:{w.lineno}: {w.message}" for w in our_warnings]
@@ -150,14 +150,14 @@ class TestSubprocessWarnings:
     """Test CLI invocation with strict warning mode."""
 
     def test_cli_help_no_deprecation_warnings(self):
-        """Verify 'pygent --help' emits no deprecation warnings."""
+        """Verify 'chapgent --help' emits no deprecation warnings."""
         result = subprocess.run(
             [
                 sys.executable,
                 "-W",
                 "error::DeprecationWarning",
                 "-m",
-                "pygent.cli",
+                "chapgent.cli",
                 "--help",
             ],
             capture_output=True,
@@ -170,14 +170,14 @@ class TestSubprocessWarnings:
         )
 
     def test_cli_version_no_deprecation_warnings(self):
-        """Verify 'pygent --version' emits no deprecation warnings."""
+        """Verify 'chapgent --version' emits no deprecation warnings."""
         result = subprocess.run(
             [
                 sys.executable,
                 "-W",
                 "error::DeprecationWarning",
                 "-m",
-                "pygent.cli",
+                "chapgent.cli",
                 "--version",
             ],
             capture_output=True,
@@ -189,14 +189,14 @@ class TestSubprocessWarnings:
         )
 
     def test_cli_tools_no_deprecation_warnings(self):
-        """Verify 'pygent tools' emits no deprecation warnings."""
+        """Verify 'chapgent tools' emits no deprecation warnings."""
         result = subprocess.run(
             [
                 sys.executable,
                 "-W",
                 "error::DeprecationWarning",
                 "-m",
-                "pygent.cli",
+                "chapgent.cli",
                 "tools",
             ],
             capture_output=True,
@@ -208,14 +208,14 @@ class TestSubprocessWarnings:
         )
 
     def test_cli_config_show_no_deprecation_warnings(self):
-        """Verify 'pygent config show' emits no deprecation warnings."""
+        """Verify 'chapgent config show' emits no deprecation warnings."""
         result = subprocess.run(
             [
                 sys.executable,
                 "-W",
                 "error::DeprecationWarning",
                 "-m",
-                "pygent.cli",
+                "chapgent.cli",
                 "config",
                 "show",
             ],
@@ -240,11 +240,11 @@ class TestToolRuntimeWarnings:
         with warnings.catch_warnings(record=True) as caught_warnings:
             warnings.simplefilter("always", DeprecationWarning)
 
-            from pygent.tools.filesystem import read_file
+            from chapgent.tools.filesystem import read_file
 
             await read_file(str(test_file))
 
-            our_warnings = [w for w in caught_warnings if "pygent" in str(w.filename).lower()]
+            our_warnings = [w for w in caught_warnings if "chapgent" in str(w.filename).lower()]
 
             assert len(our_warnings) == 0, f"Warnings: {our_warnings}"
 
@@ -257,11 +257,11 @@ class TestToolRuntimeWarnings:
         with warnings.catch_warnings(record=True) as caught_warnings:
             warnings.simplefilter("always", DeprecationWarning)
 
-            from pygent.tools.filesystem import list_files
+            from chapgent.tools.filesystem import list_files
 
             await list_files(str(tmp_path))
 
-            our_warnings = [w for w in caught_warnings if "pygent" in str(w.filename).lower()]
+            our_warnings = [w for w in caught_warnings if "chapgent" in str(w.filename).lower()]
 
             assert len(our_warnings) == 0, f"Warnings: {our_warnings}"
 
@@ -271,11 +271,11 @@ class TestToolRuntimeWarnings:
         with warnings.catch_warnings(record=True) as caught_warnings:
             warnings.simplefilter("always", DeprecationWarning)
 
-            from pygent.tools.shell import shell
+            from chapgent.tools.shell import shell
 
             await shell("echo test")
 
-            our_warnings = [w for w in caught_warnings if "pygent" in str(w.filename).lower()]
+            our_warnings = [w for w in caught_warnings if "chapgent" in str(w.filename).lower()]
 
             assert len(our_warnings) == 0, f"Warnings: {our_warnings}"
 
@@ -288,12 +288,12 @@ class TestPydanticModelWarnings:
         with warnings.catch_warnings(record=True) as caught_warnings:
             warnings.simplefilter("always", DeprecationWarning)
 
-            from pygent.config.settings import Settings
+            from chapgent.config.settings import Settings
 
             settings = Settings()
             _ = settings.model_dump()
 
-            our_warnings = [w for w in caught_warnings if "pygent" in str(w.filename).lower()]
+            our_warnings = [w for w in caught_warnings if "chapgent" in str(w.filename).lower()]
 
             assert len(our_warnings) == 0, f"Warnings: {our_warnings}"
 
@@ -302,7 +302,7 @@ class TestPydanticModelWarnings:
         with warnings.catch_warnings(record=True) as caught_warnings:
             warnings.simplefilter("always", DeprecationWarning)
 
-            from pygent.session.models import Message, Session
+            from chapgent.session.models import Message, Session
 
             session = Session(
                 id="test",
@@ -310,7 +310,7 @@ class TestPydanticModelWarnings:
             )
             _ = session.model_dump()
 
-            our_warnings = [w for w in caught_warnings if "pygent" in str(w.filename).lower()]
+            our_warnings = [w for w in caught_warnings if "chapgent" in str(w.filename).lower()]
 
             assert len(our_warnings) == 0, f"Warnings: {our_warnings}"
 
@@ -325,12 +325,12 @@ class TestPropertyBased:
         with warnings.catch_warnings(record=True) as caught_warnings:
             warnings.simplefilter("always", DeprecationWarning)
 
-            from pygent.session.models import Message
+            from chapgent.session.models import Message
 
             msg = Message(role="user", content=content)
             _ = msg.model_dump()
 
-            our_warnings = [w for w in caught_warnings if "pygent" in str(w.filename).lower()]
+            our_warnings = [w for w in caught_warnings if "chapgent" in str(w.filename).lower()]
 
             assert len(our_warnings) == 0
 
@@ -347,12 +347,12 @@ class TestIntegration:
             # Import the main package
 
             # Access key components
-            from pygent.tools.registry import ToolRegistry
+            from chapgent.tools.registry import ToolRegistry
 
             # Create instances
             _ = ToolRegistry()
 
-            our_warnings = [w for w in caught_warnings if "pygent" in str(w.filename).lower()]
+            our_warnings = [w for w in caught_warnings if "chapgent" in str(w.filename).lower()]
 
             if our_warnings:
                 warning_msgs = [f"{w.filename}:{w.lineno}: {w.message}" for w in our_warnings]

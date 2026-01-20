@@ -1,8 +1,8 @@
 from hypothesis import given
 from hypothesis import strategies as st
 
-from pygent.tools.base import ToolCategory, ToolDefinition, ToolRisk
-from pygent.tools.registry import ToolRegistry
+from chapgent.tools.base import ToolCategory, ToolDefinition, ToolRisk
+from chapgent.tools.registry import ToolRegistry
 
 
 def create_dummy_tool(

@@ -10,7 +10,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from pygent.context.detection import (
+from chapgent.context.detection import (
     GitIgnoreFilter,
     _detect_git_info,
     _detect_go_project,
@@ -19,7 +19,7 @@ from pygent.context.detection import (
     _detect_rust_project,
     detect_project_context,
 )
-from pygent.context.models import ProjectType, TestFramework
+from chapgent.context.models import ProjectType, TestFramework
 
 # GitIgnoreFilter tests
 
@@ -458,7 +458,7 @@ class TestDetectGitInfo:
                 return "abc1234"
             return None
 
-        with patch("pygent.context.detection._run_git_command", side_effect=mock_run_git):
+        with patch("chapgent.context.detection._run_git_command", side_effect=mock_run_git):
             info = await _detect_git_info(tmp_path)
 
         assert info is not None
@@ -479,7 +479,7 @@ class TestDetectGitInfo:
                 return " M modified.txt"
             return None
 
-        with patch("pygent.context.detection._run_git_command", side_effect=mock_run_git):
+        with patch("chapgent.context.detection._run_git_command", side_effect=mock_run_git):
             info = await _detect_git_info(tmp_path)
 
         assert info is not None
@@ -555,8 +555,8 @@ class TestDetectProjectContext:
         (tmp_path / "pyproject.toml").write_text("[project]\nname = 'test'", encoding="utf-8")
         (tmp_path / ".git").mkdir()
 
-        with patch("pygent.context.detection._detect_git_info") as mock_git:
-            from pygent.context.models import GitInfo
+        with patch("chapgent.context.detection._detect_git_info") as mock_git:
+            from chapgent.context.models import GitInfo
 
             mock_git.return_value = GitInfo(branch="main")
             ctx = await detect_project_context(tmp_path)

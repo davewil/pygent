@@ -1,8 +1,8 @@
-# Pygent: Vision Document
+# Chapgent: Vision Document
 
 ## Overview
 
-**Pygent** is an AI-powered coding agent CLI tool built in Python. It provides developers with an intelligent assistant that can read, write, search, and execute code within their projects through natural language interaction.
+**Chapgent** is an AI-powered coding agent CLI tool built in Python. It provides developers with an intelligent assistant that can read, write, search, and execute code within their projects through natural language interaction.
 
 ## Core Philosophy
 
@@ -56,11 +56,11 @@
 - Auto-detects `.git` repositories
 - Reads `pyproject.toml`, `package.json` for project context
 - Respects `.gitignore` in file operations
-- Project-local configuration via `.pygent/` directory
+- Project-local configuration via `.chapgent/` directory
 
 ### Customizable Behavior
 - User-level system prompts in config
-- Project-level prompt overrides (`.pygent/prompt.md`)
+- Project-level prompt overrides (`.chapgent/prompt.md`)
 - Configurable model selection and parameters
 
 ## Technical Architecture
@@ -81,9 +81,9 @@
 
 ### Project Structure
 ```
-pygent/
+chapgent/
 ├── src/
-│   └── pygent/
+│   └── chapgent/
 │       ├── __init__.py
 │       ├── cli.py                 # Entry point
 │       ├── core/
@@ -138,7 +138,7 @@ pygent/
 
 ### Tool Registration (Decorator Pattern)
 ```python
-from pygent.tools import tool, ToolRisk
+from chapgent.tools import tool, ToolRisk
 
 @tool(
     name="read_file",
@@ -160,7 +160,7 @@ async def read_file(path: str) -> str:
 
 ### Provider Abstraction
 ```python
-from pygent.core.providers import LLMProvider
+from chapgent.core.providers import LLMProvider
 
 async def run_agent():
     provider = LLMProvider(
@@ -181,7 +181,7 @@ Tool Invoked → Check Risk Level →
 
 ## Configuration
 
-### User Config (`~/.config/pygent/config.toml`)
+### User Config (`~/.config/chapgent/config.toml`)
 ```toml
 [llm]
 provider = "anthropic"
@@ -202,7 +202,7 @@ You are a helpful coding assistant...
 """
 ```
 
-### Project Config (`.pygent/config.toml`)
+### Project Config (`.chapgent/config.toml`)
 ```toml
 [project]
 type = "python"
@@ -213,9 +213,9 @@ include = ["src/**/*.py", "tests/**/*.py"]
 exclude = ["**/node_modules/**"]
 ```
 
-### Project Prompt Override (`.pygent/prompt.md`)
+### Project Prompt Override (`.chapgent/prompt.md`)
 ```markdown
-You are working on the Pygent project, a Python CLI tool...
+You are working on the Chapgent project, a Python CLI tool...
 Focus on maintaining async patterns and type safety.
 ```
 
@@ -235,7 +235,7 @@ See individual phase documents for detailed specifications.
 - Intuitive permission prompts that don't interrupt flow
 - Seamless session persistence and resumption
 - Easy provider switching via config
-- PyPI installable with `uv install pygent` or `pip install pygent`
+- PyPI installable with `uv install chapgent` or `pip install chapgent`
 
 ## Future Considerations (Post-v1.0)
 

@@ -1,14 +1,14 @@
 import pytest
 from textual.widgets import Footer, Header
 
-from pygent.tui.app import PygentApp
-from pygent.tui.widgets import ConversationPanel, MessageInput, SessionsSidebar, ToolPanel
+from chapgent.tui.app import ChapgentApp
+from chapgent.tui.widgets import ConversationPanel, MessageInput, SessionsSidebar, ToolPanel
 
 
 @pytest.mark.asyncio
 async def test_app_startup():
     """Test that the app starts execution and shows key widgets."""
-    app = PygentApp()
+    app = ChapgentApp()
     async with app.run_test():
         # Check if the app is running
         assert app.is_running
@@ -25,7 +25,7 @@ async def test_app_startup():
 @pytest.mark.asyncio
 async def test_app_quit_binding():
     """Test that the quit binding works."""
-    app = PygentApp()
+    app = ChapgentApp()
     async with app.run_test() as pilot:
         await pilot.press("ctrl+c")
         assert not app.is_running

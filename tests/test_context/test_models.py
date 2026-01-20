@@ -4,7 +4,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.context.models import (
+from chapgent.context.models import (
     GitInfo,
     ProjectContext,
     ProjectType,

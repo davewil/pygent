@@ -6,13 +6,13 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.core.agent import Agent
-from pygent.core.loop import DEFAULT_MAX_ITERATIONS, _convert_to_llm_messages, conversation_loop
-from pygent.core.providers import LLMResponse, TokenUsage
-from pygent.core.providers import TextBlock as ProvTextBlock
-from pygent.core.providers import ToolUseBlock as ProvToolUseBlock
-from pygent.session.models import Message, Session, TextBlock, ToolResultBlock, ToolUseBlock
-from pygent.tools.base import ToolCategory, ToolDefinition, ToolRisk
+from chapgent.core.agent import Agent
+from chapgent.core.loop import DEFAULT_MAX_ITERATIONS, _convert_to_llm_messages, conversation_loop
+from chapgent.core.providers import LLMResponse, TokenUsage
+from chapgent.core.providers import TextBlock as ProvTextBlock
+from chapgent.core.providers import ToolUseBlock as ProvToolUseBlock
+from chapgent.session.models import Message, Session, TextBlock, ToolResultBlock, ToolUseBlock
+from chapgent.tools.base import ToolCategory, ToolDefinition, ToolRisk
 
 
 @pytest.fixture
@@ -876,7 +876,7 @@ class TestLoopCancellationAfterTools:
         self, mock_provider, mock_registry, mock_permissions, session
     ):
         """Cancellation after tools should still append results to messages."""
-        from pygent.core.cancellation import CancellationToken
+        from chapgent.core.cancellation import CancellationToken
 
         async def slow_tool(**kwargs):
             return "Tool result"
@@ -926,7 +926,7 @@ class TestLoopCancellationAfterTools:
         self, mock_provider, mock_registry, mock_permissions, session
     ):
         """Cancelled event after tools should have correct content message."""
-        from pygent.core.cancellation import CancellationToken
+        from chapgent.core.cancellation import CancellationToken
 
         async def quick_tool(**kwargs):
             return "Quick result"
@@ -967,7 +967,7 @@ class TestLoopCancellationAfterTools:
         self, mock_provider, mock_registry, mock_permissions, session
     ):
         """Cancelled event should have correct iteration count."""
-        from pygent.core.cancellation import CancellationToken
+        from chapgent.core.cancellation import CancellationToken
 
         async def tool_fn(**kwargs):
             return "done"
@@ -1011,7 +1011,7 @@ class TestLoopErrorHandling:
     @pytest.mark.asyncio
     async def test_rate_limit_error_yields_event(self, mock_provider, mock_registry, mock_permissions, session):
         """Rate limit error should yield llm_error event with retryable=True."""
-        from pygent.core.providers import RateLimitError
+        from chapgent.core.providers import RateLimitError
 
         mock_provider.complete.side_effect = RateLimitError("Rate limit exceeded")
 
@@ -1037,7 +1037,7 @@ class TestLoopErrorHandling:
     @pytest.mark.asyncio
     async def test_auth_error_yields_event(self, mock_provider, mock_registry, mock_permissions, session):
         """Authentication error should yield llm_error event with retryable=False."""
-        from pygent.core.providers import AuthenticationError
+        from chapgent.core.providers import AuthenticationError
 
         mock_provider.complete.side_effect = AuthenticationError("Invalid API key")
 
@@ -1058,7 +1058,7 @@ class TestLoopErrorHandling:
     @pytest.mark.asyncio
     async def test_network_error_yields_event(self, mock_provider, mock_registry, mock_permissions, session):
         """Network error should yield llm_error event with retryable=True."""
-        from pygent.core.providers import NetworkError
+        from chapgent.core.providers import NetworkError
 
         mock_provider.complete.side_effect = NetworkError("Connection timeout")
 
@@ -1079,7 +1079,7 @@ class TestLoopErrorHandling:
     @pytest.mark.asyncio
     async def test_invalid_request_error_yields_event(self, mock_provider, mock_registry, mock_permissions, session):
         """Invalid request error should yield llm_error event with retryable=False."""
-        from pygent.core.providers import InvalidRequestError
+        from chapgent.core.providers import InvalidRequestError
 
         mock_provider.complete.side_effect = InvalidRequestError("Invalid model")
 
@@ -1102,7 +1102,7 @@ class TestLoopErrorHandling:
         self, mock_provider, mock_registry, mock_permissions, session
     ):
         """Service unavailable error should yield llm_error event with retryable=True."""
-        from pygent.core.providers import ServiceUnavailableError
+        from chapgent.core.providers import ServiceUnavailableError
 
         mock_provider.complete.side_effect = ServiceUnavailableError("Service down")
 
@@ -1142,7 +1142,7 @@ class TestLoopErrorHandling:
     @pytest.mark.asyncio
     async def test_error_event_includes_iteration(self, mock_provider, mock_registry, mock_permissions, session):
         """Error event should include current iteration number."""
-        from pygent.core.providers import RateLimitError
+        from chapgent.core.providers import RateLimitError
 
         mock_provider.complete.side_effect = RateLimitError("Rate limit")
 
@@ -1159,7 +1159,7 @@ class TestLoopErrorHandling:
     @pytest.mark.asyncio
     async def test_error_event_includes_total_tokens(self, mock_provider, mock_registry, mock_permissions, session):
         """Error event should include cumulative token count."""
-        from pygent.core.providers import RateLimitError
+        from chapgent.core.providers import RateLimitError
 
         # First call succeeds with tokens, second fails
         mock_provider.complete.side_effect = [

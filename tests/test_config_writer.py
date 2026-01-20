@@ -7,7 +7,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.config.writer import (
+from chapgent.config.writer import (
     VALID_CONFIG_KEYS,
     ConfigWriteError,
     convert_value,
@@ -70,19 +70,19 @@ class TestGetConfigPaths:
         assert isinstance(project_config, Path)
 
     def test_user_config_path_structure(self):
-        """Test user config path is in ~/.config/pygent/."""
+        """Test user config path is in ~/.config/chapgent/."""
         user_config, _ = get_config_paths()
 
         assert user_config.name == "config.toml"
-        assert user_config.parent.name == "pygent"
+        assert user_config.parent.name == "chapgent"
         assert user_config.parent.parent.name == ".config"
 
     def test_project_config_path_structure(self):
-        """Test project config path is in .pygent/."""
+        """Test project config path is in .chapgent/."""
         _, project_config = get_config_paths()
 
         assert project_config.name == "config.toml"
-        assert project_config.parent.name == ".pygent"
+        assert project_config.parent.name == ".chapgent"
 
 
 class TestConvertValue:
@@ -186,7 +186,7 @@ class TestWriteDefaultConfig:
 
     def test_creates_config_file(self, tmp_path):
         """Test that config file is created."""
-        config_path = tmp_path / "pygent" / "config.toml"
+        config_path = tmp_path / "chapgent" / "config.toml"
         write_default_config(config_path)
 
         assert config_path.exists()
@@ -288,7 +288,7 @@ class TestSaveConfigValue:
         user_config = tmp_path / "user" / "config.toml"
         project_config = tmp_path / "project" / "config.toml"
 
-        from pygent.config import writer
+        from chapgent.config import writer
 
         monkeypatch.setattr(writer, "get_config_paths", lambda: (user_config, project_config))
 
@@ -306,7 +306,7 @@ class TestSaveConfigValue:
         user_config = tmp_path / "user" / "config.toml"
         project_config = tmp_path / "project" / "config.toml"
 
-        from pygent.config import writer
+        from chapgent.config import writer
 
         monkeypatch.setattr(writer, "get_config_paths", lambda: (user_config, project_config))
 
@@ -320,7 +320,7 @@ class TestSaveConfigValue:
         user_config = tmp_path / "user" / "config.toml"
         project_config = tmp_path / "project" / "config.toml"
 
-        from pygent.config import writer
+        from chapgent.config import writer
 
         monkeypatch.setattr(writer, "get_config_paths", lambda: (user_config, project_config))
 
@@ -342,7 +342,7 @@ class TestSaveConfigValue:
         # Create existing config
         user_config.write_text('[llm]\nmodel = "existing-model"\n')
 
-        from pygent.config import writer
+        from chapgent.config import writer
 
         monkeypatch.setattr(writer, "get_config_paths", lambda: (user_config, tmp_path / "p" / "c.toml"))
 
@@ -453,7 +453,7 @@ class TestIntegration:
 
         user_config = tmp_path / "user" / "config.toml"
 
-        from pygent.config import writer
+        from chapgent.config import writer
 
         monkeypatch.setattr(writer, "get_config_paths", lambda: (user_config, tmp_path / "p" / "c.toml"))
 

@@ -6,7 +6,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.ux.help import (
+from chapgent.ux.help import (
     HELP_TOPICS,
     HelpTopic,
     format_help_topic,

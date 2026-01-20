@@ -8,7 +8,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.core.recovery import (
+from chapgent.core.recovery import (
     ERROR_PATTERNS,
     MESSAGE_PATTERNS,
     ErrorRecovery,
@@ -360,7 +360,7 @@ class TestIntegration:
     def test_git_error_flow(self, recovery: ErrorRecovery) -> None:
         """Test error recovery flow for git operations."""
         # Import GitError for testing
-        from pygent.tools.git import GitError
+        from chapgent.tools.git import GitError
 
         error = GitError("Not a git repository (or any parent up to mount point)")
         action = recovery.handle_tool_error("git_commit", error)

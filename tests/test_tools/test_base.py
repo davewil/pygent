@@ -1,6 +1,6 @@
 import pytest
 
-from pygent.tools.base import ToolCategory, ToolDefinition, ToolRisk, tool
+from chapgent.tools.base import ToolCategory, ToolDefinition, ToolRisk, tool
 
 
 @pytest.mark.asyncio

@@ -1,18 +1,18 @@
-# Pygent
+# Chapgent
 
 AI-powered coding agent for the terminal.
 
 ## Installation
 
 ```bash
-pip install pygent
+pip install chapgent
 ```
 
 Or install from source:
 
 ```bash
-git clone https://github.com/davewil/pygent.git
-cd pygent
+git clone https://github.com/davewil/chapgent.git
+cd chapgent
 pip install -e .
 ```
 
@@ -20,42 +20,42 @@ pip install -e .
 
 ```bash
 # Start a chat session
-pygent chat
+chapgent chat
 
 # Use mock mode (no API key needed)
-pygent chat --mock
+chapgent chat --mock
 
 # List available tools
-pygent tools
+chapgent tools
 
 # View configuration
-pygent config show
+chapgent config show
 ```
 
 ## Configuration
 
-Pygent uses TOML configuration files with the following priority:
+Chapgent uses TOML configuration files with the following priority:
 
 1. Environment variables (highest)
-2. Project config (`.pygent.toml` in current directory)
-3. User config (`~/.config/pygent/config.toml`)
+2. Project config (`.chapgent.toml` in current directory)
+3. User config (`~/.config/chapgent/config.toml`)
 4. Defaults (lowest)
 
 ### Environment Variables
 
 ```bash
-export PYGENT_MODEL="claude-sonnet-4-20250514"
-export PYGENT_API_KEY="your-api-key"
-export PYGENT_MAX_TOKENS=4096
+export CHAPGENT_MODEL="claude-sonnet-4-20250514"
+export CHAPGENT_API_KEY="your-api-key"
+export CHAPGENT_MAX_TOKENS=4096
 ```
 
 ### Config Commands
 
 ```bash
-pygent config path      # Show config file locations
-pygent config init      # Create default config
-pygent config set llm.model "claude-sonnet-4-20250514"
-pygent config edit      # Open in $EDITOR
+chapgent config path      # Show config file locations
+chapgent config init      # Create default config
+chapgent config set llm.model "claude-sonnet-4-20250514"
+chapgent config edit      # Open in $EDITOR
 ```
 
 ## Development
@@ -64,8 +64,8 @@ pygent config edit      # Open in $EDITOR
 
 ```bash
 # Clone and install dev dependencies
-git clone https://github.com/davewil/pygent.git
-cd pygent
+git clone https://github.com/davewil/chapgent.git
+cd chapgent
 pip install -e ".[dev]"
 
 # Install pre-commit hooks
@@ -79,7 +79,7 @@ pre-commit install
 pytest
 
 # Run with coverage
-pytest --cov=src/pygent
+pytest --cov=src/chapgent
 
 # Run specific test file
 pytest tests/test_tools/test_filesystem.py -v
@@ -165,13 +165,13 @@ pytest tests/test_tools/test_filesystem.py -v
 
 ### Config Priority Testing
 
-- **API key precedence** - Test explicit priority ordering (e.g., `PYGENT_API_KEY > ANTHROPIC_API_KEY`)
+- **API key precedence** - Test explicit priority ordering (e.g., `CHAPGENT_API_KEY > ANTHROPIC_API_KEY`)
 - **Use `monkeypatch.delenv(raising=False)`** - Cleaner than try/except for clearing env vars
 
 ## Architecture
 
 ```
-src/pygent/
+src/chapgent/
 ├── cli.py              # CLI entry point (Click)
 ├── config/             # Configuration system
 │   ├── loader.py       # Config file loading

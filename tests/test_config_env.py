@@ -10,7 +10,7 @@ import tomli_w
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.config.loader import (
+from chapgent.config.loader import (
     API_KEY_ENV_PRIORITY,
     ENV_MAPPINGS,
     _convert_env_value,
@@ -23,12 +23,12 @@ from pygent.config.loader import (
 class TestEnvMappings:
     """Tests for ENV_MAPPINGS constant."""
 
-    def test_contains_pygent_vars(self) -> None:
-        """Pygent-specific env vars are defined."""
-        assert "PYGENT_MODEL" in ENV_MAPPINGS
-        assert "PYGENT_API_KEY" in ENV_MAPPINGS
-        assert "PYGENT_MAX_TOKENS" in ENV_MAPPINGS
-        assert "PYGENT_PROVIDER" in ENV_MAPPINGS
+    def test_contains_chapgent_vars(self) -> None:
+        """Chapgent-specific env vars are defined."""
+        assert "CHAPGENT_MODEL" in ENV_MAPPINGS
+        assert "CHAPGENT_API_KEY" in ENV_MAPPINGS
+        assert "CHAPGENT_MAX_TOKENS" in ENV_MAPPINGS
+        assert "CHAPGENT_PROVIDER" in ENV_MAPPINGS
 
     def test_contains_api_key_fallbacks(self) -> None:
         """Standard API key env vars are defined as fallbacks."""
@@ -46,9 +46,9 @@ class TestEnvMappings:
 class TestApiKeyEnvPriority:
     """Tests for API_KEY_ENV_PRIORITY constant."""
 
-    def test_pygent_api_key_first(self) -> None:
-        """PYGENT_API_KEY should have highest priority."""
-        assert API_KEY_ENV_PRIORITY[0] == "PYGENT_API_KEY"
+    def test_chapgent_api_key_first(self) -> None:
+        """CHAPGENT_API_KEY should have highest priority."""
+        assert API_KEY_ENV_PRIORITY[0] == "CHAPGENT_API_KEY"
 
     def test_anthropic_before_openai(self) -> None:
         """ANTHROPIC_API_KEY should come before OPENAI_API_KEY."""
@@ -157,37 +157,37 @@ class TestLoadEnvConfig:
         result = _load_env_config()
         assert result == {}
 
-    def test_loads_pygent_model(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Loads PYGENT_MODEL env var."""
+    def test_loads_chapgent_model(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Loads CHAPGENT_MODEL env var."""
         for var in ENV_MAPPINGS:
             monkeypatch.delenv(var, raising=False)
-        monkeypatch.setenv("PYGENT_MODEL", "gpt-4")
+        monkeypatch.setenv("CHAPGENT_MODEL", "gpt-4")
 
         result = _load_env_config()
         assert result == {"llm": {"model": "gpt-4"}}
 
-    def test_loads_pygent_max_tokens(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Loads PYGENT_MAX_TOKENS as integer."""
+    def test_loads_chapgent_max_tokens(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Loads CHAPGENT_MAX_TOKENS as integer."""
         for var in ENV_MAPPINGS:
             monkeypatch.delenv(var, raising=False)
-        monkeypatch.setenv("PYGENT_MAX_TOKENS", "8192")
+        monkeypatch.setenv("CHAPGENT_MAX_TOKENS", "8192")
 
         result = _load_env_config()
         assert result == {"llm": {"max_tokens": 8192}}
 
-    def test_api_key_priority_pygent_first(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """PYGENT_API_KEY takes priority over others."""
+    def test_api_key_priority_chapgent_first(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """CHAPGENT_API_KEY takes priority over others."""
         for var in ENV_MAPPINGS:
             monkeypatch.delenv(var, raising=False)
-        monkeypatch.setenv("PYGENT_API_KEY", "pygent-key")
+        monkeypatch.setenv("CHAPGENT_API_KEY", "chapgent-key")
         monkeypatch.setenv("ANTHROPIC_API_KEY", "anthropic-key")
         monkeypatch.setenv("OPENAI_API_KEY", "openai-key")
 
         result = _load_env_config()
-        assert result["llm"]["api_key"] == "pygent-key"
+        assert result["llm"]["api_key"] == "chapgent-key"
 
     def test_api_key_priority_anthropic_second(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """ANTHROPIC_API_KEY used when PYGENT_API_KEY not set."""
+        """ANTHROPIC_API_KEY used when CHAPGENT_API_KEY not set."""
         for var in ENV_MAPPINGS:
             monkeypatch.delenv(var, raising=False)
         monkeypatch.setenv("ANTHROPIC_API_KEY", "anthropic-key")
@@ -209,9 +209,9 @@ class TestLoadEnvConfig:
         """Loads multiple env vars at once."""
         for var in ENV_MAPPINGS:
             monkeypatch.delenv(var, raising=False)
-        monkeypatch.setenv("PYGENT_MODEL", "claude-3")
-        monkeypatch.setenv("PYGENT_PROVIDER", "anthropic")
-        monkeypatch.setenv("PYGENT_MAX_TOKENS", "2048")
+        monkeypatch.setenv("CHAPGENT_MODEL", "claude-3")
+        monkeypatch.setenv("CHAPGENT_PROVIDER", "anthropic")
+        monkeypatch.setenv("CHAPGENT_MAX_TOKENS", "2048")
         monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
 
         result = _load_env_config()
@@ -238,7 +238,7 @@ class TestLoadConfigWithEnv:
             tomli_w.dump(config_data, f)
 
         # Set env var
-        monkeypatch.setenv("PYGENT_MODEL", "env-model")
+        monkeypatch.setenv("CHAPGENT_MODEL", "env-model")
 
         settings = await load_config(
             user_config_path=config_path,
@@ -261,7 +261,7 @@ class TestLoadConfigWithEnv:
             tomli_w.dump(config_data, f)
 
         # Set env var (should be ignored)
-        monkeypatch.setenv("PYGENT_MODEL", "env-model")
+        monkeypatch.setenv("CHAPGENT_MODEL", "env-model")
 
         settings = await load_config(
             user_config_path=config_path,
@@ -304,7 +304,7 @@ class TestLoadConfigWithEnv:
             tomli_w.dump({"llm": {"model": "project-model"}}, f)
 
         # Env var sets provider (overrides all) - use a different valid provider
-        monkeypatch.setenv("PYGENT_PROVIDER", "groq")
+        monkeypatch.setenv("CHAPGENT_PROVIDER", "groq")
 
         settings = await load_config(
             user_config_path=user_config_path,
@@ -358,7 +358,7 @@ class TestEdgeCases:
         for var in ENV_MAPPINGS:
             monkeypatch.delenv(var, raising=False)
         # Empty string should be falsy
-        monkeypatch.setenv("PYGENT_MODEL", "")
+        monkeypatch.setenv("CHAPGENT_MODEL", "")
 
         result = _load_env_config()
         # Empty string is falsy, so should not be in result
@@ -368,7 +368,7 @@ class TestEdgeCases:
         """Whitespace-only env var is loaded (non-empty)."""
         for var in ENV_MAPPINGS:
             monkeypatch.delenv(var, raising=False)
-        monkeypatch.setenv("PYGENT_MODEL", "   ")
+        monkeypatch.setenv("CHAPGENT_MODEL", "   ")
 
         result = _load_env_config()
         # Whitespace is truthy
@@ -389,8 +389,8 @@ class TestEdgeCases:
         """Works when only env vars are set (no config files)."""
         for var in ENV_MAPPINGS:
             monkeypatch.delenv(var, raising=False)
-        monkeypatch.setenv("PYGENT_MODEL", "test-model")
-        monkeypatch.setenv("PYGENT_API_KEY", "test-key")
+        monkeypatch.setenv("CHAPGENT_MODEL", "test-model")
+        monkeypatch.setenv("CHAPGENT_API_KEY", "test-key")
 
         settings = await load_config(
             user_config_path=tmp_path / "no_exist.toml",

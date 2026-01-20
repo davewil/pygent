@@ -1,6 +1,6 @@
 # Agent Loop: Technical Specification
 
-This document provides a detailed breakdown of how the pygent agent loop works, including all core components, execution flow, and supporting systems.
+This document provides a detailed breakdown of how the chapgent agent loop works, including all core components, execution flow, and supporting systems.
 
 ## Overview
 

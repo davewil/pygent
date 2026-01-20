@@ -11,7 +11,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.config.prompt import (
+from chapgent.config.prompt import (
     TEMPLATE_VARIABLES,
     PromptLoadError,
     build_full_system_prompt,
@@ -20,8 +20,8 @@ from pygent.config.prompt import (
     load_prompt_file,
     resolve_template_variables,
 )
-from pygent.config.settings import DEFAULT_SYSTEM_PROMPT, SystemPromptSettings
-from pygent.context.models import GitInfo, ProjectContext, ProjectType, TestFramework
+from chapgent.config.settings import DEFAULT_SYSTEM_PROMPT, SystemPromptSettings
+from chapgent.context.models import GitInfo, ProjectContext, ProjectType, TestFramework
 
 
 class TestTemplateVariables:
@@ -186,13 +186,13 @@ class TestLoadPromptFile:
     def test_expands_home_directory(self, tmp_path: Path) -> None:
         """Expands ~ to home directory."""
         # Create a file in a temp directory that we'll pretend is home
-        prompt_file = tmp_path / ".config" / "pygent" / "prompt.md"
+        prompt_file = tmp_path / ".config" / "chapgent" / "prompt.md"
         prompt_file.parent.mkdir(parents=True)
         prompt_file.write_text("Home prompt")
 
         # Use the full path with ~ substitution
         with patch.object(Path, "expanduser", lambda self: Path(str(self).replace("~", str(tmp_path)))):
-            result = load_prompt_file("~/.config/pygent/prompt.md")
+            result = load_prompt_file("~/.config/chapgent/prompt.md")
             assert result == "Home prompt"
 
     def test_raises_for_nonexistent_file(self) -> None:

@@ -4,10 +4,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from pygent.core.agent import Agent
-from pygent.core.loop import LoopEvent
-from pygent.tui.app import PygentApp
-from pygent.tui.widgets import ConversationPanel, MessageInput, ToolPanel, ToolProgressItem
+from chapgent.core.agent import Agent
+from chapgent.core.loop import LoopEvent
+from chapgent.tui.app import ChapgentApp
+from chapgent.tui.widgets import ConversationPanel, MessageInput, ToolPanel, ToolProgressItem
 
 
 @pytest.mark.asyncio
@@ -40,7 +40,7 @@ async def test_tui_integration_with_mock_agent():
     mock_agent.run.side_effect = event_generator
 
     # 2. Initialize App with Mock Agent
-    app = PygentApp(agent=mock_agent)
+    app = ChapgentApp(agent=mock_agent)
 
     async with app.run_test() as pilot:
         # 3. Simulate User Input

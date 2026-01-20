@@ -8,14 +8,14 @@ from hypothesis import given
 from hypothesis import settings as hypothesis_settings
 from hypothesis import strategies as st
 
-from pygent.config.settings import Settings
-from pygent.core.agent import Agent
-from pygent.core.providers import LLMProvider, LLMResponse
-from pygent.session.models import Session
-from pygent.session.storage import SessionStorage
-from pygent.tools.registry import ToolRegistry
-from pygent.tui.app import PygentApp
-from pygent.tui.widgets import SessionItem, SessionsSidebar
+from chapgent.config.settings import Settings
+from chapgent.core.agent import Agent
+from chapgent.core.providers import LLMProvider, LLMResponse
+from chapgent.session.models import Session
+from chapgent.session.storage import SessionStorage
+from chapgent.tools.registry import ToolRegistry
+from chapgent.tui.app import ChapgentApp
+from chapgent.tui.widgets import SessionItem, SessionsSidebar
 
 # =============================================================================
 # SessionItem Widget Tests
@@ -75,7 +75,7 @@ class TestSessionsSidebar:
     @pytest.mark.asyncio
     async def test_sidebar_compose(self):
         """Test that sidebar composes correctly."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             sidebar = app.query_one(SessionsSidebar)
             # Check that the sessions-list scroll is present
@@ -85,7 +85,7 @@ class TestSessionsSidebar:
     @pytest.mark.asyncio
     async def test_sidebar_add_session(self):
         """Test adding a session to the sidebar."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             sidebar = app.query_one(SessionsSidebar)
 
@@ -103,7 +103,7 @@ class TestSessionsSidebar:
     @pytest.mark.asyncio
     async def test_sidebar_add_multiple_sessions(self):
         """Test adding multiple sessions to the sidebar."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             sidebar = app.query_one(SessionsSidebar)
 
@@ -119,7 +119,7 @@ class TestSessionsSidebar:
     @pytest.mark.asyncio
     async def test_sidebar_update_active_session(self):
         """Test updating which session is active."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             sidebar = app.query_one(SessionsSidebar)
 
@@ -141,7 +141,7 @@ class TestSessionsSidebar:
     @pytest.mark.asyncio
     async def test_sidebar_clear(self):
         """Test clearing the sidebar."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             sidebar = app.query_one(SessionsSidebar)
 
@@ -157,7 +157,7 @@ class TestSessionsSidebar:
     @pytest.mark.asyncio
     async def test_sidebar_get_session_count(self):
         """Test getting session count."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             sidebar = app.query_one(SessionsSidebar)
             assert sidebar.get_session_count() == 0
@@ -170,17 +170,17 @@ class TestSessionsSidebar:
 
 
 # =============================================================================
-# PygentApp Sidebar Integration Tests
+# ChapgentApp Sidebar Integration Tests
 # =============================================================================
 
 
-class TestPygentAppSidebarIntegration:
-    """Tests for sidebar integration with PygentApp."""
+class TestChapgentAppSidebarIntegration:
+    """Tests for sidebar integration with ChapgentApp."""
 
     @pytest.mark.asyncio
     async def test_sidebar_present_by_default(self):
         """Test that sidebar is present when show_sidebar=True (default)."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             assert len(app.query(SessionsSidebar)) == 1
 
@@ -190,14 +190,14 @@ class TestPygentAppSidebarIntegration:
         settings = Settings()
         settings.tui.show_sidebar = False
 
-        app = PygentApp(settings=settings)
+        app = ChapgentApp(settings=settings)
         async with app.run_test():
             assert len(app.query(SessionsSidebar)) == 0
 
     @pytest.mark.asyncio
     async def test_toggle_sidebar_keybinding(self):
         """Test that ctrl+b toggles sidebar visibility."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             sidebar = app.query_one(SessionsSidebar)
             assert sidebar.display is True
@@ -216,7 +216,7 @@ class TestPygentAppSidebarIntegration:
         settings = Settings()
         settings.tui.show_sidebar = False
 
-        app = PygentApp(settings=settings)
+        app = ChapgentApp(settings=settings)
         async with app.run_test() as pilot:
             # Should not crash, just show warning
             await pilot.press("ctrl+b")
@@ -237,7 +237,7 @@ class TestPygentAppSidebarIntegration:
         )
 
         agent = Agent(provider, ToolRegistry(), None, session)
-        app = PygentApp(agent=agent)
+        app = ChapgentApp(agent=agent)
 
         async with app.run_test() as pilot:
             sidebar = app.query_one(SessionsSidebar)
@@ -264,7 +264,7 @@ class TestPygentAppSidebarIntegration:
         )
 
         agent = Agent(provider, ToolRegistry(), None, session)
-        app = PygentApp(agent=agent)
+        app = ChapgentApp(agent=agent)
 
         async with app.run_test() as pilot:
             sidebar = app.query_one(SessionsSidebar)
@@ -317,7 +317,7 @@ class TestSidebarWithStorage:
         provider = AsyncMock(spec=LLMProvider)
         agent = Agent(provider, ToolRegistry(), None, session1)
 
-        app = PygentApp(agent=agent, storage=storage)
+        app = ChapgentApp(agent=agent, storage=storage)
 
         async with app.run_test():
             sidebar = app.query_one(SessionsSidebar)
@@ -340,7 +340,7 @@ class TestSidebarWithStorage:
         provider = AsyncMock(spec=LLMProvider)
         agent = Agent(provider, ToolRegistry(), None, session1)
 
-        app = PygentApp(agent=agent, storage=storage)
+        app = ChapgentApp(agent=agent, storage=storage)
 
         async with app.run_test():
             await asyncio.sleep(0.2)
@@ -355,7 +355,7 @@ class TestSidebarWithStorage:
     @pytest.mark.asyncio
     async def test_no_storage_no_population(self):
         """Test that sidebar remains empty when no storage is provided."""
-        app = PygentApp(storage=None)
+        app = ChapgentApp(storage=None)
 
         async with app.run_test():
             await asyncio.sleep(0.1)
@@ -396,7 +396,7 @@ class TestPropertyBased:
     @hypothesis_settings(max_examples=10)
     async def test_sidebar_add_multiple_sessions_property(self, session_count):
         """Test adding varying numbers of sessions to sidebar."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             sidebar = app.query_one(SessionsSidebar)
 
@@ -408,7 +408,7 @@ class TestPropertyBased:
     @pytest.mark.asyncio
     async def test_sidebar_clear_then_add(self):
         """Test clearing sidebar then adding new sessions."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             sidebar = app.query_one(SessionsSidebar)
 
@@ -440,7 +440,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_sidebar_with_empty_session_id(self):
         """Test sidebar handles empty session ID."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             sidebar = app.query_one(SessionsSidebar)
             # Should not crash with empty string
@@ -450,7 +450,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_sidebar_with_very_long_session_id(self):
         """Test sidebar handles very long session ID."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             sidebar = app.query_one(SessionsSidebar)
             long_id = "a" * 1000
@@ -460,7 +460,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_sidebar_with_special_characters_in_id(self):
         """Test sidebar handles special characters in session ID."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             sidebar = app.query_one(SessionsSidebar)
             special_id = "session-<>\"'&;`$()[]{}|\\!"
@@ -470,7 +470,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_update_active_nonexistent_session(self):
         """Test updating active session with non-existent ID."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test():
             sidebar = app.query_one(SessionsSidebar)
             sidebar.add_session("session-1", 0, is_active=True)
@@ -488,7 +488,7 @@ class TestEdgeCases:
         storage = MagicMock(spec=SessionStorage)
         storage.list_sessions = AsyncMock(side_effect=Exception("Storage error"))
 
-        app = PygentApp(storage=storage)
+        app = ChapgentApp(storage=storage)
 
         # Should not crash
         async with app.run_test():

@@ -8,7 +8,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from pygent.tools.web import (
+from chapgent.tools.web import (
     DEFAULT_TIMEOUT,
     WebFetchError,
     _format_response,

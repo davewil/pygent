@@ -2,7 +2,7 @@
 
 ## Objective
 
-Enhance pygent with advanced capabilities: test running integration, project scaffolding, enhanced TUI features, and improved context awareness. This phase elevates pygent from a tool collection to an intelligent development companion.
+Enhance chapgent with advanced capabilities: test running integration, project scaffolding, enhanced TUI features, and improved context awareness. This phase elevates chapgent from a tool collection to an intelligent development companion.
 
 ## Prerequisites
 
@@ -514,7 +514,7 @@ async def execute_tools_parallel(
 ```python
 # Defer heavy imports until needed
 def get_git_tools():
-    from pygent.tools.git import git_status, git_diff, ...
+    from chapgent.tools.git import git_status, git_diff, ...
     return [git_status, git_diff, ...]
 ```
 

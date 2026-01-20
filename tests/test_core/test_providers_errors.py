@@ -3,7 +3,7 @@
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.core.providers import (
+from chapgent.core.providers import (
     AuthenticationError,
     InvalidRequestError,
     LLMError,

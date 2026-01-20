@@ -7,7 +7,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from pygent.tools.scaffold import (
+from chapgent.tools.scaffold import (
     COMPONENTS,
     TEMPLATES,
     ComponentTemplate,

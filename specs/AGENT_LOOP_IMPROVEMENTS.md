@@ -16,23 +16,23 @@ Four independent improvements to harden the agent loop for production use. Each 
 
 ### Changes Made
 
-1. **`src/pygent/tools/base.py`** ✅
+1. **`src/chapgent/tools/base.py`** ✅
    - Added `read_only: bool = False` field to `ToolDefinition` dataclass
    - Added `cacheable: bool = True` field to `ToolDefinition` dataclass
    - Updated `@tool` decorator to accept `read_only` and `cacheable` parameters
    - Default: `cacheable` defaults to `True` if `read_only=True`, otherwise `False`
 
-2. **`src/pygent/tools/*.py`** (all tool files) ✅
+2. **`src/chapgent/tools/*.py`** (all tool files) ✅
    - Updated each `@tool()` decorator with appropriate `read_only` and `cacheable` values
    - Read-only tools marked with `read_only=True`: `read_file`, `list_files`, `grep_search`, `find_files`, `find_definition`, `git_status`, `git_diff`, `git_log`, `git_branch`, `web_fetch`, `list_templates`, `list_components`
    - Mutation tools marked with `cacheable=False`: `edit_file`, `create_file`, `delete_file`, `move_file`, `copy_file`, `shell`, `git_add`, `git_commit`, `git_checkout`, `git_push`, `git_pull`, `run_tests`, `create_project`, `add_component`
 
-3. **`src/pygent/core/parallel.py`** ✅
+3. **`src/chapgent/core/parallel.py`** ✅
    - Removed `READ_ONLY_TOOLS` hardcoded set
    - Updated `is_read_only_tool()` to check `tool_def.read_only` instead of string lookup
    - Updated `execute_single_tool()` to pass `cacheable=tool_def.cacheable` to cache methods
 
-4. **`src/pygent/core/cache.py`** ✅
+4. **`src/chapgent/core/cache.py`** ✅
    - Removed `NON_CACHEABLE_TOOLS` hardcoded set
    - Removed `_is_cacheable()` method
    - Updated `get()` and `set()` methods to accept `cacheable: bool = True` parameter
@@ -59,7 +59,7 @@ Four independent improvements to harden the agent loop for production use. Each 
 
 ### Changes Made
 
-1. **`src/pygent/core/loop.py`** ✅
+1. **`src/chapgent/core/loop.py`** ✅
    - Added `DEFAULT_MAX_ITERATIONS = 50` constant
    - Added `max_iterations: int = DEFAULT_MAX_ITERATIONS` parameter to `conversation_loop()`
    - Added `max_tokens: int | None = None` parameter (None = unlimited)
@@ -69,21 +69,21 @@ Four independent improvements to harden the agent loop for production use. Each 
    - Enhanced `LoopEvent` dataclass with: `usage`, `iteration`, `total_tokens` fields
    - All events now include iteration and token tracking info
 
-2. **`src/pygent/core/agent.py`** ✅
+2. **`src/chapgent/core/agent.py`** ✅
    - Added `max_iterations` and `max_tokens` to `Agent.__init__()`
    - Pass limits to `conversation_loop()` via `run()` method
 
-3. **`src/pygent/core/providers.py`** ✅
+3. **`src/chapgent/core/providers.py`** ✅
    - Added `TokenUsage` dataclass with `prompt_tokens`, `completion_tokens`, `total_tokens`
    - Added `usage: TokenUsage | None = None` field to `LLMResponse`
    - Updated `LiteLLMProvider.complete()` to parse token usage from response
 
-4. **`src/pygent/core/mock_provider.py`** ✅
+4. **`src/chapgent/core/mock_provider.py`** ✅
    - Added `_mock_usage()` helper method
    - Added `MOCK_PROMPT_TOKENS` and `MOCK_COMPLETION_TOKENS` constants
    - Updated all `LLMResponse` returns to include `usage=self._mock_usage()`
 
-5. **`src/pygent/config/settings.py`**
+5. **`src/chapgent/config/settings.py`**
    - ⏳ Deferred: Add `max_iterations` and `max_tokens` to config model (can be done when needed)
 
 ### Tests ✅
@@ -111,7 +111,7 @@ Four independent improvements to harden the agent loop for production use. Each 
 
 ### Changes Made
 
-1. **`src/pygent/core/providers.py`** ✅
+1. **`src/chapgent/core/providers.py`** ✅
    - Created custom exception class hierarchy:
      - `LLMError` (base) - with message, retryable, status_code, original_error attributes
      - `RateLimitError` - retryable=True, status_code=429, optional retry_after
@@ -125,7 +125,7 @@ Four independent improvements to harden the agent loop for production use. Each 
      - Patterns include: rate limit, network, auth, service unavailable
      - Preserves original_error for debugging
 
-2. **`src/pygent/core/loop.py`** ✅
+2. **`src/chapgent/core/loop.py`** ✅
    - Added new `LoopEvent` fields: `error_type`, `error_message`, `retryable`
    - Wrapped `provider.complete()` in try/except block
    - Yields `llm_error` event on exception with:
@@ -164,7 +164,7 @@ Four independent improvements to harden the agent loop for production use. Each 
 
 ### Changes Made
 
-1. **`src/pygent/core/cancellation.py`** (new file) ✅
+1. **`src/chapgent/core/cancellation.py`** (new file) ✅
    - Created `CancellationToken` class with:
      - `_cancelled`, `_cancel_time`, `_reason` fields
      - `_event` (asyncio.Event) for async waiting
@@ -175,7 +175,7 @@ Four independent improvements to harden the agent loop for production use. Each 
      - `raise_if_cancelled()` method that raises CancellationError
    - Created `CancellationError` exception class
 
-2. **`src/pygent/core/loop.py`** ✅
+2. **`src/chapgent/core/loop.py`** ✅
    - Added `cancellation_token: CancellationToken | None = None` parameter to `conversation_loop()`
    - Added `cancel_reason: str | None = None` field to `LoopEvent`
    - Check `token.is_cancelled` at start of each iteration
@@ -183,7 +183,7 @@ Four independent improvements to harden the agent loop for production use. Each 
    - Yield `LoopEvent(type="cancelled")` with cancel_reason on cancellation
    - Pass cancellation_token to `execute_tools_parallel()`
 
-3. **`src/pygent/core/agent.py`** ✅
+3. **`src/chapgent/core/agent.py`** ✅
    - Added `_cancellation_token` private attribute
    - Added `cancel(reason)` method for external cancellation
    - Added `is_cancelled` property to check cancellation state
@@ -191,7 +191,7 @@ Four independent improvements to harden the agent loop for production use. Each 
    - Pass token to `conversation_loop()`
    - Clear token in finally block after run completes
 
-4. **`src/pygent/core/parallel.py`** ✅
+4. **`src/chapgent/core/parallel.py`** ✅
    - Added `cancellation_token` parameter to `execute_tools_parallel()`
    - Check cancellation between batches (not mid-batch)
    - Return partial results for completed batches if cancelled

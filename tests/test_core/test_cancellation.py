@@ -8,7 +8,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.core.cancellation import CancellationError, CancellationToken
+from chapgent.core.cancellation import CancellationError, CancellationToken
 
 
 class TestCancellationToken:
@@ -152,14 +152,14 @@ class TestCancellationTokenInLoopEvent:
 
     def test_loop_event_has_cancel_reason_field(self):
         """LoopEvent should have cancel_reason field."""
-        from pygent.core.loop import LoopEvent
+        from chapgent.core.loop import LoopEvent
 
         event = LoopEvent(type="cancelled", cancel_reason="User stopped")
         assert event.cancel_reason == "User stopped"
 
     def test_loop_event_cancelled_type(self):
         """LoopEvent should support 'cancelled' type."""
-        from pygent.core.loop import LoopEvent
+        from chapgent.core.loop import LoopEvent
 
         event = LoopEvent(type="cancelled", content="Operation cancelled")
         assert event.type == "cancelled"
@@ -173,7 +173,7 @@ class TestCancellationInConversationLoop:
         """Create a mock LLM provider."""
         from unittest.mock import AsyncMock, MagicMock
 
-        from pygent.core.mock_provider import MockLLMProvider
+        from chapgent.core.mock_provider import MockLLMProvider
 
         provider = MagicMock(spec=MockLLMProvider)
         provider.complete = AsyncMock()
@@ -201,17 +201,17 @@ class TestCancellationInConversationLoop:
     @pytest.fixture
     def session(self):
         """Create a test session."""
-        from pygent.session.models import Session
+        from chapgent.session.models import Session
 
         return Session(id="test-session")
 
     @pytest.mark.asyncio
     async def test_cancellation_before_first_iteration(self, mock_provider, mock_registry, mock_permissions, session):
         """Should yield cancelled event immediately if cancelled before start."""
-        from pygent.core.agent import Agent
-        from pygent.core.cancellation import CancellationToken
-        from pygent.core.loop import conversation_loop
-        from pygent.session.models import Message
+        from chapgent.core.agent import Agent
+        from chapgent.core.cancellation import CancellationToken
+        from chapgent.core.loop import conversation_loop
+        from chapgent.session.models import Message
 
         agent = Agent(mock_provider, mock_registry, mock_permissions, session)
         messages = [Message(role="user", content="Hello")]
@@ -233,11 +233,11 @@ class TestCancellationInConversationLoop:
     async def test_cancellation_mid_loop(self, mock_provider, mock_registry, mock_permissions, session):
         """Should yield cancelled event when cancelled during loop."""
 
-        from pygent.core.agent import Agent
-        from pygent.core.cancellation import CancellationToken
-        from pygent.core.loop import conversation_loop
-        from pygent.core.providers import LLMResponse, TextBlock, TokenUsage
-        from pygent.session.models import Message
+        from chapgent.core.agent import Agent
+        from chapgent.core.cancellation import CancellationToken
+        from chapgent.core.loop import conversation_loop
+        from chapgent.core.providers import LLMResponse, TextBlock, TokenUsage
+        from chapgent.session.models import Message
 
         # Set up provider to return text (ending the loop)
         mock_provider.complete.return_value = LLMResponse(
@@ -272,7 +272,7 @@ class TestCancellationInAgent:
         """Create a mock LLM provider."""
         from unittest.mock import AsyncMock, MagicMock
 
-        from pygent.core.mock_provider import MockLLMProvider
+        from chapgent.core.mock_provider import MockLLMProvider
 
         provider = MagicMock(spec=MockLLMProvider)
         provider.complete = AsyncMock()
@@ -300,13 +300,13 @@ class TestCancellationInAgent:
     @pytest.fixture
     def session(self):
         """Create a test session."""
-        from pygent.session.models import Session
+        from chapgent.session.models import Session
 
         return Session(id="test-session")
 
     def test_cancel_before_run_has_no_effect(self, mock_provider, mock_registry, mock_permissions, session):
         """cancel() before run() should have no effect."""
-        from pygent.core.agent import Agent
+        from chapgent.core.agent import Agent
 
         agent = Agent(mock_provider, mock_registry, mock_permissions, session)
         # No exception should be raised
@@ -316,8 +316,8 @@ class TestCancellationInAgent:
     @pytest.mark.asyncio
     async def test_cancel_during_run(self, mock_provider, mock_registry, mock_permissions, session):
         """cancel() during run should cause loop to exit."""
-        from pygent.core.agent import Agent
-        from pygent.core.providers import LLMResponse, TextBlock, TokenUsage
+        from chapgent.core.agent import Agent
+        from chapgent.core.providers import LLMResponse, TextBlock, TokenUsage
 
         # Set up provider for multiple iterations
         responses = iter(
@@ -344,7 +344,7 @@ class TestCancellationInAgent:
 
     def test_is_cancelled_property(self, mock_provider, mock_registry, mock_permissions, session):
         """is_cancelled property should reflect cancellation state."""
-        from pygent.core.agent import Agent
+        from chapgent.core.agent import Agent
 
         agent = Agent(mock_provider, mock_registry, mock_permissions, session)
         assert agent.is_cancelled is False
@@ -357,7 +357,7 @@ class TestCancellationInParallel:
         """execute_tools_parallel should accept cancellation_token parameter."""
         import inspect
 
-        from pygent.core.parallel import execute_tools_parallel
+        from chapgent.core.parallel import execute_tools_parallel
 
         sig = inspect.signature(execute_tools_parallel)
         assert "cancellation_token" in sig.parameters
@@ -367,8 +367,8 @@ class TestCancellationInParallel:
         """Cancellation should be checked between batches, not mid-batch."""
         from unittest.mock import AsyncMock, MagicMock
 
-        from pygent.core.cancellation import CancellationToken
-        from pygent.core.parallel import (
+        from chapgent.core.cancellation import CancellationToken
+        from chapgent.core.parallel import (
             execute_tools_parallel,
         )
 
@@ -468,10 +468,10 @@ class TestIntegration:
         """Test complete cancellation flow from Agent.cancel() to LoopEvent."""
         from unittest.mock import AsyncMock, MagicMock
 
-        from pygent.core.agent import Agent
-        from pygent.core.providers import LLMResponse, TextBlock, TokenUsage
-        from pygent.session.models import Session
-        from pygent.tools.base import ToolCategory, ToolDefinition, ToolRisk
+        from chapgent.core.agent import Agent
+        from chapgent.core.providers import LLMResponse, TextBlock, TokenUsage
+        from chapgent.session.models import Session
+        from chapgent.tools.base import ToolCategory, ToolDefinition, ToolRisk
 
         # Create a mock tool that takes time
         async def slow_tool(message: str) -> str:

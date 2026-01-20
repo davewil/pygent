@@ -8,13 +8,13 @@ from hypothesis import given
 from hypothesis import settings as hypothesis_settings
 from hypothesis import strategies as st
 
-from pygent.config.settings import Settings
-from pygent.core.agent import Agent
-from pygent.core.providers import LLMProvider, LLMResponse
-from pygent.session.models import Session
-from pygent.tools.registry import ToolRegistry
-from pygent.tui.app import PygentApp
-from pygent.tui.widgets import (
+from chapgent.config.settings import Settings
+from chapgent.core.agent import Agent
+from chapgent.core.providers import LLMProvider, LLMResponse
+from chapgent.session.models import Session
+from chapgent.tools.registry import ToolRegistry
+from chapgent.tui.app import ChapgentApp
+from chapgent.tui.widgets import (
     DEFAULT_COMMANDS,
     CommandPalette,
     CommandPaletteItem,
@@ -238,7 +238,7 @@ class TestCommandPalette:
     @pytest.mark.asyncio
     async def test_palette_compose(self):
         """Test that palette composes correctly."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             # Push the command palette
             app.push_screen(CommandPalette())
@@ -256,7 +256,7 @@ class TestCommandPalette:
     @pytest.mark.asyncio
     async def test_palette_shows_default_commands(self):
         """Test that palette shows default commands on mount."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             app.push_screen(CommandPalette())
             await pilot.pause()
@@ -274,7 +274,7 @@ class TestCommandPalette:
             PaletteCommand(id="cmd2", name="Command 2", description="Second"),
         ]
 
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             app.push_screen(CommandPalette(commands=custom_commands))
             await pilot.pause()
@@ -287,7 +287,7 @@ class TestCommandPalette:
     @pytest.mark.asyncio
     async def test_palette_filter_commands(self):
         """Test filtering commands with search input."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             app.push_screen(CommandPalette())
             await pilot.pause()
@@ -308,7 +308,7 @@ class TestCommandPalette:
     @pytest.mark.asyncio
     async def test_palette_dismiss_on_escape(self):
         """Test that escape dismisses the palette."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             # Create a callback to capture the result
             result_holder = {"result": "not_set"}
@@ -335,7 +335,7 @@ class TestCommandPalette:
             PaletteCommand(id="second_cmd", name="Second", description="Desc"),
         ]
 
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             result_holder = {"result": "not_set"}
 
@@ -362,7 +362,7 @@ class TestCommandPalette:
             PaletteCommand(id="second", name="Second", description="Desc"),
         ]
 
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             result_holder = {"result": "not_set"}
 
@@ -401,7 +401,7 @@ class TestCommandPalette:
             PaletteCommand(id="third", name="Third", description="Desc"),
         ]
 
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             app.push_screen(CommandPalette(commands=custom_commands))
             await pilot.pause()
@@ -428,7 +428,7 @@ class TestCommandPalette:
             PaletteCommand(id="second", name="Second", description="Desc"),
         ]
 
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             app.push_screen(CommandPalette(commands=custom_commands))
             await pilot.pause()
@@ -454,7 +454,7 @@ class TestCommandPalette:
     @pytest.mark.asyncio
     async def test_palette_empty_filter_result(self):
         """Test behavior when filter returns no results."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             app.push_screen(CommandPalette())
             await pilot.pause()
@@ -473,17 +473,17 @@ class TestCommandPalette:
 
 
 # =============================================================================
-# PygentApp Command Palette Integration Tests
+# ChapgentApp Command Palette Integration Tests
 # =============================================================================
 
 
-class TestPygentAppCommandPaletteIntegration:
-    """Tests for command palette integration with PygentApp."""
+class TestChapgentAppCommandPaletteIntegration:
+    """Tests for command palette integration with ChapgentApp."""
 
     @pytest.mark.asyncio
     async def test_keybinding_opens_palette(self):
         """Test that Ctrl+Shift+P opens the command palette."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             # Press Ctrl+Shift+P
             await pilot.press("ctrl+shift+p")
@@ -506,7 +506,7 @@ class TestPygentAppCommandPaletteIntegration:
         )
         agent = Agent(provider, ToolRegistry(), None, session)
 
-        app = PygentApp(agent=agent)
+        app = ChapgentApp(agent=agent)
 
         async with app.run_test() as pilot:
             # Add a message so we can verify clear works
@@ -536,7 +536,7 @@ class TestPygentAppCommandPaletteIntegration:
     @pytest.mark.asyncio
     async def test_palette_toggle_tools(self):
         """Test toggling tool panel from palette."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             # Get initial state
             tool_panel = app.query_one("ToolPanel")
@@ -572,7 +572,7 @@ class TestNewActions:
     @pytest.mark.asyncio
     async def test_action_toggle_tools(self):
         """Test toggle_tools action."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             tool_panel = app.query_one("ToolPanel")
             assert tool_panel.display is True
@@ -593,7 +593,7 @@ class TestNewActions:
         settings = Settings()
         settings.tui.show_tool_panel = False
 
-        app = PygentApp(settings=settings)
+        app = ChapgentApp(settings=settings)
         async with app.run_test() as pilot:
             # Should not crash
             app.action_toggle_tools()
@@ -602,7 +602,7 @@ class TestNewActions:
     @pytest.mark.asyncio
     async def test_action_clear(self):
         """Test clear action."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             # Add some content
             app.query_one("ConversationPanel").append_user_message("Hello")
@@ -624,7 +624,7 @@ class TestNewActions:
         settings = Settings()
         settings.tui.show_tool_panel = False
 
-        app = PygentApp(settings=settings)
+        app = ChapgentApp(settings=settings)
         async with app.run_test() as pilot:
             # Add content to conversation
             app.query_one("ConversationPanel").append_user_message("Hello")
@@ -694,7 +694,7 @@ class TestPropertyBased:
             PaletteCommand(id="xyz", name="XYZ Command", description="Desc"),
         ]
 
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             app.push_screen(CommandPalette(commands=commands))
             await pilot.pause()
@@ -723,7 +723,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_palette_with_empty_commands(self):
         """Test palette with empty command list."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             app.push_screen(CommandPalette(commands=[]))
             await pilot.pause()
@@ -737,7 +737,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_palette_enter_with_no_selection(self):
         """Test pressing enter when no command is selected."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             result_holder = {"result": "not_set"}
 
@@ -757,7 +757,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_palette_special_characters_in_search(self):
         """Test searching with special characters."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             app.push_screen(CommandPalette())
             await pilot.pause()
@@ -777,7 +777,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_rapid_filter_changes(self):
         """Test rapid filter changes don't cause issues."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             app.push_screen(CommandPalette())
             await pilot.pause()
@@ -813,7 +813,7 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_palette_navigation_on_empty_list(self):
         """Test navigation when command list is empty."""
-        app = PygentApp()
+        app = ChapgentApp()
         async with app.run_test() as pilot:
             app.push_screen(CommandPalette(commands=[]))
             await pilot.pause()

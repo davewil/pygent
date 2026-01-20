@@ -1,5 +1,5 @@
 [project]
-name = "pygent"
+name = "chapgent"
 version = "0.1.0"
 description = "AI-powered coding agent"
 readme = "README.md"
@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-pygent = "pygent.cli:cli"
+chapgent = "chapgent.cli:cli"
 
 [project.optional-dependencies]
 dev = [
@@ -36,7 +36,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/pygent"]
+packages = ["src/chapgent"]
 
 [tool.ruff]
 line-length = 120
@@ -59,7 +59,7 @@ filterwarnings = [
 strict = true
 python_version = "3.10"
 mypy_path = "src"
-packages = ["pygent"]
+packages = ["chapgent"]
 explicit_package_bases = true
 
 [dependency-groups]

@@ -1,28 +1,28 @@
 2026-01-16: Initialized project structure and configuration.
 2026-01-16: Implemented core tool system (ToolDefinition, tool decorator) and verified with tests.
 2026-01-16: Configured pre-commit hooks for automatic linting (ruff) and testing (pytest).
-2026-01-16: Repository initialized and pushed to GitHub (davewil/pygent).
+2026-01-16: Repository initialized and pushed to GitHub (davewil/chapgent).
 2026-01-16: Implemented ToolRegistry class with property-based tests. Added hypothesis dependency.
 2026-01-16: Implemented filesystem tools (read_file, list_files, edit_file) with unit tests.
 2026-01-16: Refactored filesystem tools to use async I/O (aiofiles) and added property-based tests (hypothesis).
 2026-01-16: Implemented Core Agent Infrastructure (LLMProvider, PermissionManager, Agent, Loop, Session Models) using TDD.
 2026-01-16: Implemented Configuration System (settings.py, loader.py) with priority merging (Project > User > Defaults) and verified with tests.
-2026-01-16: Implemented shell tool (src/pygent/tools/shell.py) with async execution, timeout handling, and output capturing.
+2026-01-16: Implemented shell tool (src/chapgent/tools/shell.py) with async execution, timeout handling, and output capturing.
 2026-01-16: Added comprehensive unit and property-based tests for shell tool (tests/test_tools/test_shell.py).
 2026-01-16: Implemented Session Storage (storage.py) with async I/O. Added SessionSummary model. Verified with unit and property-based tests.
 2026-01-16: Implemented Basic TUI Structure (app.py, widgets.py, styles.tcss).
 2026-01-16: Added TUI tests (test_app.py) verifying startup and key bindings.
-2026-01-16: Integrated TUI with Agent Loop. Updated PygentApp to handle agent events and added integration tests (test_integration.py). Verified all tests pass.
-2026-01-16: Implemented CLI entry point (src/pygent/cli.py) with chat command. Wired up to Agent/TUI. Verified with units tests.
+2026-01-16: Integrated TUI with Agent Loop. Updated ChapgentApp to handle agent events and added integration tests (test_integration.py). Verified all tests pass.
+2026-01-16: Implemented CLI entry point (src/chapgent/cli.py) with chat command. Wired up to Agent/TUI. Verified with units tests.
 2026-01-16: Implemented Permission Integration. Wired PermissionPrompt in TUI to Agent's PermissionManager via CLI. Added integration tests for Allow/Deny flows. Refactored CLI initialization to resolve circular dependencies.
-2026-01-16: Implemented Session Persistence in TUI. Wired SessionStorage to PygentApp and implemented action_save_session method. Added verification tests.
+2026-01-16: Implemented Session Persistence in TUI. Wired SessionStorage to ChapgentApp and implemented action_save_session method. Added verification tests.
 2026-01-16: Added comprehensive tests for conversation loop error handling (test_loop.py): unknown tool handling, tool execution exceptions, permission denied flows, message conversion, multiple tool calls, and property-based tests. Also added LLMProvider tool call parsing tests for string/dict JSON args and invalid JSON handling. Coverage improved from 91% to 94%, with core/loop.py and core/providers.py now at 100%.
 2026-01-16: Implemented CLI commands (sessions, resume, config). Sessions command lists saved sessions with ID, date, message count, and working directory. Resume command loads an existing session and starts the TUI. Config command displays current configuration. Fixed deprecated asyncio.get_event_loop() usage in property-based tests for Python 3.13 compatibility. Coverage improved to 95%.
 2026-01-16: Added MockLLMProvider (core/mock_provider.py) for TUI testing without API key. Supports canned text responses and tool call triggers based on user input keywords. Added --mock flag to CLI chat command. Verified with unit tests.
 2026-01-16: Added comprehensive error handling tests for SessionStorage (test_storage.py): corrupted file loading, non-existent session deletion, index.json skipping, and corrupted file filtering in list_sessions. Coverage for storage.py improved from 84% to 96%.
 2026-01-16: Added shell tool exception path tests (test_shell.py): ProcessLookupError during timeout (when process exits before kill) and generic exception handling (when subprocess creation fails). Coverage for shell.py improved from 85% to 100%.
-2026-01-16: Refactored CLI (src/pygent/cli.py) to consolidate initialization logic in _init_agent_and_app, reducing code duplication and ensuring consistent settings integration.
-2026-01-16: Implemented missing TUI actions (PygentApp.action_new_session, PygentApp.action_toggle_permissions) and integrated TUI settings (theme, show_tool_panel).
+2026-01-16: Refactored CLI (src/chapgent/cli.py) to consolidate initialization logic in _init_agent_and_app, reducing code duplication and ensuring consistent settings integration.
+2026-01-16: Implemented missing TUI actions (ChapgentApp.action_new_session, ChapgentApp.action_toggle_permissions) and integrated TUI settings (theme, show_tool_panel).
 2026-01-16: Added comprehensive integration tests for TUI actions (tests/test_integration/test_tui_actions.py) and fixed regressions in existing tests (test_cli.py, test_config.py, test_integration.py). Verified all 86 tests pass.
 2026-01-16: Fixed case sensitivity in MockLLMProvider. Filenames now preserve original case for tool calls on Unix systems, while command triggers remains case-insensitive. Updated and added tests to verify fix.
 2026-01-16: Finalized Phase 1 MVP. Implemented performance benchmarking (tests/test_performance.py) verifying <500ms tool execution. Achieved 96% test coverage across the codebase. Verified all CLI commands and TUI actions.
@@ -33,14 +33,14 @@
   - MockLLMProvider tests: Added tests for delay feature, no-user-message edge case, quoted filename/path/command extraction, edit_file trigger, tool-result-only messages, and non-string content handling (87% → 97%)
   - Filesystem tests: Added tests for IsADirectoryError when reading directory, FileNotFoundError in list_files, and FileNotFoundError in edit_file (93% → 100%)
   - Total: 105 tests pass (up from 92), all linting/type checks pass.
-2026-01-16: Started Phase 2 - Extended Tools. Implemented grep_search tool (src/pygent/tools/search.py):
+2026-01-16: Started Phase 2 - Extended Tools. Implemented grep_search tool (src/chapgent/tools/search.py):
   - Supports regex pattern matching in files with ripgrep backend (fast) or pure Python fallback
   - Features: file pattern filtering (glob), case-insensitive search, max results limit, context lines
   - Respects .gitignore-style exclusions (hidden dirs, node_modules, __pycache__, .git, venv)
   - Returns structured JSON results with file, line number, content, and match text
   - Added 22 tests including unit tests and property-based tests (hypothesis)
   - Total: 127 tests pass, 97% coverage maintained
-2026-01-16: Implemented find_files tool (src/pygent/tools/search.py):
+2026-01-16: Implemented find_files tool (src/chapgent/tools/search.py):
   - Finds files matching glob patterns (e.g., "**/*.py", "test_*.py")
   - Features: max_depth filtering, file_type filtering ("file" or "directory")
   - Respects .gitignore-style exclusions (hidden dirs, node_modules, __pycache__, .git, venv)
@@ -49,7 +49,7 @@
   - Added 20 tests: 13 unit tests + 4 helper function tests + 3 property-based tests (using uuid for isolation)
   - Learned: Hypothesis property-based tests with tmp_path fixture need unique subdirectories per example (uuid.uuid4()) to avoid state pollution
   - Total: 147 tests pass
-2026-01-16: Implemented find_definition tool (src/pygent/tools/search.py):
+2026-01-16: Implemented find_definition tool (src/chapgent/tools/search.py):
   - Finds symbol definitions (functions, classes, interfaces, types, variables) in code
   - Multi-language support: Python, JavaScript, TypeScript, Go, Rust, Java, C, C++
   - Features: automatic language detection from file extensions, explicit language hint option
@@ -71,7 +71,7 @@
   - Learned: Breaking pattern match on first match per line prevents duplicate reports
   - Search Tools section of Phase 2 now complete (grep_search, find_files, find_definition)
   - Total: 179 tests pass
-2026-01-17: Implemented Additional File Tools (src/pygent/tools/filesystem.py):
+2026-01-17: Implemented Additional File Tools (src/chapgent/tools/filesystem.py):
   - create_file: Creates new file with content, auto-creates parent directories via Path.mkdir(parents=True)
     * Raises FileExistsError if file already exists (intentional, prevents accidental overwrites)
     * Risk level: MEDIUM
@@ -93,7 +93,7 @@
   - Learned: shutil.copy2 preserves metadata unlike shutil.copy; use asyncio.to_thread to wrap blocking shutil calls
   - Additional File Tools section of Phase 2 now complete
   - Total: 201 tests pass
-2026-01-17: Implemented Git Tools (src/pygent/tools/git.py):
+2026-01-17: Implemented Git Tools (src/chapgent/tools/git.py):
   - git_status: Shows working tree status (staged/unstaged/untracked files, current branch)
   - git_diff: Unified diff output with --cached, commit, and path filter support
   - git_log: Commit history with count limit, oneline format, and path filter
@@ -112,7 +112,7 @@
   - Learned: Property tests with hypothesis need careful strategy selection - st.from_regex is cleaner than filter()
   - Git Tools section of Phase 2 now complete
   - Total: 251 tests pass
-2026-01-17: Implemented Web Tools (src/pygent/tools/web.py):
+2026-01-17: Implemented Web Tools (src/chapgent/tools/web.py):
   - web_fetch: Fetches URL content with httpx async client
     * HTTPS enforced (HTTP URLs automatically upgraded)
     * Configurable timeout (default 30s) and max_size (default 1MB)
@@ -151,7 +151,7 @@
     * list_all(): Returns all registered tools
     * list_by_category(category): Returns tools in a specific category
     * get_categories(): Returns sorted list of categories with registered tools
-  - Added CLI 'tools' command (pygent tools):
+  - Added CLI 'tools' command (chapgent tools):
     * Lists all tools grouped by category
     * Supports --category/-c filter option
     * Shows risk level indicators [LOW], [MEDIUM], [HIGH]
@@ -167,7 +167,7 @@
   - Tool Categories & Discovery section of Phase 2 now complete
   - Phase 2 all acceptance criteria now met
   - Total: 313 tests pass
-2026-01-17: Started Phase 3 - Advanced Features. Implemented Context Awareness System (src/pygent/context/):
+2026-01-17: Started Phase 3 - Advanced Features. Implemented Context Awareness System (src/chapgent/context/):
   - Created context module structure (__init__.py, models.py, detection.py, prompt.py)
   - Implemented TestFramework enum: pytest, unittest, jest, mocha, vitest, go test, cargo test
   - Implemented ProjectType enum: python, node, go, rust, unknown
@@ -199,7 +199,7 @@
   - Learned: Pydantic models with nested optional models (like GitInfo) serialize/deserialize cleanly
   - Context Awareness section of Phase 3 now complete
   - Total: 405 tests pass
-2026-01-17: Implemented Test Runner Integration (src/pygent/tools/testing.py):
+2026-01-17: Implemented Test Runner Integration (src/chapgent/tools/testing.py):
   - Added TESTING category to ToolCategory enum in tools/base.py
   - Implemented TestResult dataclass: name, status (passed/failed/skipped/error), duration, error_message, file_path, line_number
   - Implemented TestSummary dataclass: total, passed, failed, skipped, errors, duration, results list, raw_output
@@ -240,7 +240,7 @@
   - Learned: Use MagicMock with explicit async methods to avoid RuntimeWarning for unawaited coroutines
   - Test Runner section of Phase 3 now complete (framework detection, run_tests tool, output parsing)
   - Total: 477 tests pass
-2026-01-17: Implemented Project Scaffolding System (src/pygent/tools/scaffold.py):
+2026-01-17: Implemented Project Scaffolding System (src/chapgent/tools/scaffold.py):
   - Added PROJECT category to ToolCategory enum in tools/base.py
   - Implemented data models:
     * TemplateOption: Configuration options (bool, str, choice types)
@@ -300,7 +300,7 @@
   - Learned: Component templates need project type context to generate correct paths
   - Project Scaffolding section of Phase 3 now complete
   - Total: 554 tests pass
-2026-01-17: Implemented Error Recovery System (src/pygent/core/recovery.py):
+2026-01-17: Implemented Error Recovery System (src/chapgent/core/recovery.py):
   - Added ErrorType enum with 15 error classifications:
     * FILE_NOT_FOUND, PERMISSION_DENIED, IS_A_DIRECTORY, FILE_EXISTS, NOT_A_DIRECTORY
     * GIT_NOT_A_REPOSITORY, GIT_CONFLICT, GIT_NO_REMOTE
@@ -344,7 +344,7 @@
   - Learned: Use vars(__builtins__) to convert module to dict for consistent access
   - Error Recovery section of Phase 3 now complete
   - Total: 597 tests pass
-2026-01-17: Implemented Tool Result Caching (src/pygent/core/cache.py):
+2026-01-17: Implemented Tool Result Caching (src/chapgent/core/cache.py):
   - Added ToolCache class with LRU eviction and TTL-based expiration
   - CacheEntry dataclass stores: value, expires_at, tool_name, args_hash
   - CacheStats dataclass tracks: hits, misses, evictions, invalidations
@@ -378,7 +378,7 @@
   - Learned: dict[str, int | float] union type needed when return value includes both types
   - Tool Caching section of Phase 3 now complete
   - Total: 645 tests pass
-2026-01-17: Implemented Parallel Tool Execution (src/pygent/core/parallel.py):
+2026-01-17: Implemented Parallel Tool Execution (src/chapgent/core/parallel.py):
   - Added READ_ONLY_TOOLS frozenset identifying safe-for-parallel tools:
     * Filesystem reads: read_file, list_files
     * Search operations: grep_search, find_files, find_definition
@@ -433,7 +433,7 @@
   - Learned: Return type Any for mock factory functions avoids mypy type mismatch errors in tests
   - Parallel Tool Execution section of Phase 3 now complete
   - Total: 703 tests pass
-2026-01-17: Implemented Session Sidebar (src/pygent/tui/widgets.py, app.py):
+2026-01-17: Implemented Session Sidebar (src/chapgent/tui/widgets.py, app.py):
   - Added SessionItem widget: Displays individual session with truncated ID, message count, active indicator
     * Supports is_active flag with CSS class "session-active" for highlighting
     * Display format: "▸ abcdefgh… (5 msgs)" for active, "  abcdefgh… (5 msgs)" for inactive
@@ -442,7 +442,7 @@
     * Methods: add_session(), update_active_session(), clear(), get_session_count()
     * Uses VerticalScroll for long session lists
   - Added show_sidebar setting to TUISettings (default: True)
-  - Integrated into PygentApp:
+  - Integrated into ChapgentApp:
     * Sidebar appears on left side of layout (before ConversationPanel)
     * Populated from SessionStorage on mount with current session highlighted
     * Updates when new session is created (ctrl+n)
@@ -460,13 +460,13 @@
   - Added 28 tests:
     * TestSessionItem: 4 tests for widget creation and properties
     * TestSessionsSidebar: 7 tests for sidebar methods (compose, add, update_active, clear, count)
-    * TestPygentAppSidebarIntegration: 6 tests for app integration (default, disabled, toggle, keybinding)
+    * TestChapgentAppSidebarIntegration: 6 tests for app integration (default, disabled, toggle, keybinding)
     * TestSidebarWithStorage: 3 tests for storage integration (populate, highlight, no storage)
     * TestPropertyBased: 4 property-based tests using hypothesis
     * TestEdgeCases: 4 edge case tests (empty ID, long ID, special chars, nonexistent session)
   - Session Sidebar section of Phase 3 now complete
   - Total: 731 tests pass
-2026-01-17: Implemented Command Palette (src/pygent/tui/widgets.py, app.py, styles.tcss):
+2026-01-17: Implemented Command Palette (src/chapgent/tui/widgets.py, app.py, styles.tcss):
   - Added PaletteCommand dataclass: Represents a command with id, name, description, and optional shortcut
     * matches() method for fuzzy search: substring matching and character-in-order matching
   - Added _fuzzy_match() helper: Checks if all characters in query appear in text in order
@@ -482,7 +482,7 @@
     * Custom commands support via constructor parameter
     * _update_command_list() filters and rebuilds command list on input change
     * on_input_submitted() handler to execute command when Enter pressed in input field
-  - Integrated into PygentApp:
+  - Integrated into ChapgentApp:
     * Added ctrl+shift+p keybinding to open command palette
     * action_command_palette() uses push_screen with callback pattern (not push_screen_wait)
     * callback uses call_later() to execute actions outside of the callback context
@@ -505,13 +505,13 @@
     * TestDefaultCommands: 4 tests for default commands list
     * TestCommandPaletteItem: 6 tests for item widget
     * TestCommandPalette: 11 tests for palette widget (compose, filter, dismiss, navigation)
-    * TestPygentAppCommandPaletteIntegration: 3 tests for app integration
+    * TestChapgentAppCommandPaletteIntegration: 3 tests for app integration
     * TestNewActions: 4 tests for toggle_tools and clear actions
     * TestPropertyBased: 5 property-based tests using hypothesis
     * TestEdgeCases: 5 edge case tests (empty commands, special chars, unicode, rapid filter)
   - Command Palette section of Phase 3 now complete
   - Total: 784 tests pass
-2026-01-17: Implemented Tool Execution Progress (src/pygent/tui/widgets.py, core/loop.py, app.py, styles.tcss):
+2026-01-17: Implemented Tool Execution Progress (src/chapgent/tui/widgets.py, core/loop.py, app.py, styles.tcss):
   - Added timestamp field to LoopEvent dataclass for tracking execution timing
   - Added ToolStatus enum with states: WAITING, RUNNING, COMPLETED, ERROR, CACHED, PERMISSION_DENIED
   - Added STATUS_ICONS dict mapping each status to a visual indicator emoji
@@ -537,7 +537,7 @@
     * tool_call events include timestamp for accurate elapsed time
     * tool_result events include tool_id for matching to progress items
     * permission_denied events include tool_id for proper tracking
-  - Updated PygentApp.run_agent_loop() to use new ToolPanel methods:
+  - Updated ChapgentApp.run_agent_loop() to use new ToolPanel methods:
     * Passes start_time from event.timestamp to append_tool_call()
     * Calls update_tool_result() with tool_id, result, is_error, cached
     * Calls update_permission_denied() for permission_denied events
@@ -571,7 +571,7 @@
   - Tool Execution Progress section of Phase 3 now complete
   - TUI remains responsive during long operations acceptance criterion now met
   - Total: 840 tests pass
-2026-01-17: Started Phase 4 - Polish & Distribution. Implemented System Prompt Customization (src/pygent/config/):
+2026-01-17: Started Phase 4 - Polish & Distribution. Implemented System Prompt Customization (src/chapgent/config/):
   - Enhanced SystemPromptSettings model (settings.py):
     * Added content: str | None - direct prompt content
     * Added file: str | None - path to prompt file (supports ~ expansion)
@@ -611,15 +611,15 @@
   - System Prompt Customization section of Phase 4 now complete (user/project config, template variables, context injection)
   - CLI prompt commands (show, set, edit, reset) deferred to future work
   - Total: 890 tests pass
-2026-01-18: Implemented Environment Variable Support for Configuration (src/pygent/config/loader.py):
+2026-01-18: Implemented Environment Variable Support for Configuration (src/chapgent/config/loader.py):
   - Added ENV_MAPPINGS constant mapping env vars to config paths:
-    * PYGENT_MODEL -> llm.model
-    * PYGENT_API_KEY -> llm.api_key
-    * PYGENT_MAX_TOKENS -> llm.max_tokens
-    * PYGENT_PROVIDER -> llm.provider
+    * CHAPGENT_MODEL -> llm.model
+    * CHAPGENT_API_KEY -> llm.api_key
+    * CHAPGENT_MAX_TOKENS -> llm.max_tokens
+    * CHAPGENT_PROVIDER -> llm.provider
     * ANTHROPIC_API_KEY -> llm.api_key (fallback)
     * OPENAI_API_KEY -> llm.api_key (fallback)
-  - Added API_KEY_ENV_PRIORITY list for API key precedence: PYGENT_API_KEY > ANTHROPIC_API_KEY > OPENAI_API_KEY
+  - Added API_KEY_ENV_PRIORITY list for API key precedence: CHAPGENT_API_KEY > ANTHROPIC_API_KEY > OPENAI_API_KEY
   - Implemented helper functions:
     * _set_nested_value() - sets value in nested dict using dotted path like "llm.model"
     * _convert_env_value() - converts env strings to appropriate types (int for max_tokens, bool for flags)
@@ -643,7 +643,7 @@
   - Learned: monkeypatch.delenv() with raising=False is cleaner for clearing env vars in tests
   - Configuration Polish: Environment Variables section of Phase 4 now complete
   - Total: 927 tests pass
-2026-01-18: Implemented Config CLI Commands (src/pygent/cli.py):
+2026-01-18: Implemented Config CLI Commands (src/chapgent/cli.py):
   - Refactored config command from single command to command group (click.group)
   - Implemented 'config show' subcommand: Displays current configuration (moved from previous 'config' command)
   - Implemented 'config path' subcommand: Shows config file paths (user and project) with [exists]/[not found] status
@@ -685,7 +685,7 @@
   - Learned: Click's CliRunner captures subprocess output differently; use 'echo' as test editor
   - Config CLI Commands section of Phase 4 now complete
   - Total: 989 tests pass
-2026-01-18: Implemented Config Validation with Pydantic Validators (src/pygent/config/settings.py):
+2026-01-18: Implemented Config Validation with Pydantic Validators (src/chapgent/config/settings.py):
   - Added VALID_PROVIDERS frozenset with 16 supported LLM providers:
     * anthropic, openai, azure, bedrock, vertex_ai, cohere, replicate, huggingface
     * ollama, together_ai, deepinfra, groq, mistral, perplexity, anyscale, fireworks_ai
@@ -735,11 +735,11 @@
   - Learned: Settings.validate_config() provides cleaner API than direct Pydantic validation for users
   - Config Validation section of Phase 4 now complete (Section 2.1)
   - Total: 1063 tests pass
-2026-01-18: Implemented Logging Infrastructure with Loguru (src/pygent/core/logging.py):
+2026-01-18: Implemented Logging Infrastructure with Loguru (src/chapgent/core/logging.py):
   - Added loguru>=0.7.0 dependency to pyproject.toml
   - Created logging module with file-based logging that doesn't interfere with TUI:
-    * DEFAULT_LOG_DIR: ~/.local/share/pygent/logs/
-    * DEFAULT_LOG_FILE: pygent.log in log dir
+    * DEFAULT_LOG_DIR: ~/.local/share/chapgent/logs/
+    * DEFAULT_LOG_FILE: chapgent.log in log dir
     * LOG_FORMAT: timestamp | level | module:function:line | message
     * VALID_LOG_LEVELS frozenset: DEBUG, INFO, WARNING, ERROR
   - Implemented setup_logging() function:
@@ -761,11 +761,11 @@
     * file: str | None for custom log file path
     * Validation for non-empty file path
   - Implemented CLI commands:
-    * `pygent report`: Creates tar.gz archive of redacted logs for bug reporting
+    * `chapgent report`: Creates tar.gz archive of redacted logs for bug reporting
       - Supports --output/-o for custom output path
       - Supports --days for filtering logs by age
       - Shows progress as files are added to archive
-    * `pygent logs`: Shows log file path and status
+    * `chapgent logs`: Shows log file path and status
       - Supports --level/-l and --file/-f for configuration
   - Added logging.level and logging.file to VALID_CONFIG_KEYS
   - Updated default config template to include [logging] section
@@ -823,7 +823,7 @@
   - Quality Assurance section of Phase 4 now complete (Section 6)
   - Total: 1155 tests pass
 2026-01-18: Implemented UX Polish (Phase 4, Section 7):
-  - Created src/pygent/ux/ module with submodules for UX features
+  - Created src/chapgent/ux/ module with submodules for UX features
   - Implemented Friendly Error Messages (messages.py):
     * ERROR_MESSAGES dict with 19 user-friendly error templates
     * Covers: no_api_key, invalid_api_key, model_not_found, rate_limit, network_error, timeout
@@ -851,7 +851,7 @@
     * get_topic_names(): Get sorted list of topic names
   - Implemented First-Run Experience (first_run.py):
     * SetupStatus dataclass: tracks is_first_run, has_api_key, has_config_file, missing_items
-    * check_api_key(): Check if ANTHROPIC_API_KEY, OPENAI_API_KEY, or PYGENT_API_KEY is set
+    * check_api_key(): Check if ANTHROPIC_API_KEY, OPENAI_API_KEY, or CHAPGENT_API_KEY is set
     * check_setup_status(): Detect current setup state
     * get_welcome_message(): Formatted welcome banner for new users
     * get_setup_instructions(): Step-by-step setup guide based on missing items
@@ -860,8 +860,8 @@
     * format_setup_complete_message(): Completion message with current config summary
     * First-run marker file to track setup completion
   - Added CLI commands:
-    * 'pygent help [topic]': Show help topics or specific topic content
-    * 'pygent setup': Interactive first-run setup wizard
+    * 'chapgent help [topic]': Show help topics or specific topic content
+    * 'chapgent setup': Interactive first-run setup wizard
       - Shows welcome message and current status
       - Offers to set API key interactively (with validation)
       - Offers to create config file with defaults
@@ -901,8 +901,8 @@
       - TestEdgeCases: edge cases
       - TestIntegration: full setup flow
     * test_ux_cli.py: 23 tests for CLI commands
-      - TestHelpCommand: 'pygent help' command tests
-      - TestSetupCommand: 'pygent setup' command tests
+      - TestHelpCommand: 'chapgent help' command tests
+      - TestSetupCommand: 'chapgent setup' command tests
       - TestHelpCommandOutput: formatting tests
       - TestPropertyBased: random topic handling
       - TestEdgeCases: empty topics, non-interactive mode
@@ -940,7 +940,7 @@
     * TestPropertyBased: 1 hypothesis test with various content
     * TestIntegration: 1 test for full import chain
   - Learned: warnings.catch_warnings(record=True) captures warnings for inspection
-  - Learned: Filter by "pygent" in filename to exclude dependency warnings
+  - Learned: Filter by "chapgent" in filename to exclude dependency warnings
   - Learned: subprocess with -W error::DeprecationWarning catches warnings as errors
   - Learned: Use noqa: F401 for intentional import-only statements in tests
   - Learned: ruff auto-fixes import sorting (I001) and removes unused f-string prefixes (F541)
@@ -1052,7 +1052,7 @@
   - Phase 3 of Agent Loop Improvements complete
   - Total: 60 tests in test_providers_errors.py + test_loop.py pass
 2026-01-19: Implemented Agent Loop Improvements - Phase 4: Cancellation Support (AGENT_LOOP_IMPROVEMENTS.md):
-  - Created CancellationToken class in src/pygent/core/cancellation.py:
+  - Created CancellationToken class in src/chapgent/core/cancellation.py:
     * _cancelled, _cancel_time, _reason fields for tracking state
     * _event (asyncio.Event) for async coordination
     * cancel(reason) method - idempotent, sets timestamp and reason
@@ -1061,21 +1061,21 @@
     * wait_for_cancellation(timeout) async method
     * raise_if_cancelled() method that raises CancellationError
   - Created CancellationError exception class
-  - Updated src/pygent/core/loop.py:
+  - Updated src/chapgent/core/loop.py:
     * Added cancellation_token parameter to conversation_loop()
     * Added cancel_reason field to LoopEvent dataclass
     * Check token.is_cancelled at start of each iteration
     * Check after tool execution completes (let tools finish)
     * Yield LoopEvent(type="cancelled") with cancel_reason on cancellation
     * Pass cancellation_token to execute_tools_parallel()
-  - Updated src/pygent/core/agent.py:
+  - Updated src/chapgent/core/agent.py:
     * Added _cancellation_token private attribute
     * Added cancel(reason) method for external cancellation
     * Added is_cancelled property to check cancellation state
     * Create fresh CancellationToken at start of each run()
     * Pass token to conversation_loop()
     * Clear token in finally block after run completes
-  - Updated src/pygent/core/parallel.py:
+  - Updated src/chapgent/core/parallel.py:
     * Added cancellation_token parameter to execute_tools_parallel()
     * Check cancellation between batches (not mid-batch)
     * Return partial results for completed batches if cancelled
@@ -1117,7 +1117,7 @@
   - Overall coverage: 96%
   - Total: 1371 tests pass (some tests consolidated via parametrization in previous commit)
 2026-01-19: Implemented Phase 5 TUI Enhancements - Infrastructure (specs/phase-5-tui-enhancements.md):
-  - Created src/pygent/config/writer.py module:
+  - Created src/chapgent/config/writer.py module:
     * Extracted config writing functions from cli.py
     * VALID_CONFIG_KEYS frozenset with 16 configurable keys
     * ConfigWriteError exception with path tracking
@@ -1129,7 +1129,7 @@
     * write_default_config() - writes config file with defaults
     * save_config_value() - main entry point for setting config values
     * get_valid_config_keys() - returns the valid keys frozenset
-  - Created src/pygent/tui/commands.py module:
+  - Created src/chapgent/tui/commands.py module:
     * SlashCommand dataclass with name, aliases, description, action, args_pattern
     * matches() method for command matching (case-insensitive)
     * SLASH_COMMANDS list with 14 commands:
@@ -1143,7 +1143,7 @@
     * list_slash_commands() - list all commands with descriptions
     * get_command_help() - get help text for specific command
     * format_command_list() - format all commands for display
-  - Updated src/pygent/tui/app.py:
+  - Updated src/chapgent/tui/app.py:
     * Added slash command interception in on_input_submitted()
     * Added _handle_slash_command() method to dispatch commands
     * Added _handle_help_command() for /help [topic]
@@ -1154,7 +1154,7 @@
   - Updated module exports:
     * config/__init__.py: Added writer module exports
     * tui/__init__.py: Added commands module exports
-  - Refactored src/pygent/cli.py:
+  - Refactored src/chapgent/cli.py:
     * Imports from config/writer.py instead of local definitions
     * Removed duplicate code for config writing functions
     * set_config command now uses save_config_value()
@@ -1182,7 +1182,7 @@
     * Changed imports to use config/writer.py module
     * Removed duplicate tests now covered by test_config_writer.py
   - Updated tests/test_logging.py:
-    * Changed monkeypatch path from pygent.cli._get_config_paths to pygent.config.writer.get_config_paths
+    * Changed monkeypatch path from chapgent.cli._get_config_paths to chapgent.config.writer.get_config_paths
   - Learned: Extracting modules from cli.py requires updating monkeypatch paths in tests
   - Learned: SlashCommand aliases provide user-friendly shortcuts (e.g., /h for /help)
   - Learned: Command action names should match action_* method names for consistent dispatch

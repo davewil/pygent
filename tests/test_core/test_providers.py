@@ -2,13 +2,13 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from pygent.core.providers import LLMProvider, LLMResponse, TextBlock
-from pygent.tools.base import ToolCategory, ToolDefinition, ToolRisk
+from chapgent.core.providers import LLMProvider, LLMResponse, TextBlock
+from chapgent.tools.base import ToolCategory, ToolDefinition, ToolRisk
 
 
 @pytest.fixture
 def mock_litellm_completion():
-    with patch("pygent.core.providers.litellm.acompletion", new_callable=AsyncMock) as mock:
+    with patch("chapgent.core.providers.litellm.acompletion", new_callable=AsyncMock) as mock:
         yield mock
 
 
@@ -41,7 +41,7 @@ async def test_complete_text_only(mock_litellm_completion):
 @pytest.mark.asyncio
 async def test_complete_with_tools_formatting():
     # Verify tools are correctly formatted for litellm
-    with patch("pygent.core.providers.litellm.acompletion", new_callable=AsyncMock) as mock_completion:
+    with patch("chapgent.core.providers.litellm.acompletion", new_callable=AsyncMock) as mock_completion:
         mock_response = AsyncMock()
         mock_response.choices = [AsyncMock(finish_reason="stop", message=AsyncMock(content="ok", tool_calls=None))]
         mock_completion.return_value = mock_response
@@ -74,7 +74,7 @@ async def test_complete_with_tools_formatting():
 @pytest.mark.asyncio
 async def test_complete_with_tool_call_response_string_args():
     """Test parsing LLM response with tool calls (string JSON arguments)."""
-    with patch("pygent.core.providers.litellm.acompletion", new_callable=AsyncMock) as mock_completion:
+    with patch("chapgent.core.providers.litellm.acompletion", new_callable=AsyncMock) as mock_completion:
         # Mock tool call with string arguments (OpenAI style)
         mock_tool_call = AsyncMock()
         mock_tool_call.id = "call_abc123"
@@ -94,7 +94,7 @@ async def test_complete_with_tool_call_response_string_args():
         provider = LLMProvider(model="gpt-4o")
         response = await provider.complete(messages=[{"role": "user", "content": "Read file"}], tools=[])
 
-        from pygent.core.providers import ToolUseBlock
+        from chapgent.core.providers import ToolUseBlock
 
         assert len(response.content) == 2  # TextBlock + ToolUseBlock
         tool_block = response.content[1]
@@ -107,7 +107,7 @@ async def test_complete_with_tool_call_response_string_args():
 @pytest.mark.asyncio
 async def test_complete_with_tool_call_response_dict_args():
     """Test parsing LLM response with tool calls (dict arguments - pre-parsed)."""
-    with patch("pygent.core.providers.litellm.acompletion", new_callable=AsyncMock) as mock_completion:
+    with patch("chapgent.core.providers.litellm.acompletion", new_callable=AsyncMock) as mock_completion:
         # Mock tool call with dict arguments (some providers return dicts already)
         mock_tool_call = AsyncMock()
         mock_tool_call.id = "call_xyz789"
@@ -124,7 +124,7 @@ async def test_complete_with_tool_call_response_dict_args():
         provider = LLMProvider(model="claude-3")
         response = await provider.complete(messages=[], tools=[])
 
-        from pygent.core.providers import ToolUseBlock
+        from chapgent.core.providers import ToolUseBlock
 
         assert len(response.content) == 1  # Only ToolUseBlock (no text)
         tool_block = response.content[0]
@@ -137,7 +137,7 @@ async def test_complete_with_tool_call_response_dict_args():
 @pytest.mark.asyncio
 async def test_complete_with_tool_call_invalid_json_args():
     """Test parsing LLM response with invalid JSON in arguments (fail-safe)."""
-    with patch("pygent.core.providers.litellm.acompletion", new_callable=AsyncMock) as mock_completion:
+    with patch("chapgent.core.providers.litellm.acompletion", new_callable=AsyncMock) as mock_completion:
         # Mock tool call with invalid JSON string
         mock_tool_call = AsyncMock()
         mock_tool_call.id = "call_broken"
@@ -154,7 +154,7 @@ async def test_complete_with_tool_call_invalid_json_args():
         provider = LLMProvider(model="gpt-4o")
         response = await provider.complete(messages=[], tools=[])
 
-        from pygent.core.providers import ToolUseBlock
+        from chapgent.core.providers import ToolUseBlock
 
         # Should fall back to empty dict on JSON decode error
         assert len(response.content) == 1
@@ -166,7 +166,7 @@ async def test_complete_with_tool_call_invalid_json_args():
 @pytest.mark.asyncio
 async def test_complete_multiple_tool_calls():
     """Test parsing response with multiple tool calls."""
-    with patch("pygent.core.providers.litellm.acompletion", new_callable=AsyncMock) as mock_completion:
+    with patch("chapgent.core.providers.litellm.acompletion", new_callable=AsyncMock) as mock_completion:
         mock_tool_call_1 = AsyncMock()
         mock_tool_call_1.id = "call_1"
         mock_tool_call_1.function = AsyncMock()
@@ -191,7 +191,7 @@ async def test_complete_multiple_tool_calls():
         provider = LLMProvider(model="gpt-4o")
         response = await provider.complete(messages=[], tools=[])
 
-        from pygent.core.providers import ToolUseBlock
+        from chapgent.core.providers import ToolUseBlock
 
         assert len(response.content) == 3  # TextBlock + 2 ToolUseBlocks
         assert isinstance(response.content[1], ToolUseBlock)

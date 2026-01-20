@@ -7,7 +7,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from pygent.tools.search import (
+from chapgent.tools.search import (
     _compile_patterns_for_symbol,
     _get_depth,
     _get_language_from_path,
@@ -134,7 +134,7 @@ async def test_grep_search_skips_hidden_dirs(tmp_path):
     (tmp_path / "visible.txt").write_text("findme", encoding="utf-8")
 
     # Use Python backend to test our filtering
-    with patch("pygent.tools.search._is_ripgrep_available", return_value=False):
+    with patch("chapgent.tools.search._is_ripgrep_available", return_value=False):
         result = await grep_search("findme", str(tmp_path))
         data = json.loads(result)
 
@@ -151,7 +151,7 @@ async def test_grep_search_skips_node_modules(tmp_path):
     (nm / "lib.js").write_text("findme", encoding="utf-8")
     (tmp_path / "app.js").write_text("findme", encoding="utf-8")
 
-    with patch("pygent.tools.search._is_ripgrep_available", return_value=False):
+    with patch("chapgent.tools.search._is_ripgrep_available", return_value=False):
         result = await grep_search("findme", str(tmp_path))
         data = json.loads(result)
 
@@ -256,8 +256,8 @@ class TestGrepBackendSelection:
     async def test_uses_ripgrep_when_available(self, tmp_path) -> None:
         """Test grep_search uses ripgrep when available."""
         (tmp_path / "test.txt").write_text("hello", encoding="utf-8")
-        with patch("pygent.tools.search._is_ripgrep_available", return_value=True):
-            with patch("pygent.tools.search._grep_with_ripgrep", return_value=[]) as mock_rg:
+        with patch("chapgent.tools.search._is_ripgrep_available", return_value=True):
+            with patch("chapgent.tools.search._grep_with_ripgrep", return_value=[]) as mock_rg:
                 await grep_search("hello", str(tmp_path))
                 mock_rg.assert_called_once()
 
@@ -265,8 +265,8 @@ class TestGrepBackendSelection:
     async def test_uses_python_when_ripgrep_unavailable(self, tmp_path) -> None:
         """Test grep_search falls back to Python when ripgrep unavailable."""
         (tmp_path / "test.txt").write_text("hello", encoding="utf-8")
-        with patch("pygent.tools.search._is_ripgrep_available", return_value=False):
-            with patch("pygent.tools.search._grep_with_python", return_value=[]) as mock_py:
+        with patch("chapgent.tools.search._is_ripgrep_available", return_value=False):
+            with patch("chapgent.tools.search._grep_with_python", return_value=[]) as mock_py:
                 await grep_search("hello", str(tmp_path))
                 mock_py.assert_called_once()
 
@@ -288,7 +288,7 @@ async def test_prop_grep_finds_inserted_pattern(tmp_path, content, search_word):
     test_file.write_text(full_content, encoding="utf-8")
 
     # Force Python backend for deterministic behavior
-    with patch("pygent.tools.search._is_ripgrep_available", return_value=False):
+    with patch("chapgent.tools.search._is_ripgrep_available", return_value=False):
         result = await grep_search(search_word, str(test_file))
         data = json.loads(result)
 
@@ -309,7 +309,7 @@ async def test_prop_grep_respects_max_results(tmp_path, lines):
     test_file.write_text("\n".join(content_lines), encoding="utf-8")
 
     max_results = 3
-    with patch("pygent.tools.search._is_ripgrep_available", return_value=False):
+    with patch("chapgent.tools.search._is_ripgrep_available", return_value=False):
         result = await grep_search("a", str(test_file), max_results=max_results)
         data = json.loads(result)
 
@@ -328,7 +328,7 @@ async def test_prop_grep_case_insensitive(tmp_path, word):
     test_file = tmp_path / "prop_case.txt"
     test_file.write_text(f"{lower}\n{upper}\n", encoding="utf-8")
 
-    with patch("pygent.tools.search._is_ripgrep_available", return_value=False):
+    with patch("chapgent.tools.search._is_ripgrep_available", return_value=False):
         result = await grep_search(lower, str(test_file), ignore_case=True)
         data = json.loads(result)
 

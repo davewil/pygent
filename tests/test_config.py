@@ -1,8 +1,8 @@
 import pytest
 import tomli_w
 
-from pygent.config.loader import load_config
-from pygent.config.settings import Settings
+from chapgent.config.loader import load_config
+from chapgent.config.settings import Settings
 
 
 # Test Defaults

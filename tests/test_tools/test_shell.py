@@ -5,7 +5,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from pygent.tools.shell import shell
+from chapgent.tools.shell import shell
 
 
 @pytest.mark.asyncio

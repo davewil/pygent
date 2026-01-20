@@ -8,8 +8,8 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.context.models import TestFramework
-from pygent.tools.testing import (
+from chapgent.context.models import TestFramework
+from chapgent.tools.testing import (
     TestResult,
     TestSummary,
     _build_test_command,

@@ -6,7 +6,7 @@ from hypothesis import settings as hypothesis_settings
 from hypothesis import strategies as st
 from pydantic import ValidationError
 
-from pygent.config.settings import (
+from chapgent.config.settings import (
     KNOWN_MODELS,
     VALID_PROVIDERS,
     VALID_THEMES,
@@ -163,7 +163,7 @@ class TestTUISettingsValidation:
 class TestSystemPromptSettingsValidation:
     """Tests for SystemPromptSettings validation."""
 
-    @pytest.mark.parametrize("file", [None, "~/.config/pygent/prompt.md"])
+    @pytest.mark.parametrize("file", [None, "~/.config/chapgent/prompt.md"])
     def test_valid_file(self, file: str | None):
         """Should accept None or valid file paths."""
         assert SystemPromptSettings(file=file).file == file

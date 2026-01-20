@@ -6,22 +6,22 @@ Migrate external CLI configuration and commands into the TUI for a better user e
 1. **Command Palette** (Ctrl+Shift+P) - Extended with new commands
 2. **Slash Commands** - Type `/command` in the message input
 
-All configuration changes will persist to `~/.config/pygent/config.toml`.
+All configuration changes will persist to `~/.config/chapgent/config.toml`.
 
 ---
 
 ## Architecture
 
 ### New Files
-- `src/pygent/tui/commands.py` - Slash command registry and dispatch
-- `src/pygent/tui/screens.py` - Modal screens (settings, help, tools, theme)
-- `src/pygent/config/writer.py` - Config persistence (extracted from cli.py)
+- `src/chapgent/tui/commands.py` - Slash command registry and dispatch
+- `src/chapgent/tui/screens.py` - Modal screens (settings, help, tools, theme)
+- `src/chapgent/config/writer.py` - Config persistence (extracted from cli.py)
 
 ### Modified Files
-- `src/pygent/tui/app.py` - Add slash command interception, new action methods
-- `src/pygent/tui/widgets.py` - Add new commands to DEFAULT_COMMANDS
-- `src/pygent/tui/styles.tcss` - Styles for new modal screens
-- `src/pygent/cli.py` - Import writer helpers instead of defining locally
+- `src/chapgent/tui/app.py` - Add slash command interception, new action methods
+- `src/chapgent/tui/widgets.py` - Add new commands to DEFAULT_COMMANDS
+- `src/chapgent/tui/styles.tcss` - Styles for new modal screens
+- `src/chapgent/cli.py` - Import writer helpers instead of defining locally
 
 ---
 
@@ -30,7 +30,7 @@ All configuration changes will persist to `~/.config/pygent/config.toml`.
 ### Phase 1: Infrastructure
 
 #### 1.1 Create Config Writer Module
-**File:** `src/pygent/config/writer.py`
+**File:** `src/chapgent/config/writer.py`
 
 Extract from `cli.py` (lines 302-450):
 - `VALID_CONFIG_KEYS` set
@@ -40,7 +40,7 @@ Extract from `cli.py` (lines 302-450):
 - New: `save_config_value(key, value, project=False)` - main entry point
 
 #### 1.2 Create Slash Command System
-**File:** `src/pygent/tui/commands.py`
+**File:** `src/chapgent/tui/commands.py`
 
 ```python
 @dataclass
@@ -63,7 +63,7 @@ def parse_slash_command(input: str) -> tuple[SlashCommand | None, list[str]]:
 ```
 
 #### 1.3 Add Slash Command Interception
-**File:** `src/pygent/tui/app.py` (modify `on_input_submitted`, line 71)
+**File:** `src/chapgent/tui/app.py` (modify `on_input_submitted`, line 71)
 
 ```python
 async def on_input_submitted(self, message: MessageInput.Submitted) -> None:
@@ -84,7 +84,7 @@ async def on_input_submitted(self, message: MessageInput.Submitted) -> None:
 
 ### Phase 2: Settings Screens
 
-**File:** `src/pygent/tui/screens.py`
+**File:** `src/chapgent/tui/screens.py`
 
 All screens follow the `ModalScreen[T]` pattern (like existing `PermissionPrompt`).
 
@@ -210,26 +210,26 @@ These reuse existing `action_*` methods - just wire up slash commands:
 ### New Files
 | File | Purpose |
 |------|---------|
-| `src/pygent/config/writer.py` | Config persistence helpers |
-| `src/pygent/tui/commands.py` | Slash command registry |
-| `src/pygent/tui/screens.py` | Modal screens for settings/help |
+| `src/chapgent/config/writer.py` | Config persistence helpers |
+| `src/chapgent/tui/commands.py` | Slash command registry |
+| `src/chapgent/tui/screens.py` | Modal screens for settings/help |
 
 ### Modified Files
 | File | Changes |
 |------|---------|
-| `src/pygent/tui/app.py` | Add `_handle_slash_command()`, new `action_*` methods |
-| `src/pygent/tui/widgets.py` | Extend `DEFAULT_COMMANDS` list (lines 101-144) |
-| `src/pygent/tui/styles.tcss` | Styles for new modal screens |
-| `src/pygent/cli.py` | Import from `config/writer.py` instead of local defs |
+| `src/chapgent/tui/app.py` | Add `_handle_slash_command()`, new `action_*` methods |
+| `src/chapgent/tui/widgets.py` | Extend `DEFAULT_COMMANDS` list (lines 101-144) |
+| `src/chapgent/tui/styles.tcss` | Styles for new modal screens |
+| `src/chapgent/cli.py` | Import from `config/writer.py` instead of local defs |
 
 ---
 
 ## Verification
 
 1. **Manual testing:**
-   - `pygent chat` → type `/theme` → select theme → verify it persists
-   - `pygent chat` → type `/model` → change model → verify next message uses new model
-   - `pygent chat` → type `/help tools` → verify help displays
+   - `chapgent chat` → type `/theme` → select theme → verify it persists
+   - `chapgent chat` → type `/model` → change model → verify next message uses new model
+   - `chapgent chat` → type `/help tools` → verify help displays
    - Ctrl+Shift+P → search "theme" → verify command appears
 
 2. **Unit tests** (new file `tests/test_tui/test_commands.py`):
@@ -250,15 +250,15 @@ These reuse existing `action_*` methods - just wire up slash commands:
    - Add interception in `app.py` ✅
    - Unit tests for new modules ✅
    - **Files created:**
-     - `src/pygent/config/writer.py`
-     - `src/pygent/tui/commands.py`
+     - `src/chapgent/config/writer.py`
+     - `src/chapgent/tui/commands.py`
      - `tests/test_config_writer.py`
      - `tests/test_tui/test_commands.py`
    - **Files modified:**
-     - `src/pygent/config/__init__.py` (exports)
-     - `src/pygent/tui/__init__.py` (exports)
-     - `src/pygent/tui/app.py` (slash command handling)
-     - `src/pygent/cli.py` (imports from writer.py)
+     - `src/chapgent/config/__init__.py` (exports)
+     - `src/chapgent/tui/__init__.py` (exports)
+     - `src/chapgent/tui/app.py` (slash command handling)
+     - `src/chapgent/cli.py` (imports from writer.py)
      - `tests/test_config_cli.py` (updated imports)
      - `tests/test_logging.py` (updated imports)
 

@@ -12,10 +12,10 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from pygent.session.models import Message, Session, ToolInvocation
-from pygent.session.storage import SessionStorage
-from pygent.tools.filesystem import create_file, edit_file, read_file
-from pygent.tools.git import (
+from chapgent.session.models import Message, Session, ToolInvocation
+from chapgent.session.storage import SessionStorage
+from chapgent.tools.filesystem import create_file, edit_file, read_file
+from chapgent.tools.git import (
     git_add,
     git_checkout,
     git_commit,
@@ -23,7 +23,7 @@ from pygent.tools.git import (
     git_log,
     git_status,
 )
-from pygent.tools.search import find_definition, find_files, grep_search
+from chapgent.tools.search import find_definition, find_files, grep_search
 
 # =============================================================================
 # Section 6.1: E2E Testing - Complete Workflows
@@ -115,11 +115,11 @@ if __name__ == "__main__":
         assert "Add initial app.py" in log
 
         # Step 6: Edit the file
-        await edit_file(str(file_path), 'print("Hello, World!")', 'print("Hello, Pygent!")')
+        await edit_file(str(file_path), 'print("Hello, World!")', 'print("Hello, Chapgent!")')
 
         # Step 7: Check diff
         diff = await git_diff(cwd=str(tmp_path))
-        assert "Hello, Pygent!" in diff
+        assert "Hello, Chapgent!" in diff
 
         # Step 8: Stage and commit the change
         await git_add(["app.py"], cwd=str(tmp_path))
@@ -386,7 +386,7 @@ class TestSessionPersistence:
     @pytest.mark.asyncio
     async def test_session_with_complex_messages(self, tmp_path):
         """Test session with complex message content (lists, tool blocks)."""
-        from pygent.session.models import TextBlock, ToolResultBlock, ToolUseBlock
+        from chapgent.session.models import TextBlock, ToolResultBlock, ToolUseBlock
 
         storage = SessionStorage(storage_dir=tmp_path)
         session_id = str(uuid.uuid4())
@@ -599,11 +599,11 @@ class TestIntegrationSmoke:
     async def test_tools_are_importable(self):
         """Verify all tool modules can be imported."""
         # This will fail fast if there are import errors
-        from pygent.tools.filesystem import read_file
-        from pygent.tools.git import git_status
-        from pygent.tools.search import grep_search
-        from pygent.tools.shell import shell
-        from pygent.tools.web import web_fetch
+        from chapgent.tools.filesystem import read_file
+        from chapgent.tools.git import git_status
+        from chapgent.tools.search import grep_search
+        from chapgent.tools.shell import shell
+        from chapgent.tools.web import web_fetch
 
         assert callable(read_file)
         assert callable(git_status)
@@ -614,13 +614,13 @@ class TestIntegrationSmoke:
     @pytest.mark.asyncio
     async def test_registry_has_all_tools(self):
         """Verify tool registry can be populated with all tools."""
-        from pygent.tools.base import ToolCategory
-        from pygent.tools.registry import ToolRegistry
+        from chapgent.tools.base import ToolCategory
+        from chapgent.tools.registry import ToolRegistry
 
         registry = ToolRegistry()
 
         # Import and register all tools
-        from pygent.tools.filesystem import (
+        from chapgent.tools.filesystem import (
             copy_file,
             create_file,
             delete_file,
@@ -629,7 +629,7 @@ class TestIntegrationSmoke:
             move_file,
             read_file,
         )
-        from pygent.tools.git import (
+        from chapgent.tools.git import (
             git_add,
             git_branch,
             git_commit,
@@ -639,8 +639,8 @@ class TestIntegrationSmoke:
             git_push,
             git_status,
         )
-        from pygent.tools.search import find_definition, find_files, grep_search
-        from pygent.tools.shell import shell
+        from chapgent.tools.search import find_definition, find_files, grep_search
+        from chapgent.tools.shell import shell
 
         tools = [
             read_file,
@@ -678,7 +678,7 @@ class TestIntegrationSmoke:
     @pytest.mark.asyncio
     async def test_config_system_works(self):
         """Verify config loading doesn't crash."""
-        from pygent.config.loader import load_config
+        from chapgent.config.loader import load_config
 
         # Should load without errors (uses defaults if no config)
         settings = await load_config()
@@ -689,7 +689,7 @@ class TestIntegrationSmoke:
     @pytest.mark.asyncio
     async def test_context_detection_works(self, tmp_path):
         """Verify project context detection works."""
-        from pygent.context.detection import detect_project_context
+        from chapgent.context.detection import detect_project_context
 
         # Create a minimal Python project
         (tmp_path / "pyproject.toml").write_text('[project]\nname = "test"')

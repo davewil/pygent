@@ -3,7 +3,7 @@
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.tui.commands import (
+from chapgent.tui.commands import (
     SLASH_COMMANDS,
     SlashCommand,
     format_command_list,

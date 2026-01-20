@@ -2,7 +2,7 @@
 
 ## Objective
 
-Expand pygent's tool suite with git operations, web fetching, code search, and additional file operations (create, delete). This phase transforms pygent from a basic assistant into a comprehensive development tool.
+Expand chapgent's tool suite with git operations, web fetching, code search, and additional file operations (create, delete). This phase transforms chapgent from a basic assistant into a comprehensive development tool.
 
 ## Prerequisites
 

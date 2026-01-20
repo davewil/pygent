@@ -5,8 +5,8 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 from hypothesis.strategies import datetimes
 
-from pygent.session.models import Message, Session, TextBlock, ToolInvocation, ToolResultBlock, ToolUseBlock
-from pygent.session.storage import SessionStorage
+from chapgent.session.models import Message, Session, TextBlock, ToolInvocation, ToolResultBlock, ToolUseBlock
+from chapgent.session.storage import SessionStorage
 
 # ASCII-safe text strategy for cross-platform compatibility
 safe_text = st.text(alphabet=string.ascii_letters + string.digits + " .,!?-_")

@@ -2,10 +2,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from pygent.core.agent import Agent
-from pygent.session.models import Session
-from pygent.session.storage import SessionStorage
-from pygent.tui.app import PygentApp
+from chapgent.core.agent import Agent
+from chapgent.session.models import Session
+from chapgent.session.storage import SessionStorage
+from chapgent.tui.app import ChapgentApp
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def mock_agent():
 @pytest.mark.asyncio
 async def test_action_save_session(mock_storage, mock_agent):
     """Test that action_save_session calls storage.save."""
-    app = PygentApp(agent=mock_agent, storage=mock_storage)
+    app = ChapgentApp(agent=mock_agent, storage=mock_storage)
 
     # Simulate saving
     await app.action_save_session()
@@ -37,7 +37,7 @@ async def test_action_save_session(mock_storage, mock_agent):
 @pytest.mark.asyncio
 async def test_action_save_session_no_storage(mock_agent):
     """Test that action_save_session handles missing storage gracefully."""
-    app = PygentApp(agent=mock_agent, storage=None)
+    app = ChapgentApp(agent=mock_agent, storage=None)
 
     # Should not raise error
     await app.action_save_session()
@@ -46,7 +46,7 @@ async def test_action_save_session_no_storage(mock_agent):
 @pytest.mark.asyncio
 async def test_action_save_session_no_agent(mock_storage):
     """Test that action_save_session handles missing agent gracefully."""
-    app = PygentApp(agent=None, storage=mock_storage)
+    app = ChapgentApp(agent=None, storage=mock_storage)
 
     # Should not call save
     await app.action_save_session()

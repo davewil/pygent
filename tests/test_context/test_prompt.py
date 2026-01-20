@@ -3,8 +3,8 @@
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from pygent.context.models import GitInfo, ProjectContext, ProjectType, TestFramework
-from pygent.context.prompt import (
+from chapgent.context.models import GitInfo, ProjectContext, ProjectType, TestFramework
+from chapgent.context.prompt import (
     _format_dependencies,
     _format_git_info,
     _format_scripts,
