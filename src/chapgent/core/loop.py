@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from chapgent.core.cancellation import CancellationToken
+from chapgent.core.logging import logger
 from chapgent.core.parallel import execute_tools_parallel
 from chapgent.core.providers import LLMError, LLMResponse, TokenUsage, classify_llm_error
 from chapgent.core.providers import TextBlock as ProvTextBlock
@@ -164,6 +165,13 @@ async def conversation_loop(
             tool_def = agent.tools.get(tool_info["name"])
             if tool_def:
                 tool_list.append(tool_def)
+
+        # Debug: log context size
+        total_chars = sum(len(json.dumps(m)) for m in llm_msgs)
+        logger.debug(f"LLM request: {len(llm_msgs)} messages, ~{total_chars} chars, ~{total_chars // 4} tokens")
+        for i, msg in enumerate(llm_msgs):
+            msg_chars = len(json.dumps(msg))
+            logger.debug(f"  Message {i}: role={msg.get('role')}, ~{msg_chars} chars")
 
         # Call LLM with error handling
         try:
