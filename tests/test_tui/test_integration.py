@@ -7,6 +7,7 @@ import pytest
 from chapgent.core.agent import Agent
 from chapgent.core.loop import LoopEvent
 from chapgent.tui.app import ChapgentApp
+from chapgent.tui.markdown import MarkdownMessage
 from chapgent.tui.widgets import ConversationPanel, MessageInput, ToolPanel, ToolProgressItem
 
 
@@ -58,33 +59,20 @@ async def test_tui_integration_with_mock_agent():
         conv_panel = app.query_one(ConversationPanel)
         tool_panel = app.query_one(ToolPanel)
 
-        # Inspect the content of the panels
-        # We need to find the Static widgets we added.
-        # Note: ConversationPanel is a Static, so we should filter for our classes.
-
+        # Check user message - now uses MarkdownMessage widgets
         user_msgs = conv_panel.query(".user-message")
         assert user_msgs, "No user messages found"
         user_msg_widget = user_msgs.last()
-
-        # Helper to extract text from a widget's render output
-        def get_text_content(widget):
-            from rich.segment import Segment
-
-            # render() returns an iterable of Segments usually
-            render_result = widget.render()
-            if hasattr(render_result, "__iter__"):
-                return "".join(s.text for s in render_result if isinstance(s, Segment))
-            return str(render_result)
-
-        user_msgs = conv_panel.query(".user-message")
-        assert user_msgs, "No user messages found"
-        user_msg_widget = user_msgs.last()
-        assert "Hello Agent" in get_text_content(user_msg_widget)
+        # MarkdownMessage has a .content property for the raw content
+        assert isinstance(user_msg_widget, MarkdownMessage)
+        assert "Hello Agent" in user_msg_widget.content
 
         # Check assistant message
         agent_msgs = conv_panel.query(".agent-message")
         assert agent_msgs, "No agent messages found"
-        assert "Hello from Agent" in get_text_content(agent_msgs.last())
+        agent_msg_widget = agent_msgs.last()
+        assert isinstance(agent_msg_widget, MarkdownMessage)
+        assert "Hello from Agent" in agent_msg_widget.content
 
         # Check tool panel - now uses ToolProgressItem widgets with .tool-progress class
         tool_progress_items = tool_panel.query(ToolProgressItem)

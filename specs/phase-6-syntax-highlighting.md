@@ -944,10 +944,13 @@ uv run pytest tests/test_tui/test_markdown.py tests/test_tui/test_highlighter.py
    - Added 36 behavioral tests (unit + property-based with Hypothesis)
    - Exports added to `tui/__init__.py` and `tui/themes/__init__.py`
 
-4. **Phase 4: Widget Integration**
-   - Update `ConversationPanel` to use `MarkdownMessage`
-   - Add streaming support methods (for future use)
-   - Integration tests
+4. **Phase 4: Widget Integration** ✓ COMPLETE
+   - Updated `ConversationPanel` to use `MarkdownMessage` for all messages
+   - Added `_get_renderer()` with theme-aware syntax highlighting
+   - Added streaming support methods: `append_streaming_message()`, `update_streaming_message()`, `finalize_streaming_message()`
+   - Added `reset_renderer()` for theme change support
+   - Added 12 behavioral tests in test_conversation_panel.py
+   - Updated test_integration.py for MarkdownMessage widgets
 
 5. **Phase 5: Styles & Polish**
    - Add TCSS styles for markdown elements
@@ -960,25 +963,25 @@ uv run pytest tests/test_tui/test_markdown.py tests/test_tui/test_highlighter.py
 
 ### Functional
 
-- [ ] Code blocks display with syntax highlighting
+- [x] Code blocks display with syntax highlighting (via MarkdownMessage + MarkdownRenderer)
 - [x] Language detection works for unlabeled code blocks (PygmentsHighlighter.detect_language)
 - [x] 50+ languages supported (via Pygments) - tested 22 common languages
-- [ ] Headers render with distinct styles (h1, h2, h3)
-- [ ] Lists render with proper indentation
-- [ ] Inline code renders with distinct background
-- [ ] Blockquotes render with left border
-- [ ] Links render with underline style
-- [x] Theme changes update syntax colors (via get_syntax_theme mapping)
+- [x] Headers render with distinct styles (h1, h2, h3) - via Rich Markdown
+- [x] Lists render with proper indentation - via Rich Markdown
+- [x] Inline code renders with distinct background - via Rich Markdown inline_code_theme
+- [x] Blockquotes render with left border - via Rich Markdown
+- [x] Links render with underline style - via Rich Markdown
+- [x] Theme changes update syntax colors (via get_syntax_theme mapping + reset_renderer)
 
 ### Non-Functional
 
 - [x] No new dependencies required
 - [ ] Rendering adds <50ms latency for typical messages
-- [x] All tests pass (89 highlighter + 35 markdown + 36 theme = 160 total tests)
+- [x] All tests pass (89 highlighter + 35 markdown + 36 theme + 12 widget = 172 total tests)
 - [x] Architecture supports future tree-sitter migration (TreeSitterHighlighter stub)
 
 ---
 
-*Document Version: 1.3*
+*Document Version: 1.4*
 *Created: 2026-01-20*
-*Updated: 2026-01-20* - Phase 3 complete
+*Updated: 2026-01-20* - Phase 4 complete

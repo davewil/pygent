@@ -214,7 +214,7 @@ Google-style docstrings, ruff linting/formatting, and >80% test coverage.
 
 | Metric | Value |
 |--------|-------|
-| Total Tests | 1,419 |
+| Total Tests | 1,467 |
 | Test Coverage | ~96% |
 | Production Lines | ~12,831 |
 | Test Lines | ~17,914 |
@@ -285,11 +285,19 @@ Environment Variables > Project Config (.chapgent.toml) > User Config (~/.config
 - **MarkdownMessage** widget with role-based styling (user/agent)
 - 35 behavioral tests added
 
-### Phase 3: Theme Integration (Pending)
-- Syntax themes mapped to Textual themes
+### Phase 3: Theme Integration ✓
+- **THEME_MAPPING** dict: 11 Textual themes → Pygments themes
+- **get_syntax_theme()**: direct lookup with heuristic fallback
+- **is_dark_theme()**: theme classification (case-insensitive)
+- Default themes: monokai (dark), friendly (light)
+- 36 behavioral tests added
 
-### Phase 4: Widget Integration (Pending)
-- ConversationPanel using MarkdownMessage
+### Phase 4: Widget Integration ✓
+- ConversationPanel updated to use MarkdownMessage widgets
+- Theme-aware syntax highlighting via _get_renderer()
+- Streaming support: append_streaming_message(), update_streaming_message(), finalize_streaming_message()
+- reset_renderer() for theme change support
+- 12 behavioral tests added
 
 ### Phase 5: Styles & Polish (Pending)
 - TCSS styles for markdown elements

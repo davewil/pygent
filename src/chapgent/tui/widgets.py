@@ -8,6 +8,9 @@ from textual.containers import Horizontal, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Pretty, Static
 
+from .markdown import MarkdownConfig, MarkdownMessage, MarkdownRenderer
+from .themes.syntax import get_syntax_theme
+
 
 class ToolStatus(Enum):
     """Status of a tool execution.
@@ -164,24 +167,135 @@ DEFAULT_COMMANDS: list[PaletteCommand] = [
 
 
 class ConversationPanel(Static):
-    """Display for the conversation history."""
+    """Display for the conversation history with markdown rendering.
+
+    This panel renders conversation messages with full markdown support,
+    including syntax-highlighted code blocks. Messages are styled based
+    on their role (user vs agent) and the current application theme.
+
+    Features:
+    - Markdown rendering via Rich
+    - Syntax highlighting for code blocks
+    - Theme-aware syntax colors
+    - Streaming message support (for future use)
+    """
 
     BORDER_TITLE = "💬 Conversation"
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the conversation panel."""
+        super().__init__(*args, **kwargs)
+        self._renderer: MarkdownRenderer | None = None
+
+    def _get_renderer(self) -> MarkdownRenderer:
+        """Get or create the markdown renderer with current theme.
+
+        Returns:
+            MarkdownRenderer configured for the current app theme.
+        """
+        if self._renderer is None:
+            # Get syntax theme based on current app theme
+            try:
+                textual_theme = self.app.theme or "textual-dark"
+            except Exception:
+                textual_theme = "textual-dark"
+
+            syntax_theme = get_syntax_theme(textual_theme)
+            config = MarkdownConfig(code_theme=syntax_theme)
+            self._renderer = MarkdownRenderer(config=config)
+
+        return self._renderer
+
+    def on_mount(self) -> None:
+        """Reset renderer when mounted to pick up theme."""
+        self._renderer = None
 
     def compose(self) -> ComposeResult:
         yield VerticalScroll(id="conversation-messages")
 
     def append_user_message(self, content: str) -> None:
-        """Append a user message to the conversation."""
+        """Append a user message to the conversation.
+
+        Args:
+            content: The message content (markdown supported).
+        """
         scroll = self.query_one("#conversation-messages", VerticalScroll)
-        scroll.mount(Static(f"👤 You: {content}", classes="user-message"))
+        message = MarkdownMessage(
+            content,
+            role="user",
+            renderer=self._get_renderer(),
+        )
+        scroll.mount(message)
         scroll.scroll_end(animate=False)
 
     def append_assistant_message(self, content: str) -> None:
-        """Append an assistant message to the conversation."""
+        """Append an assistant message to the conversation.
+
+        Args:
+            content: The message content (markdown supported).
+        """
         scroll = self.query_one("#conversation-messages", VerticalScroll)
-        scroll.mount(Static(f"🤖 Agent: {content}", classes="agent-message"))
+        message = MarkdownMessage(
+            content,
+            role="agent",
+            renderer=self._get_renderer(),
+        )
+        scroll.mount(message)
         scroll.scroll_end(animate=False)
+
+    def append_streaming_message(self) -> MarkdownMessage:
+        """Append an empty assistant message for streaming updates.
+
+        This method creates a placeholder message that can be updated
+        incrementally as streaming content arrives.
+
+        Returns:
+            The MarkdownMessage widget that can be updated via update_content().
+        """
+        scroll = self.query_one("#conversation-messages", VerticalScroll)
+        message = MarkdownMessage(
+            "",
+            role="agent",
+            renderer=self._get_renderer(),
+            id="streaming-message",
+        )
+        scroll.mount(message)
+        scroll.scroll_end(animate=False)
+        return message
+
+    def update_streaming_message(self, content: str) -> None:
+        """Update the current streaming message content.
+
+        Args:
+            content: The new content for the streaming message.
+        """
+        try:
+            message = self.query_one("#streaming-message", MarkdownMessage)
+            message.update_content(content)
+            scroll = self.query_one("#conversation-messages", VerticalScroll)
+            scroll.scroll_end(animate=False)
+        except Exception:
+            pass  # No streaming message active
+
+    def finalize_streaming_message(self) -> None:
+        """Convert streaming message to regular message.
+
+        Removes the special ID from the streaming message so it becomes
+        a normal message in the conversation history.
+        """
+        try:
+            message = self.query_one("#streaming-message", MarkdownMessage)
+            message.id = None  # Remove special ID
+        except Exception:
+            pass
+
+    def reset_renderer(self) -> None:
+        """Reset the renderer to pick up theme changes.
+
+        Call this when the application theme changes to ensure code blocks
+        use appropriate syntax highlighting colors.
+        """
+        self._renderer = None
 
     def clear(self) -> None:
         """Clear the conversation history."""

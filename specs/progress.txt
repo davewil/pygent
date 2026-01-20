@@ -1449,3 +1449,31 @@
   - Learned: Integration tests verifying theme-to-config flow catch potential mismatches
   - Phase 3 of Phase 6 Syntax Highlighting complete (Theme Integration)
   - Total: 1455 tests pass (36 theme tests added)
+2026-01-20: Phase 6 - Syntax Highlighting (Phase 4: Widget Integration):
+  - Updated src/chapgent/tui/widgets.py ConversationPanel to use MarkdownMessage widgets:
+    * Added imports for MarkdownConfig, MarkdownMessage, MarkdownRenderer from markdown.py
+    * Added import for get_syntax_theme from themes/syntax.py
+    * Added _renderer attribute for caching MarkdownRenderer
+    * Added _get_renderer() method that creates theme-aware MarkdownRenderer
+    * append_user_message() now creates MarkdownMessage with role="user"
+    * append_assistant_message() now creates MarkdownMessage with role="agent"
+    * Added append_streaming_message() for future streaming support (returns MarkdownMessage)
+    * Added update_streaming_message() for incremental content updates
+    * Added finalize_streaming_message() to mark streaming complete
+    * Added reset_renderer() to clear cached renderer on theme changes
+    * Added on_mount() to reset renderer when widget is mounted
+  - Created tests/test_tui/test_conversation_panel.py with 12 behavioral tests:
+    * TestConversationPanelMessages: 4 tests for message rendering
+    * TestConversationPanelStreaming: 3 tests for streaming support
+    * TestConversationPanelThemeIntegration: 2 tests for theme awareness
+    * TestConversationPanelClear: 1 test for clearing messages
+    * TestMarkdownMessageRender: 2 tests for render output
+  - Updated tests/test_tui/test_integration.py:
+    * Changed imports to include MarkdownMessage
+    * Updated assertions to use MarkdownMessage.content property instead of extracting from render output
+  - Learned: Textual DOM operations are asynchronous - need await pilot.pause() after clear()
+  - Learned: Setting widget.id = None doesn't immediately remove it from DOM queries
+  - Learned: MarkdownMessage.content property provides direct access to raw markdown content
+  - Learned: Theme-aware renderer should use try/except for self.app.theme access (may not be mounted yet)
+  - Phase 4 of Phase 6 Syntax Highlighting complete (Widget Integration)
+  - Total: 1467 tests pass (12 widget tests added)
