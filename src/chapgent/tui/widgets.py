@@ -285,7 +285,7 @@ class ConversationPanel(Static):
         """
         try:
             message = self.query_one("#streaming-message", MarkdownMessage)
-            message.id = None  # Remove special ID
+            message.id = None  # type: ignore[assignment]  # Remove special ID
         except Exception:
             pass
 

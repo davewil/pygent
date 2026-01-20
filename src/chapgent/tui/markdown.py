@@ -198,6 +198,12 @@ class MarkdownMessage(Static):
         """Get the current content."""
         return self._content
 
+    @content.setter
+    def content(self, value: str) -> None:
+        """Set the content."""
+        self._content = value
+        self.refresh()
+
     @property
     def role(self) -> str:
         """Get the message role."""
