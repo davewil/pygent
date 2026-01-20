@@ -10,6 +10,7 @@ from chapgent.core.agent import Agent
 from chapgent.session.models import Session
 from chapgent.session.storage import SessionStorage
 from chapgent.tui.commands import format_command_list, get_command_help, parse_slash_command
+from chapgent.tui.screens import ThemePickerScreen
 from chapgent.tui.widgets import (
     CommandPalette,
     ConversationPanel,
@@ -249,6 +250,25 @@ class ChapgentApp(App[None]):
                     self.call_later(action_method)
 
         self.push_screen(CommandPalette(), callback=handle_command)
+
+    def action_show_theme_picker(self) -> None:
+        """Show the theme picker modal."""
+
+        def handle_theme(result: str | None) -> None:
+            """Handle the selected theme from the picker."""
+            if result is not None:
+                # Theme was already applied during preview
+                # Persist to config
+                try:
+                    from chapgent.config.writer import save_config_value
+
+                    save_config_value("tui.theme", result)
+                    self.notify(f"Theme set to: {result}", severity="information")
+                except Exception as e:
+                    self.notify(f"Error saving theme: {e}", severity="error")
+
+        current_theme = self.theme if hasattr(self, "theme") else None
+        self.push_screen(ThemePickerScreen(current_theme=current_theme), callback=handle_theme)
 
     async def _populate_sessions_sidebar(self) -> None:
         """Populate the sessions sidebar with saved sessions."""

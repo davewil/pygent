@@ -1190,3 +1190,40 @@
   - Learned: frozenset is immutable and faster for membership testing than set
   - Phase 1 of Phase 5 TUI Enhancements complete (Infrastructure)
   - Total: 1439 tests pass
+2026-01-20: Implemented Phase 5 TUI Enhancements - Phase 2.1: ThemePickerScreen (specs/phase-5-tui-enhancements.md):
+  - Created src/chapgent/tui/screens.py module:
+    * ThemePickerScreen modal for selecting TUI themes
+    * Grid of theme buttons (11 themes from VALID_THEMES)
+    * Live preview: clicking a theme applies it immediately via self.app.theme
+    * Save button persists selected theme to config
+    * Cancel button reverts to original theme
+    * Escape key binding for cancel action
+    * CSS styles embedded in screen class for modal layout
+  - Updated src/chapgent/tui/app.py:
+    * Added action_show_theme_picker() method
+    * Imports ThemePickerScreen from screens module
+    * Callback pattern uses save_config_value() from config.writer
+    * Displays notification on save/error
+  - Updated src/chapgent/tui/widgets.py:
+    * Added "Change Theme" command to DEFAULT_COMMANDS
+    * id="show_theme_picker", name="Change Theme"
+  - Updated src/chapgent/tui/__init__.py:
+    * Added screens module exports (ThemePickerScreen)
+  - Created tests/test_tui/test_screens.py with 27 tests:
+    * TestThemePickerScreen: 5 tests for modal creation and compose
+    * TestThemePickerSelection: 2 tests for theme selection and button variants
+    * TestThemePickerDismissal: 4 tests for save/cancel/escape behavior
+    * TestThemePickerAppIntegration: 4 tests for app integration
+    * TestPropertyBased: 2 tests using hypothesis
+    * TestEdgeCases: 4 tests for edge cases
+    * TestIntegration: 2 end-to-end tests
+  - Learned: Textual test pilot.click() fails with OutOfBounds for elements outside visible screen
+    * Solution: Use size=(100, 50) in app.run_test() or call internal methods directly
+    * Alternative: Use button.press() to simulate button clicks without screen position
+  - Learned: Modal screens with nested containers need careful sizing to fit in test viewport
+  - Learned: Callbacks from push_screen need asyncio.sleep() to allow execution time in tests
+  - Learned: Local imports (inside functions) need to be patched at their source module, not at import site
+    * e.g., patch "chapgent.config.writer.save_config_value" not "chapgent.tui.app.save_config_value"
+  - Learned: Internal methods (e.g., picker._select_theme()) are useful for testing without UI interaction
+  - Phase 2.1 of Phase 5 TUI Enhancements complete (ThemePickerScreen)
+  - Total: 1466 tests pass

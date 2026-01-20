@@ -136,6 +136,11 @@ DEFAULT_COMMANDS: list[PaletteCommand] = [
         shortcut="Ctrl+L",
     ),
     PaletteCommand(
+        id="show_theme_picker",
+        name="Change Theme",
+        description="Select a color theme for the TUI",
+    ),
+    PaletteCommand(
         id="quit",
         name="Quit",
         description="Exit the application",

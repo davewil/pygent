@@ -262,10 +262,18 @@ These reuse existing `action_*` methods - just wire up slash commands:
      - `tests/test_config_cli.py` (updated imports)
      - `tests/test_logging.py` (updated imports)
 
-2. **Phase 2.1**: Theme Picker (high visibility, validates pattern)
-   - Create `ThemePickerScreen` in `screens.py`
-   - Add `action_show_theme_picker` in `app.py`
-   - Wire up `/theme` command
+2. **Phase 2.1**: Theme Picker (high visibility, validates pattern) ✅ COMPLETE
+   - Create `ThemePickerScreen` in `screens.py` ✅
+   - Add `action_show_theme_picker` in `app.py` ✅
+   - Wire up `/theme` command ✅
+   - Add "Change Theme" to command palette ✅
+   - **Files created:**
+     - `src/chapgent/tui/screens.py`
+     - `tests/test_tui/test_screens.py` (27 tests)
+   - **Files modified:**
+     - `src/chapgent/tui/__init__.py` (exports)
+     - `src/chapgent/tui/app.py` (action_show_theme_picker, import ThemePickerScreen)
+     - `src/chapgent/tui/widgets.py` (added "Change Theme" to DEFAULT_COMMANDS)
 
 3. **Phase 2.2**: LLM Settings (core functionality)
    - Create `LLMSettingsScreen`
