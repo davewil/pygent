@@ -700,9 +700,15 @@ def login(import_claude_code: bool, token: str | None) -> None:
         try:
             with open(credentials_path) as f:
                 creds = json.load(f)
-            token = creds.get("accessToken") or creds.get("access_token")
+            # Token can be at top level or nested under claudeAiOauth
+            token = (
+                creds.get("accessToken")
+                or creds.get("access_token")
+                or creds.get("claudeAiOauth", {}).get("accessToken")
+            )
             if not token:
                 console.print("[red]Error: No access token found in credentials[/red]")
+                console.print("[dim]Expected 'accessToken' or 'claudeAiOauth.accessToken'[/dim]")
                 raise SystemExit(1)
             console.print("[green]✓ Imported token from Claude Code credentials[/green]")
         except json.JSONDecodeError:
@@ -982,7 +988,11 @@ def proxy_setup() -> None:
                 try:
                     with open(credentials_path) as f:
                         creds = json.load(f)
-                    token = creds.get("accessToken") or creds.get("access_token")
+                    token = (
+                        creds.get("accessToken")
+                        or creds.get("access_token")
+                        or creds.get("claudeAiOauth", {}).get("accessToken")
+                    )
                     if token and len(token) >= 20:
                         save_config_value("llm.oauth_token", token, project=False)
                         console.print("[green]✓ OAuth token imported from Claude Code[/green]")
