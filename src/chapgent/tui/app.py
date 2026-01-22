@@ -291,7 +291,7 @@ class ChapgentApp(App[None]):
                     # Save each setting
                     save_config_value("llm.provider", result["provider"])
                     save_config_value("llm.model", result["model"])
-                    save_config_value("llm.max_tokens", str(result["max_tokens"]))
+                    save_config_value("llm.max_output_tokens", str(result["max_output_tokens"]))
 
                     self.notify(
                         f"LLM settings updated: {result['provider']}/{result['model']}",
@@ -302,20 +302,20 @@ class ChapgentApp(App[None]):
                     if self.settings:
                         self.settings.llm.provider = result["provider"]
                         self.settings.llm.model = result["model"]
-                        self.settings.llm.max_tokens = result["max_tokens"]
+                        self.settings.llm.max_output_tokens = result["max_output_tokens"]
                 except Exception as e:
                     self.notify(f"Error saving LLM settings: {e}", severity="error")
 
         # Get current settings
         current_provider = self.settings.llm.provider if self.settings else None
         current_model = self.settings.llm.model if self.settings else None
-        current_max_tokens = self.settings.llm.max_tokens if self.settings else None
+        current_max_output_tokens = self.settings.llm.max_output_tokens if self.settings else None
 
         self.push_screen(
             LLMSettingsScreen(
                 current_provider=current_provider,
                 current_model=current_model,
-                current_max_tokens=current_max_tokens,
+                current_max_output_tokens=current_max_output_tokens,
             ),
             callback=handle_llm_settings,
         )
@@ -434,7 +434,7 @@ class ChapgentApp(App[None]):
                     "Current Configuration:\n"
                     f"  LLM Model: {self.settings.llm.model}\n"
                     f"  LLM Provider: {self.settings.llm.provider}\n"
-                    f"  Max Tokens: {self.settings.llm.max_tokens}\n"
+                    f"  Max Output Tokens: {self.settings.llm.max_output_tokens}\n"
                     f"  Theme: {self.settings.tui.theme}\n"
                     f"  Show Tool Panel: {self.settings.tui.show_tool_panel}\n"
                     f"  Show Sidebar: {self.settings.tui.show_sidebar}"

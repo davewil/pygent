@@ -143,12 +143,12 @@ Supported providers:
 
 Configure with: chapgent config set llm.provider <provider>
 """,
-    "max_tokens_exceeded": """Max tokens ({max_tokens}) exceeded.
+    "max_output_tokens_exceeded": """Max output tokens ({max_output_tokens}) exceeded.
 
 The response was too long for the configured limit.
 
 Increase the limit:
-  chapgent config set llm.max_tokens 8192
+  chapgent config set llm.max_output_tokens 8192
 
 Or ask for a shorter response.
 """,

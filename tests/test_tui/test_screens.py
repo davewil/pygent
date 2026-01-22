@@ -120,7 +120,7 @@ class TestLLMSettings:
 
     @pytest.mark.asyncio
     async def test_user_can_save_llm_settings(self):
-        """Saving LLM settings persists provider, model, and max_tokens."""
+        """Saving LLM settings persists provider, model, and max_output_tokens."""
         app = ChapgentApp()
         async with app.run_test(size=(100, 50)) as pilot:
             saved_values = {}
@@ -143,8 +143,8 @@ class TestLLMSettings:
                 model_input = screen.query_one("#llm-model-input", Input)
                 model_input.value = "claude-opus-4-20250514"
 
-                # Change max tokens
-                tokens_input = screen.query_one("#llm-max-tokens-input", Input)
+                # Change max output tokens
+                tokens_input = screen.query_one("#llm-max-output-tokens-input", Input)
                 tokens_input.value = "8192"
 
                 # Save
@@ -154,11 +154,11 @@ class TestLLMSettings:
                 await pilot.pause()
 
             assert saved_values.get("llm.model") == "claude-opus-4-20250514"
-            assert saved_values.get("llm.max_tokens") == "8192"
+            assert saved_values.get("llm.max_output_tokens") == "8192"
 
     @pytest.mark.asyncio
-    async def test_invalid_max_tokens_shows_error(self):
-        """Invalid max_tokens value prevents saving."""
+    async def test_invalid_max_output_tokens_shows_error(self):
+        """Invalid max_output_tokens value prevents saving."""
         app = ChapgentApp()
         async with app.run_test(size=(100, 50)) as pilot:
             with patch("chapgent.config.writer.save_config_value") as mock_save:
@@ -169,7 +169,7 @@ class TestLLMSettings:
                 from textual.widgets import Button, Input
 
                 # Enter invalid value
-                tokens_input = screen.query_one("#llm-max-tokens-input", Input)
+                tokens_input = screen.query_one("#llm-max-output-tokens-input", Input)
                 tokens_input.value = "not-a-number"
 
                 # Try to save

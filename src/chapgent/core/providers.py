@@ -222,14 +222,14 @@ class LLMProvider:
         self,
         messages: list[dict[str, Any]],
         tools: list[ToolDefinition],
-        max_tokens: int = 4096,
+        max_output_tokens: int = 4096,
     ) -> LLMResponse:
         """Send completion request to LLM.
 
         Args:
             messages: List of message dicts (role, content).
             tools: List of available tool definitions.
-            max_tokens: Max tokens to generate.
+            max_output_tokens: Maximum tokens in the model's response.
 
         Returns:
             LLMResponse containing content blocks and stop reason.
@@ -256,7 +256,7 @@ class LLMProvider:
             extra_headers=self.extra_headers,
             messages=messages,
             tools=formatted_tools,
-            max_tokens=max_tokens,
+            max_tokens=max_output_tokens,  # litellm uses max_tokens
         )
 
         choice = response.choices[0]

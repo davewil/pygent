@@ -58,9 +58,9 @@ KNOWN_MODELS = frozenset(
     }
 )
 
-# Max tokens validation bounds
-MAX_TOKENS_MIN = 1
-MAX_TOKENS_MAX = 100000
+# Max output tokens validation bounds
+MAX_OUTPUT_TOKENS_MIN = 1
+MAX_OUTPUT_TOKENS_MAX = 100000
 
 # Valid Textual themes
 VALID_THEMES = frozenset(
@@ -119,7 +119,7 @@ class LLMSettings(BaseModel):
         provider: LLM provider name (e.g., "anthropic", "openai", "ollama").
         model: Model identifier. Known models are validated; unknown models
             trigger a warning but are allowed for flexibility.
-        max_tokens: Maximum tokens in response. Must be between 1 and 100000.
+        max_output_tokens: Maximum tokens in the model's response. Must be between 1 and 100000.
         api_key: API key for the provider. Falls back to environment variable.
         base_url: Custom API endpoint (e.g., LiteLLM proxy URL).
         extra_headers: Additional HTTP headers to send with requests.
@@ -128,7 +128,7 @@ class LLMSettings(BaseModel):
 
     provider: str = "anthropic"
     model: str = "claude-sonnet-4-20250514"
-    max_tokens: int = 4096
+    max_output_tokens: int = 4096  # Maximum tokens in the model's response
     api_key: str | None = None  # Falls back to env var
     base_url: str | None = None  # Custom API endpoint (e.g., LiteLLM proxy)
     extra_headers: dict[str, str] | None = None  # Additional HTTP headers
@@ -147,15 +147,15 @@ class LLMSettings(BaseModel):
             )
         return v_lower
 
-    @field_validator("max_tokens")
+    @field_validator("max_output_tokens")
     @classmethod
-    def validate_max_tokens(cls, v: int) -> int:
-        """Validate that max_tokens is within reasonable bounds."""
-        if v < MAX_TOKENS_MIN:
-            raise ValueError(f"max_tokens must be at least {MAX_TOKENS_MIN}")
-        if v > MAX_TOKENS_MAX:
+    def validate_max_output_tokens(cls, v: int) -> int:
+        """Validate that max_output_tokens is within reasonable bounds."""
+        if v < MAX_OUTPUT_TOKENS_MIN:
+            raise ValueError(f"max_output_tokens must be at least {MAX_OUTPUT_TOKENS_MIN}")
+        if v > MAX_OUTPUT_TOKENS_MAX:
             raise ValueError(
-                f"max_tokens value {v} exceeds maximum of {MAX_TOKENS_MAX}. "
+                f"max_output_tokens value {v} exceeds maximum of {MAX_OUTPUT_TOKENS_MAX}. "
                 "Most models support at most 4096-32000 tokens."
             )
         return v

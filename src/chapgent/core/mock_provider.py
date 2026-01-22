@@ -45,14 +45,14 @@ class MockLLMProvider(LLMProvider):
         self,
         messages: list[dict[str, Any]],
         tools: list[ToolDefinition],
-        max_tokens: int = 4096,
+        max_output_tokens: int = 4096,
     ) -> LLMResponse:
         """Return canned responses based on user input patterns.
 
         Args:
             messages: Conversation messages.
             tools: Available tool definitions.
-            max_tokens: Ignored for mock.
+            max_output_tokens: Ignored for mock.
 
         Returns:
             LLMResponse with either text or tool calls.

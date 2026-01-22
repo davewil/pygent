@@ -193,7 +193,7 @@ def show() -> None:
     click.echo("\n[LLM]")
     click.echo(f"  provider: {settings.llm.provider}")
     click.echo(f"  model: {settings.llm.model}")
-    click.echo(f"  max_tokens: {settings.llm.max_tokens}")
+    click.echo(f"  max_output_tokens: {settings.llm.max_output_tokens}")
     click.echo("\n[Permissions]")
     click.echo(f"  auto_approve_low_risk: {settings.permissions.auto_approve_low_risk}")
     click.echo(f"  session_override_allowed: {settings.permissions.session_override_allowed}")

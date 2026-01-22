@@ -236,10 +236,10 @@ class TestConfigSetCommand:
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["config", "set", "llm.max_tokens", "8192"])
+        result = runner.invoke(cli, ["config", "set", "llm.max_output_tokens", "8192"])
 
         assert result.exit_code == 0
-        assert "Set llm.max_tokens = 8192" in result.output
+        assert "Set llm.max_output_tokens = 8192" in result.output
 
     def test_sets_boolean_value(self, tmp_path, monkeypatch):
         """Test setting a boolean value."""
@@ -284,7 +284,7 @@ class TestConfigSetCommand:
         config_path.write_text('[llm]\nmodel = "existing"\n')
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["config", "set", "llm.max_tokens", "8192"])
+        result = runner.invoke(cli, ["config", "set", "llm.max_output_tokens", "8192"])
 
         assert result.exit_code == 0
 
@@ -298,7 +298,7 @@ class TestConfigSetCommand:
             data = tomllib.load(f)
 
         assert data["llm"]["model"] == "existing"
-        assert data["llm"]["max_tokens"] == 8192
+        assert data["llm"]["max_output_tokens"] == 8192
 
 
 class TestConfigShowCommand:
@@ -324,7 +324,7 @@ class TestConfigShowCommand:
         """Test shows custom configuration values."""
         from chapgent.config.settings import LLMSettings, Settings
 
-        mock_load_config.return_value = Settings(llm=LLMSettings(model="custom-model", max_tokens=8192))
+        mock_load_config.return_value = Settings(llm=LLMSettings(model="custom-model", max_output_tokens=8192))
 
         runner = CliRunner()
         result = runner.invoke(cli, ["config", "show"])
@@ -454,7 +454,7 @@ class TestIntegration:
 
         # Set multiple values
         runner.invoke(cli, ["config", "set", "llm.model", "model1"])
-        runner.invoke(cli, ["config", "set", "llm.max_tokens", "8192"])
+        runner.invoke(cli, ["config", "set", "llm.max_output_tokens", "8192"])
         runner.invoke(cli, ["config", "set", "tui.theme", "dark"])
 
         # Read back
@@ -469,5 +469,5 @@ class TestIntegration:
             data = tomllib.load(f)
 
         assert data["llm"]["model"] == "model1"
-        assert data["llm"]["max_tokens"] == 8192
+        assert data["llm"]["max_output_tokens"] == 8192
         assert data["tui"]["theme"] == "dark"

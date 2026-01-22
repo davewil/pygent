@@ -19,8 +19,8 @@ from chapgent.config.loader import (
     load_config,
 )
 from chapgent.config.settings import (
-    MAX_TOKENS_MAX,
-    MAX_TOKENS_MIN,
+    MAX_OUTPUT_TOKENS_MAX,
+    MAX_OUTPUT_TOKENS_MIN,
     LLMSettings,
     PermissionSettings,
 )
@@ -33,7 +33,7 @@ class TestEnvMappings:
         """Chapgent-specific env vars are defined."""
         assert "CHAPGENT_MODEL" in ENV_MAPPINGS
         assert "CHAPGENT_API_KEY" in ENV_MAPPINGS
-        assert "CHAPGENT_MAX_TOKENS" in ENV_MAPPINGS
+        assert "CHAPGENT_MAX_OUTPUT_TOKENS" in ENV_MAPPINGS
         assert "CHAPGENT_PROVIDER" in ENV_MAPPINGS
 
     def test_contains_api_key_fallbacks(self) -> None:
@@ -111,14 +111,14 @@ class TestSetNestedValue:
 class TestConvertEnvValue:
     """Tests for _convert_env_value helper function."""
 
-    def test_max_tokens_converted_to_int(self) -> None:
-        """max_tokens paths are converted to integers."""
-        assert _convert_env_value("4096", "llm.max_tokens") == 4096
-        assert _convert_env_value("8192", "some.max_tokens") == 8192
+    def test_max_output_tokens_converted_to_int(self) -> None:
+        """max_output_tokens paths are converted to integers."""
+        assert _convert_env_value("4096", "llm.max_output_tokens") == 4096
+        assert _convert_env_value("8192", "some.max_output_tokens") == 8192
 
-    def test_max_tokens_invalid_stays_string(self) -> None:
-        """Invalid max_tokens value stays as string."""
-        assert _convert_env_value("not_a_number", "llm.max_tokens") == "not_a_number"
+    def test_max_output_tokens_invalid_stays_string(self) -> None:
+        """Invalid max_output_tokens value stays as string."""
+        assert _convert_env_value("not_a_number", "llm.max_output_tokens") == "not_a_number"
 
     def test_boolean_true_values(self) -> None:
         """Boolean paths convert true-like values."""
@@ -172,14 +172,14 @@ class TestLoadEnvConfig:
         result = _load_env_config()
         assert result == {"llm": {"model": "gpt-4"}}
 
-    def test_loads_chapgent_max_tokens(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Loads CHAPGENT_MAX_TOKENS as integer."""
+    def test_loads_chapgent_max_output_tokens(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Loads CHAPGENT_MAX_OUTPUT_TOKENS as integer."""
         for var in ENV_MAPPINGS:
             monkeypatch.delenv(var, raising=False)
-        monkeypatch.setenv("CHAPGENT_MAX_TOKENS", "8192")
+        monkeypatch.setenv("CHAPGENT_MAX_OUTPUT_TOKENS", "8192")
 
         result = _load_env_config()
-        assert result == {"llm": {"max_tokens": 8192}}
+        assert result == {"llm": {"max_output_tokens": 8192}}
 
     def test_api_key_priority_chapgent_first(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """CHAPGENT_API_KEY takes priority over others."""
@@ -217,13 +217,13 @@ class TestLoadEnvConfig:
             monkeypatch.delenv(var, raising=False)
         monkeypatch.setenv("CHAPGENT_MODEL", "claude-3")
         monkeypatch.setenv("CHAPGENT_PROVIDER", "anthropic")
-        monkeypatch.setenv("CHAPGENT_MAX_TOKENS", "2048")
+        monkeypatch.setenv("CHAPGENT_MAX_OUTPUT_TOKENS", "2048")
         monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
 
         result = _load_env_config()
         assert result["llm"]["model"] == "claude-3"
         assert result["llm"]["provider"] == "anthropic"
-        assert result["llm"]["max_tokens"] == 2048
+        assert result["llm"]["max_output_tokens"] == 2048
         assert result["llm"]["api_key"] == "test-key"
 
 
@@ -322,8 +322,8 @@ class TestLoadConfigWithEnv:
         assert settings.llm.provider == "groq"
         # Project overrides user for model
         assert settings.llm.model == "project-model"
-        # Default for max_tokens (not set anywhere)
-        assert settings.llm.max_tokens == LLMSettings.model_fields["max_tokens"].default
+        # Default for max_output_tokens (not set anywhere)
+        assert settings.llm.max_output_tokens == LLMSettings.model_fields["max_output_tokens"].default
 
 
 class TestPropertyBased:
@@ -341,11 +341,11 @@ class TestPropertyBased:
 
         assert data["section"][key] == value
 
-    @given(st.integers(min_value=MAX_TOKENS_MIN, max_value=MAX_TOKENS_MAX))
+    @given(st.integers(min_value=MAX_OUTPUT_TOKENS_MIN, max_value=MAX_OUTPUT_TOKENS_MAX))
     @settings(max_examples=20)
-    def test_max_tokens_conversion(self, num: int) -> None:
-        """Integer strings are converted for max_tokens."""
-        result = _convert_env_value(str(num), "llm.max_tokens")
+    def test_max_output_tokens_conversion(self, num: int) -> None:
+        """Integer strings are converted for max_output_tokens."""
+        result = _convert_env_value(str(num), "llm.max_output_tokens")
         assert result == num
 
     @given(st.sampled_from(["true", "True", "TRUE", "1", "yes", "on"]))
@@ -408,7 +408,7 @@ class TestEdgeCases:
         assert settings.llm.api_key == "test-key"
         # Defaults still work
         assert settings.llm.provider == LLMSettings.model_fields["provider"].default
-        assert settings.llm.max_tokens == LLMSettings.model_fields["max_tokens"].default
+        assert settings.llm.max_output_tokens == LLMSettings.model_fields["max_output_tokens"].default
 
 
 class TestIntegration:
@@ -425,7 +425,7 @@ class TestIntegration:
         with open(user_config, "wb") as f:
             tomli_w.dump(
                 {
-                    "llm": {"model": "claude-sonnet-4-20250514", "max_tokens": 8192},
+                    "llm": {"model": "claude-sonnet-4-20250514", "max_output_tokens": 8192},
                     "tui": {"theme": "gruvbox", "show_tool_panel": True},
                 },
                 f,
@@ -442,7 +442,7 @@ class TestIntegration:
 
         # File settings applied
         assert settings.llm.model == "claude-sonnet-4-20250514"
-        assert settings.llm.max_tokens == 8192
+        assert settings.llm.max_output_tokens == 8192
         assert settings.tui.theme == "gruvbox"
         assert settings.tui.show_tool_panel is True
 

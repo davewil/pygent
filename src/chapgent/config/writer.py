@@ -36,7 +36,7 @@ VALID_CONFIG_KEYS: frozenset[str] = frozenset(
     {
         "llm.provider",
         "llm.model",
-        "llm.max_tokens",
+        "llm.max_output_tokens",
         "llm.api_key",
         "llm.base_url",
         "llm.extra_headers",
@@ -71,7 +71,7 @@ def convert_value(key: str, value: str) -> str | int | bool | dict[str, str]:
     """Convert a string value to the appropriate type for the given key.
 
     Args:
-        key: The config key (e.g., "llm.max_tokens").
+        key: The config key (e.g., "llm.max_output_tokens").
         value: The string value to convert.
 
     Returns:
@@ -81,7 +81,7 @@ def convert_value(key: str, value: str) -> str | int | bool | dict[str, str]:
         ConfigWriteError: If the value cannot be converted or is invalid.
     """
     # Integer fields
-    if key == "llm.max_tokens":
+    if key == "llm.max_output_tokens":
         try:
             return int(value)
         except ValueError:
@@ -216,7 +216,7 @@ def get_default_config_content() -> str:
 [llm]
 # provider = "anthropic"
 # model = "claude-sonnet-4-20250514"
-# max_tokens = 4096
+# max_output_tokens = 4096
 # api_key = ""  # Prefer ANTHROPIC_API_KEY env var
 
 [permissions]

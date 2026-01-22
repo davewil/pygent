@@ -107,12 +107,12 @@ ENVIRONMENT VARIABLES
   ANTHROPIC_API_KEY   API key for Anthropic (recommended)
   OPENAI_API_KEY      API key for OpenAI
   CHAPGENT_API_KEY      Override API key
-  CHAPGENT_MODEL        Override model name
-  CHAPGENT_PROVIDER     Override provider
-  CHAPGENT_MAX_TOKENS   Override max tokens
+  CHAPGENT_MODEL              Override model name
+  CHAPGENT_PROVIDER           Override provider
+  CHAPGENT_MAX_OUTPUT_TOKENS  Override max output tokens
 
 CONFIGURATION SECTIONS
-  [llm]           - LLM provider settings (model, api_key, max_tokens)
+  [llm]           - LLM provider settings (model, api_key, max_output_tokens)
   [permissions]   - Permission settings (auto_approve_low_risk)
   [tui]           - TUI settings (theme, show_tool_panel)
   [system_prompt] - Custom system prompt settings
@@ -121,7 +121,7 @@ CONFIGURATION SECTIONS
 EXAMPLE CONFIG
   [llm]
   model = "claude-sonnet-4-20250514"
-  max_tokens = 4096
+  max_output_tokens = 4096
 
   [tui]
   theme = "textual-dark"

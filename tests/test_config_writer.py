@@ -28,7 +28,7 @@ class TestValidConfigKeys:
         """Test LLM config keys are present."""
         assert "llm.provider" in VALID_CONFIG_KEYS
         assert "llm.model" in VALID_CONFIG_KEYS
-        assert "llm.max_tokens" in VALID_CONFIG_KEYS
+        assert "llm.max_output_tokens" in VALID_CONFIG_KEYS
         assert "llm.api_key" in VALID_CONFIG_KEYS
 
     def test_contains_permission_keys(self):
@@ -88,16 +88,16 @@ class TestGetConfigPaths:
 class TestConvertValue:
     """Tests for convert_value helper."""
 
-    def test_converts_max_tokens_to_int(self):
-        """Test integer conversion for max_tokens."""
-        result = convert_value("llm.max_tokens", "8192")
+    def test_converts_max_output_tokens_to_int(self):
+        """Test integer conversion for max_output_tokens."""
+        result = convert_value("llm.max_output_tokens", "8192")
         assert result == 8192
         assert isinstance(result, int)
 
-    def test_invalid_max_tokens_raises(self):
+    def test_invalid_max_output_tokens_raises(self):
         """Test invalid integer raises ConfigWriteError."""
         with pytest.raises(ConfigWriteError) as exc_info:
-            convert_value("llm.max_tokens", "not_a_number")
+            convert_value("llm.max_output_tokens", "not_a_number")
 
         assert "Invalid integer" in str(exc_info.value)
 
@@ -242,7 +242,7 @@ class TestWriteToml:
             import tomli as tomllib  # type: ignore[import-not-found,unused-ignore]
 
         config_path = tmp_path / "config.toml"
-        data = {"llm": {"model": "test-model", "max_tokens": 4096}}
+        data = {"llm": {"model": "test-model", "max_output_tokens": 4096}}
         write_toml(config_path, data)
 
         # Read back and verify
@@ -250,7 +250,7 @@ class TestWriteToml:
             loaded = tomllib.load(f)
 
         assert loaded["llm"]["model"] == "test-model"
-        assert loaded["llm"]["max_tokens"] == 4096
+        assert loaded["llm"]["max_output_tokens"] == 4096
 
     def test_writes_nested_sections(self, tmp_path):
         """Test writing nested sections."""
@@ -346,14 +346,14 @@ class TestSaveConfigValue:
 
         monkeypatch.setattr(writer, "get_config_paths", lambda: (user_config, tmp_path / "p" / "c.toml"))
 
-        save_config_value("llm.max_tokens", "8192")
+        save_config_value("llm.max_output_tokens", "8192")
 
         with open(user_config, "rb") as f:
             loaded = tomllib.load(f)
 
         # Both values should be present
         assert loaded["llm"]["model"] == "existing-model"
-        assert loaded["llm"]["max_tokens"] == 8192
+        assert loaded["llm"]["max_output_tokens"] == 8192
 
 
 class TestGetValidConfigKeys:
@@ -395,9 +395,9 @@ class TestPropertyBased:
 
     @given(st.integers(min_value=1, max_value=100000))
     @settings(max_examples=20)
-    def test_max_tokens_roundtrip(self, value):
-        """Test max_tokens value roundtrip."""
-        result = convert_value("llm.max_tokens", str(value))
+    def test_max_output_tokens_roundtrip(self, value):
+        """Test max_output_tokens value roundtrip."""
+        result = convert_value("llm.max_output_tokens", str(value))
         assert result == value
 
     @given(st.text(min_size=1, max_size=100, alphabet=st.characters(blacklist_categories=["Cs"])))
@@ -459,7 +459,7 @@ class TestIntegration:
 
         # Set multiple values
         save_config_value("llm.model", "test-model")
-        save_config_value("llm.max_tokens", "8192")
+        save_config_value("llm.max_output_tokens", "8192")
         save_config_value("tui.theme", "dark")
         save_config_value("tui.show_tool_panel", "true")
 
@@ -468,6 +468,6 @@ class TestIntegration:
             loaded = tomllib.load(f)
 
         assert loaded["llm"]["model"] == "test-model"
-        assert loaded["llm"]["max_tokens"] == 8192
+        assert loaded["llm"]["max_output_tokens"] == 8192
         assert loaded["tui"]["theme"] == "dark"
         assert loaded["tui"]["show_tool_panel"] is True

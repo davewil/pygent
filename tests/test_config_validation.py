@@ -8,8 +8,8 @@ from pydantic import ValidationError
 
 from chapgent.config.settings import (
     KNOWN_MODELS,
-    MAX_TOKENS_MAX,
-    MAX_TOKENS_MIN,
+    MAX_OUTPUT_TOKENS_MAX,
+    MAX_OUTPUT_TOKENS_MIN,
     VALID_PROVIDERS,
     VALID_THEMES,
     ConfigValidationError,
@@ -85,23 +85,23 @@ class TestLLMSettingsValidation:
         error_msg = str(exc_info.value)
         assert "Unknown provider" in error_msg and "anthropic" in error_msg and "openai" in error_msg
 
-    @pytest.mark.parametrize("max_tokens", [MAX_TOKENS_MIN, 4096, 8192, MAX_TOKENS_MAX])
-    def test_valid_max_tokens(self, max_tokens: int):
-        """Should accept max_tokens within valid range."""
-        assert LLMSettings(max_tokens=max_tokens).max_tokens == max_tokens
+    @pytest.mark.parametrize("max_output_tokens", [MAX_OUTPUT_TOKENS_MIN, 4096, 8192, MAX_OUTPUT_TOKENS_MAX])
+    def test_valid_max_output_tokens(self, max_output_tokens: int):
+        """Should accept max_output_tokens within valid range."""
+        assert LLMSettings(max_output_tokens=max_output_tokens).max_output_tokens == max_output_tokens
 
     @pytest.mark.parametrize(
-        "max_tokens,error_substring",
+        "max_output_tokens,error_substring",
         [
-            (MAX_TOKENS_MIN - 1, f"at least {MAX_TOKENS_MIN}"),
-            (-100, f"at least {MAX_TOKENS_MIN}"),
-            (MAX_TOKENS_MAX + 1, "exceeds maximum"),
+            (MAX_OUTPUT_TOKENS_MIN - 1, f"at least {MAX_OUTPUT_TOKENS_MIN}"),
+            (-100, f"at least {MAX_OUTPUT_TOKENS_MIN}"),
+            (MAX_OUTPUT_TOKENS_MAX + 1, "exceeds maximum"),
         ],
     )
-    def test_invalid_max_tokens(self, max_tokens: int, error_substring: str):
-        """Should reject invalid max_tokens values."""
+    def test_invalid_max_output_tokens(self, max_output_tokens: int, error_substring: str):
+        """Should reject invalid max_output_tokens values."""
         with pytest.raises(ValidationError) as exc_info:
-            LLMSettings(max_tokens=max_tokens)
+            LLMSettings(max_output_tokens=max_output_tokens)
         assert error_substring in str(exc_info.value)
 
     @pytest.mark.parametrize("api_key", [None, "sk-test-key-123"])
@@ -297,9 +297,9 @@ class TestSettingsValidation:
     def test_multiple_errors_all_reported(self):
         """Should report all validation errors."""
         with pytest.raises(ConfigValidationError) as exc_info:
-            Settings.validate_config({"llm": {"provider": "bad", "max_tokens": -1}, "tui": {"theme": "invalid"}})
+            Settings.validate_config({"llm": {"provider": "bad", "max_output_tokens": -1}, "tui": {"theme": "invalid"}})
         error_msg = str(exc_info.value)
-        assert all(field in error_msg for field in ["llm.provider", "llm.max_tokens", "tui.theme"])
+        assert all(field in error_msg for field in ["llm.provider", "llm.max_output_tokens", "tui.theme"])
 
     def test_nested_validation(self):
         """Should validate nested settings models."""
@@ -331,19 +331,19 @@ class TestPropertyBased:
         settings = TUISettings(theme=theme)
         assert settings.theme == theme.lower()
 
-    @given(st.integers(min_value=MAX_TOKENS_MIN, max_value=MAX_TOKENS_MAX))
+    @given(st.integers(min_value=MAX_OUTPUT_TOKENS_MIN, max_value=MAX_OUTPUT_TOKENS_MAX))
     @hypothesis_settings(max_examples=50)
-    def test_valid_max_tokens_range(self, max_tokens: int):
-        """All max_tokens in valid range should be accepted."""
-        settings = LLMSettings(max_tokens=max_tokens)
-        assert settings.max_tokens == max_tokens
+    def test_valid_max_output_tokens_range(self, max_output_tokens: int):
+        """All max_output_tokens in valid range should be accepted."""
+        settings = LLMSettings(max_output_tokens=max_output_tokens)
+        assert settings.max_output_tokens == max_output_tokens
 
-    @given(st.integers(max_value=MAX_TOKENS_MIN - 1))
+    @given(st.integers(max_value=MAX_OUTPUT_TOKENS_MIN - 1))
     @hypothesis_settings(max_examples=20)
-    def test_invalid_max_tokens_below_minimum(self, max_tokens: int):
-        """All max_tokens below minimum should be rejected."""
+    def test_invalid_max_output_tokens_below_minimum(self, max_output_tokens: int):
+        """All max_output_tokens below minimum should be rejected."""
         with pytest.raises(ValidationError):
-            LLMSettings(max_tokens=max_tokens)
+            LLMSettings(max_output_tokens=max_output_tokens)
 
     @given(st.text(min_size=1).filter(lambda x: x.strip() and x.lower() not in VALID_PROVIDERS))
     @hypothesis_settings(max_examples=30)
@@ -403,7 +403,7 @@ class TestEdgeCases:
         assert settings.llm.model == "gpt-4"
         # Defaults should be preserved
         assert settings.llm.provider == LLMSettings.model_fields["provider"].default
-        assert settings.llm.max_tokens == LLMSettings.model_fields["max_tokens"].default
+        assert settings.llm.max_output_tokens == LLMSettings.model_fields["max_output_tokens"].default
 
 
 # =============================================================================
@@ -420,7 +420,7 @@ class TestIntegration:
             "llm": {
                 "provider": "openai",
                 "model": "gpt-4",
-                "max_tokens": 8192,
+                "max_output_tokens": 8192,
             },
             "permissions": {
                 "auto_approve_low_risk": False,
@@ -440,7 +440,7 @@ class TestIntegration:
 
         assert settings.llm.provider == "openai"
         assert settings.llm.model == "gpt-4"
-        assert settings.llm.max_tokens == 8192
+        assert settings.llm.max_output_tokens == 8192
         assert settings.permissions.auto_approve_low_risk is False
         assert settings.tui.theme == "rose-pine"
         assert settings.tui.show_tool_panel is False
@@ -451,7 +451,7 @@ class TestIntegration:
         """Validation should fail fast but report all errors."""
         # This tests that multiple errors are collected
         config = {
-            "llm": {"provider": "invalid", "max_tokens": -1},
+            "llm": {"provider": "invalid", "max_output_tokens": -1},
             "tui": {"theme": "invalid"},
         }
         with pytest.raises(ConfigValidationError) as exc_info:
@@ -460,5 +460,5 @@ class TestIntegration:
         error_str = str(exc_info.value)
         # All three errors should be reported
         assert "llm.provider" in error_str
-        assert "llm.max_tokens" in error_str
+        assert "llm.max_output_tokens" in error_str
         assert "tui.theme" in error_str

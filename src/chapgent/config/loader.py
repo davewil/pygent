@@ -16,7 +16,8 @@ ENV_MAPPINGS: dict[str, str] = {
     # Chapgent-specific env vars (highest priority)
     "CHAPGENT_MODEL": "llm.model",
     "CHAPGENT_API_KEY": "llm.api_key",
-    "CHAPGENT_MAX_TOKENS": "llm.max_tokens",
+    "CHAPGENT_MAX_OUTPUT_TOKENS": "llm.max_output_tokens",
+    "CHAPGENT_MAX_TOKENS": "llm.max_output_tokens",  # Backwards compat
     "CHAPGENT_PROVIDER": "llm.provider",
     "CHAPGENT_BASE_URL": "llm.base_url",
     "CHAPGENT_EXTRA_HEADERS": "llm.extra_headers",
@@ -85,7 +86,7 @@ def _convert_env_value(value: str, path: str) -> Any:
         Converted value (int, bool, dict, or str).
     """
     # Integer fields
-    if path.endswith(".max_tokens"):
+    if path.endswith(".max_output_tokens") or path.endswith(".max_tokens"):
         try:
             return int(value)
         except ValueError:
@@ -162,6 +163,26 @@ def _load_toml(path: Path) -> dict[str, Any]:
         return cast(dict[str, Any], data)
 
 
+def _migrate_deprecated_keys(config_data: dict[str, Any]) -> dict[str, Any]:
+    """Migrate deprecated config keys to their new names.
+
+    Args:
+        config_data: The configuration dictionary to migrate.
+
+    Returns:
+        The migrated configuration dictionary.
+    """
+    llm = config_data.get("llm", {})
+    if isinstance(llm, dict):
+        # Migrate max_tokens -> max_output_tokens
+        if "max_tokens" in llm and "max_output_tokens" not in llm:
+            llm["max_output_tokens"] = llm.pop("max_tokens")
+        elif "max_tokens" in llm:
+            # If both exist, prefer max_output_tokens and remove max_tokens
+            del llm["max_tokens"]
+    return config_data
+
+
 async def load_config(
     user_config_path: Path | None = None,
     project_config_path: Path | None = None,
@@ -204,5 +225,8 @@ async def load_config(
         env_config = _load_env_config()
         config_data = _deep_update(config_data, env_config)
 
-    # 4. Create Settings (this handles validation and defaults for missing keys)
+    # 4. Migrate deprecated keys (e.g., max_tokens -> max_output_tokens)
+    config_data = _migrate_deprecated_keys(config_data)
+
+    # 5. Create Settings (this handles validation and defaults for missing keys)
     return Settings(**config_data)

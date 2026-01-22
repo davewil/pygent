@@ -163,12 +163,12 @@ class LLMSettingsScreen(ModalScreen[dict[str, Any] | None]):
     Features:
     - Select widget for provider (from VALID_PROVIDERS)
     - Input for model name
-    - Input for max_tokens with validation (1-100000)
+    - Input for max_output_tokens with validation (1-100000)
     - Save button: persists settings to config
     - Cancel button: discards changes
 
     Returns:
-        A dict with {"provider": str, "model": str, "max_tokens": int} on save,
+        A dict with {"provider": str, "model": str, "max_output_tokens": int} on save,
         or None on cancel.
     """
 
@@ -231,7 +231,7 @@ class LLMSettingsScreen(ModalScreen[dict[str, Any] | None]):
         self,
         current_provider: str | None = None,
         current_model: str | None = None,
-        current_max_tokens: int | None = None,
+        current_max_output_tokens: int | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LLM settings screen.
@@ -239,18 +239,18 @@ class LLMSettingsScreen(ModalScreen[dict[str, Any] | None]):
         Args:
             current_provider: The currently configured provider.
             current_model: The currently configured model.
-            current_max_tokens: The currently configured max_tokens.
+            current_max_output_tokens: The currently configured max output tokens.
             **kwargs: Additional arguments passed to ModalScreen.
         """
         super().__init__(**kwargs)
         self.original_provider = current_provider or "anthropic"
         self.original_model = current_model or "claude-sonnet-4-20250514"
-        self.original_max_tokens = current_max_tokens or 4096
+        self.original_max_output_tokens = current_max_output_tokens or 4096
 
         # Track current selections
         self.selected_provider = self.original_provider
         self.selected_model = self.original_model
-        self.selected_max_tokens = self.original_max_tokens
+        self.selected_max_output_tokens = self.original_max_output_tokens
 
         self.error_message = ""
 
@@ -279,13 +279,13 @@ class LLMSettingsScreen(ModalScreen[dict[str, Any] | None]):
                     classes="llm-setting-input",
                 )
 
-            # Max tokens input
+            # Max output tokens input
             with Horizontal(classes="llm-setting-row"):
-                yield Label("Max Tokens:", classes="llm-setting-label")
+                yield Label("Max Output Tokens:", classes="llm-setting-label")
                 yield Input(
-                    value=str(self.selected_max_tokens),
+                    value=str(self.selected_max_output_tokens),
                     placeholder="1-100000",
-                    id="llm-max-tokens-input",
+                    id="llm-max-output-tokens-input",
                     classes="llm-setting-input",
                 )
 
@@ -316,7 +316,7 @@ class LLMSettingsScreen(ModalScreen[dict[str, Any] | None]):
         if event.input.id == "llm-model-input":
             self.selected_model = event.value
             self._clear_error()
-        elif event.input.id == "llm-max-tokens-input":
+        elif event.input.id == "llm-max-output-tokens-input":
             self._clear_error()
 
     def _clear_error(self) -> None:
@@ -343,7 +343,7 @@ class LLMSettingsScreen(ModalScreen[dict[str, Any] | None]):
         """Validate inputs and return the settings dict.
 
         Returns:
-            Dict with provider, model, max_tokens if valid, or None if invalid.
+            Dict with provider, model, max_output_tokens if valid, or None if invalid.
         """
         # Get model value
         try:
@@ -356,31 +356,31 @@ class LLMSettingsScreen(ModalScreen[dict[str, Any] | None]):
             self._show_error("Model name cannot be empty.")
             return None
 
-        # Get max_tokens value
+        # Get max_output_tokens value
         try:
-            max_tokens_input = self.query_one("#llm-max-tokens-input", Input)
-            max_tokens_str = max_tokens_input.value.strip()
+            max_output_tokens_input = self.query_one("#llm-max-output-tokens-input", Input)
+            max_output_tokens_str = max_output_tokens_input.value.strip()
         except Exception:
-            max_tokens_str = str(self.selected_max_tokens)
+            max_output_tokens_str = str(self.selected_max_output_tokens)
 
         try:
-            max_tokens = int(max_tokens_str)
+            max_output_tokens = int(max_output_tokens_str)
         except ValueError:
-            self._show_error("Max tokens must be a number.")
+            self._show_error("Max output tokens must be a number.")
             return None
 
-        if max_tokens < 1:
-            self._show_error("Max tokens must be at least 1.")
+        if max_output_tokens < 1:
+            self._show_error("Max output tokens must be at least 1.")
             return None
 
-        if max_tokens > 100000:
-            self._show_error("Max tokens cannot exceed 100000.")
+        if max_output_tokens > 100000:
+            self._show_error("Max output tokens cannot exceed 100000.")
             return None
 
         return {
             "provider": self.selected_provider,
             "model": model,
-            "max_tokens": max_tokens,
+            "max_output_tokens": max_output_tokens,
         }
 
     def on_button_pressed(self, event: Button.Pressed) -> None:

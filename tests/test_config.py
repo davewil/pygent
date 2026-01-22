@@ -40,7 +40,7 @@ async def test_load_user_config(tmp_path):
     assert settings.llm.provider == "openai"
     assert settings.llm.model == "gpt-4"
     # Should keep defaults for others
-    assert settings.llm.max_tokens == LLMSettings.model_fields["max_tokens"].default
+    assert settings.llm.max_output_tokens == LLMSettings.model_fields["max_output_tokens"].default
 
 
 @pytest.mark.asyncio
@@ -49,7 +49,7 @@ async def test_load_project_config_overrides_user(tmp_path):
     project_config_path = tmp_path / "project_config.toml"
 
     # User config
-    user_data = {"llm": {"provider": "openai", "max_tokens": 1000}, "tui": {"theme": "textual-light"}}
+    user_data = {"llm": {"provider": "openai", "max_output_tokens": 1000}, "tui": {"theme": "textual-light"}}
     with open(user_config_path, "wb") as f:
         tomli_w.dump(user_data, f)
 
@@ -67,7 +67,7 @@ async def test_load_project_config_overrides_user(tmp_path):
     assert settings.llm.provider == "azure"
 
     # User overrides Default (if not in Project)
-    assert settings.llm.max_tokens == 1000
+    assert settings.llm.max_output_tokens == 1000
     assert settings.tui.theme == "textual-light"
 
     # Project overrides Default
