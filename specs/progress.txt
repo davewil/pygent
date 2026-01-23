@@ -1618,3 +1618,40 @@
   - Learned: Boolean config values should be converted to lowercase strings ("true"/"false") for TOML
   - Phase 4.1 of Phase 5 TUI Enhancements complete (TUISettingsScreen)
   - Total: 1575 tests pass (9 TUISettings tests added)
+2026-01-23: Completed Phase 5 TUI Enhancements - Phase 4.2 (SystemPromptScreen and ConfigShowScreen):
+  - Created SystemPromptScreen modal in src/chapgent/tui/screens.py:
+    * TextArea for editing prompt content (supports multiline text)
+    * RadioSet for mode selection (append/replace)
+    * Input for optional file path
+    * Save button persists content, mode, and file to config
+    * Cancel button and Escape key support
+    * CSS styles embedded in screen class
+  - Created ConfigShowScreen modal in src/chapgent/tui/screens.py:
+    * Read-only display of all current Settings grouped by section
+    * Shows LLM settings (provider, model, max_output_tokens, base_url, api_key status, oauth_token status)
+    * Shows TUI settings (theme, show_sidebar, show_tool_panel)
+    * Shows Permission settings (auto_approve_low_risk, session_override_allowed)
+    * Shows System Prompt settings (mode, file, content preview)
+    * Shows Logging settings (level, file)
+    * Close button and Escape key support
+    * Graceful handling when no settings available
+  - Updated src/chapgent/tui/app.py:
+    * Added action_show_prompt_settings() method with callback for saving
+    * Added action_show_config() method
+    * Updated _handle_config_command() to use ConfigShowScreen for /config show
+  - Updated src/chapgent/tui/widgets.py:
+    * Added "System Prompt" command to DEFAULT_COMMANDS
+    * Added "Show Config" command to DEFAULT_COMMANDS
+  - Updated src/chapgent/tui/__init__.py:
+    * Added SystemPromptScreen and ConfigShowScreen to exports
+  - Added 15 tests to tests/test_tui/test_screens.py:
+    * TestSlashCommands: /prompt and /config show slash commands
+    * TestSystemPromptScreen: 7 tests (open, edit content, toggle mode, set file, save, escape, cancel)
+    * TestConfigShowScreen: 6 tests (open, llm settings, tui settings, no settings, escape, close button)
+  - Learned: Textual's RadioSet uses pressed_index to set initial selection
+  - Learned: RadioButton's value parameter sets initial checked state
+  - Learned: TextArea.text returns content, TextArea.insert() adds text, TextArea.clear() removes all
+  - Learned: Testing widget content in Textual is tricky - better to test structure (element counts) than content strings
+  - Learned: For behavioral tests, focus on what user does and sees, not internal implementation details
+  - Phase 5 TUI Enhancements COMPLETE (all phases done)
+  - Total: 1590 tests pass (15 new screen tests added)

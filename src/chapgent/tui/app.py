@@ -10,7 +10,15 @@ from chapgent.core.agent import Agent
 from chapgent.session.models import Session
 from chapgent.session.storage import SessionStorage
 from chapgent.tui.commands import parse_slash_command
-from chapgent.tui.screens import HelpScreen, LLMSettingsScreen, ThemePickerScreen, ToolsScreen, TUISettingsScreen
+from chapgent.tui.screens import (
+    ConfigShowScreen,
+    HelpScreen,
+    LLMSettingsScreen,
+    SystemPromptScreen,
+    ThemePickerScreen,
+    ToolsScreen,
+    TUISettingsScreen,
+)
 from chapgent.tui.widgets import (
     CommandPalette,
     ConversationPanel,
@@ -390,6 +398,51 @@ class ChapgentApp(App[None]):
         """
         self.push_screen(ToolsScreen(category=category))
 
+    def action_show_prompt_settings(self) -> None:
+        """Show the system prompt settings modal."""
+
+        def handle_prompt_settings(result: dict[str, Any] | None) -> None:
+            """Handle the system prompt settings from the modal."""
+            if result is not None:
+                # Persist settings to config
+                try:
+                    from chapgent.config.writer import save_config_value
+
+                    # Save each setting
+                    if result.get("content"):
+                        save_config_value("system_prompt.content", result["content"])
+                    save_config_value("system_prompt.mode", result["mode"])
+                    if result.get("file"):
+                        save_config_value("system_prompt.file", result["file"])
+
+                    self.notify("System prompt settings updated.", severity="information")
+
+                    # Update settings if available
+                    if self.settings:
+                        self.settings.system_prompt.content = result.get("content")
+                        self.settings.system_prompt.mode = result["mode"]
+                        self.settings.system_prompt.file = result.get("file")
+                except Exception as e:
+                    self.notify(f"Error saving prompt settings: {e}", severity="error")
+
+        # Get current settings
+        current_content = self.settings.system_prompt.content if self.settings else None
+        current_mode = self.settings.system_prompt.mode if self.settings else "append"
+        current_file = self.settings.system_prompt.file if self.settings else None
+
+        self.push_screen(
+            SystemPromptScreen(
+                current_content=current_content,
+                current_mode=current_mode,
+                current_file=current_file,
+            ),
+            callback=handle_prompt_settings,
+        )
+
+    def action_show_config(self) -> None:
+        """Show the config display modal."""
+        self.push_screen(ConfigShowScreen(settings=self.settings))
+
     async def _populate_sessions_sidebar(self) -> None:
         """Populate the sessions sidebar with saved sessions."""
         if not self.storage or not self.settings.tui.show_sidebar:
@@ -482,20 +535,8 @@ class ChapgentApp(App[None]):
             args: Command arguments (e.g., ["show"] or ["set", "key", "value"]).
         """
         if not args or args[0] == "show":
-            # Show current configuration
-            if self.settings:
-                config_text = (
-                    "Current Configuration:\n"
-                    f"  LLM Model: {self.settings.llm.model}\n"
-                    f"  LLM Provider: {self.settings.llm.provider}\n"
-                    f"  Max Output Tokens: {self.settings.llm.max_output_tokens}\n"
-                    f"  Theme: {self.settings.tui.theme}\n"
-                    f"  Show Tool Panel: {self.settings.tui.show_tool_panel}\n"
-                    f"  Show Sidebar: {self.settings.tui.show_sidebar}"
-                )
-                self.query_one(ConversationPanel).append_assistant_message(config_text)
-            else:
-                self.notify("No configuration available.", severity="warning")
+            # Show current configuration using the modal screen
+            self.action_show_config()
             return
 
         if args[0] == "set":

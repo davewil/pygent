@@ -11,7 +11,15 @@ import pytest
 
 from chapgent.tools.base import ToolCategory
 from chapgent.tui.app import ChapgentApp
-from chapgent.tui.screens import HelpScreen, LLMSettingsScreen, ThemePickerScreen, ToolsScreen, TUISettingsScreen
+from chapgent.tui.screens import (
+    ConfigShowScreen,
+    HelpScreen,
+    LLMSettingsScreen,
+    SystemPromptScreen,
+    ThemePickerScreen,
+    ToolsScreen,
+    TUISettingsScreen,
+)
 from chapgent.ux.help import HELP_TOPICS
 
 # =============================================================================
@@ -613,3 +621,298 @@ class TestSlashCommands:
             await pilot.pause()
 
             assert isinstance(app.screen, TUISettingsScreen)
+
+    @pytest.mark.asyncio
+    async def test_slash_prompt_opens_system_prompt_screen(self):
+        """/prompt opens the system prompt screen."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            input_widget = app.query_one("#input")
+            input_widget.value = "/prompt"
+            await pilot.press("enter")
+            await pilot.pause()
+
+            from chapgent.tui.screens import SystemPromptScreen
+
+            assert isinstance(app.screen, SystemPromptScreen)
+
+    @pytest.mark.asyncio
+    async def test_slash_config_show_opens_config_screen(self):
+        """/config show opens the config display screen."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            input_widget = app.query_one("#input")
+            input_widget.value = "/config show"
+            await pilot.press("enter")
+            await pilot.pause()
+
+            from chapgent.tui.screens import ConfigShowScreen
+
+            assert isinstance(app.screen, ConfigShowScreen)
+
+
+# =============================================================================
+# SystemPromptScreen - User can configure system prompt
+# =============================================================================
+
+
+class TestSystemPromptScreen:
+    """User can configure system prompt settings."""
+
+    @pytest.mark.asyncio
+    async def test_user_can_open_prompt_settings(self):
+        """System prompt screen opens from command palette."""
+        from chapgent.tui.screens import SystemPromptScreen
+
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.action_show_prompt_settings()
+            await pilot.pause()
+            assert isinstance(app.screen, SystemPromptScreen)
+
+    @pytest.mark.asyncio
+    async def test_user_can_edit_prompt_content(self):
+        """User can edit the prompt content in the text area."""
+        from chapgent.tui.screens import SystemPromptScreen
+        from textual.widgets import TextArea
+
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(SystemPromptScreen(current_content="Initial content"))
+            await pilot.pause()
+
+            screen = app.screen
+            text_area = screen.query_one("#prompt-content-area", TextArea)
+            assert text_area.text == "Initial content"
+
+    @pytest.mark.asyncio
+    async def test_user_can_toggle_mode_to_replace(self):
+        """User can switch mode from append to replace."""
+        from chapgent.tui.screens import SystemPromptScreen
+        from textual.widgets import RadioButton
+
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(SystemPromptScreen(current_mode="append"))
+            await pilot.pause()
+
+            screen = app.screen
+            replace_btn = screen.query_one("#mode-replace", RadioButton)
+            replace_btn.toggle()
+            await pilot.pause()
+
+            assert screen.selected_mode == "replace"
+
+    @pytest.mark.asyncio
+    async def test_user_can_set_file_path(self):
+        """User can specify a file path for the prompt."""
+        from chapgent.tui.screens import SystemPromptScreen
+        from textual.widgets import Input
+
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(SystemPromptScreen())
+            await pilot.pause()
+
+            screen = app.screen
+            file_input = screen.query_one("#prompt-file-input", Input)
+            file_input.value = "~/.config/chapgent/prompt.md"
+            await pilot.pause()
+
+            assert screen.selected_file == "~/.config/chapgent/prompt.md"
+
+    @pytest.mark.asyncio
+    async def test_user_can_save_prompt_settings(self):
+        """Saving prompt settings persists content, mode, and file."""
+        from chapgent.tui.screens import SystemPromptScreen
+        from textual.widgets import Button, TextArea
+
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            saved_values = {}
+
+            with patch("chapgent.config.writer.save_config_value") as mock_save:
+
+                def capture_save(key, value):
+                    saved_values[key] = value
+                    return ("/path/config.toml", value)
+
+                mock_save.side_effect = capture_save
+
+                app.action_show_prompt_settings()
+                await pilot.pause()
+
+                screen = app.screen
+                # Edit the content
+                text_area = screen.query_one("#prompt-content-area", TextArea)
+                text_area.clear()
+                text_area.insert("Custom prompt content")
+                await pilot.pause()
+
+                # Save
+                save_btn = screen.query_one("#btn-save", Button)
+                save_btn.press()
+                await asyncio.sleep(0.2)
+                await pilot.pause()
+
+            assert saved_values.get("system_prompt.content") == "Custom prompt content"
+            assert saved_values.get("system_prompt.mode") == "append"
+
+    @pytest.mark.asyncio
+    async def test_escape_closes_prompt_settings(self):
+        """Pressing escape closes without saving."""
+        from chapgent.tui.screens import SystemPromptScreen
+
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(SystemPromptScreen())
+            await pilot.pause()
+
+            await pilot.press("escape")
+            await asyncio.sleep(0.1)
+            await pilot.pause()
+
+            assert not isinstance(app.screen, SystemPromptScreen)
+
+    @pytest.mark.asyncio
+    async def test_cancel_closes_without_saving(self):
+        """Cancel button closes without saving."""
+        from chapgent.tui.screens import SystemPromptScreen
+        from textual.widgets import Button
+
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            with patch("chapgent.config.writer.save_config_value") as mock_save:
+                app.push_screen(SystemPromptScreen())
+                await pilot.pause()
+
+                screen = app.screen
+                cancel_btn = screen.query_one("#btn-cancel", Button)
+                cancel_btn.press()
+                await asyncio.sleep(0.1)
+                await pilot.pause()
+
+                mock_save.assert_not_called()
+                assert not isinstance(app.screen, SystemPromptScreen)
+
+
+# =============================================================================
+# ConfigShowScreen - User can view current configuration
+# =============================================================================
+
+
+class TestConfigShowScreen:
+    """User can view current configuration."""
+
+    @pytest.mark.asyncio
+    async def test_user_can_open_config_show(self):
+        """Config show screen opens from command palette."""
+        from chapgent.tui.screens import ConfigShowScreen
+
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.action_show_config()
+            await pilot.pause()
+            assert isinstance(app.screen, ConfigShowScreen)
+
+    @pytest.mark.asyncio
+    async def test_config_shows_llm_settings(self):
+        """Config screen displays LLM settings when provided."""
+        from chapgent.config.settings import Settings
+        from chapgent.tui.screens import ConfigShowScreen
+        from textual.containers import VerticalScroll
+        from textual.widgets import Static
+
+        settings = Settings()
+        settings.llm.model = "test-model"
+        settings.llm.provider = "anthropic"
+
+        app = ChapgentApp(settings=settings)
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(ConfigShowScreen(settings=settings))
+            await pilot.pause()
+
+            screen = app.screen
+            content = screen.query_one("#config-content", VerticalScroll)
+
+            # Should have populated content (multiple Static widgets)
+            statics = content.query(Static)
+            # With settings, we should have section headers and items (more than 10 items)
+            assert len(statics) > 10
+
+    @pytest.mark.asyncio
+    async def test_config_shows_tui_settings(self):
+        """Config screen mounts correctly with TUI settings."""
+        from chapgent.config.settings import Settings
+        from chapgent.tui.screens import ConfigShowScreen
+        from textual.containers import VerticalScroll
+        from textual.widgets import Static
+
+        settings = Settings()
+        settings.tui.theme = "dracula"
+
+        app = ChapgentApp(settings=settings)
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(ConfigShowScreen(settings=settings))
+            await pilot.pause()
+
+            screen = app.screen
+            # Verify the screen has the expected structure
+            assert screen.query_one("#config-title")
+            assert screen.query_one("#config-content")
+            assert screen.query_one("#btn-close")
+
+    @pytest.mark.asyncio
+    async def test_config_shows_no_settings_message(self):
+        """Config screen shows minimal content when no settings available."""
+        from chapgent.tui.screens import ConfigShowScreen
+        from textual.containers import VerticalScroll
+        from textual.widgets import Static
+
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(ConfigShowScreen(settings=None))
+            await pilot.pause()
+
+            screen = app.screen
+            content = screen.query_one("#config-content", VerticalScroll)
+
+            # Query for all Static widgets in the content
+            statics = content.query(Static)
+            # With no settings, we should have just one Static with the "no config" message
+            assert len(statics) == 1
+
+    @pytest.mark.asyncio
+    async def test_escape_closes_config_show(self):
+        """Pressing escape closes config show screen."""
+        from chapgent.tui.screens import ConfigShowScreen
+
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(ConfigShowScreen())
+            await pilot.pause()
+
+            await pilot.press("escape")
+            await asyncio.sleep(0.1)
+            await pilot.pause()
+
+            assert not isinstance(app.screen, ConfigShowScreen)
+
+    @pytest.mark.asyncio
+    async def test_close_button_closes_screen(self):
+        """Close button closes config show screen."""
+        from chapgent.tui.screens import ConfigShowScreen
+        from textual.widgets import Button
+
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(ConfigShowScreen())
+            await pilot.pause()
+
+            screen = app.screen
+            close_btn = screen.query_one("#btn-close", Button)
+            close_btn.press()
+            await asyncio.sleep(0.1)
+            await pilot.pause()
+
+            assert not isinstance(app.screen, ConfigShowScreen)

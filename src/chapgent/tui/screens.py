@@ -1135,3 +1135,374 @@ class ToolsScreen(ModalScreen[None]):
     BINDINGS = [
         ("escape", "close", "Close"),
     ]
+
+
+class SystemPromptScreen(ModalScreen[dict[str, Any] | None]):
+    """Modal screen for configuring the system prompt.
+
+    Features:
+    - TextArea for editing prompt content
+    - RadioSet for mode (replace/append)
+    - Input for file path (optional, overrides content)
+    - Save button: persists settings to config
+    - Cancel button: discards changes
+
+    Returns:
+        A dict with {"content": str, "mode": str, "file": str | None} on save,
+        or None on cancel.
+    """
+
+    CSS = """
+    SystemPromptScreen {
+        align: center middle;
+    }
+
+    #prompt-container {
+        background: $surface;
+        border: round $primary;
+        padding: 1 2;
+        width: 80;
+        height: 80%;
+        max-height: 45;
+    }
+
+    #prompt-title {
+        text-align: center;
+        text-style: bold;
+        color: $text;
+        padding: 0 0 1 0;
+    }
+
+    #prompt-content-area {
+        height: 1fr;
+        min-height: 10;
+    }
+
+    .prompt-setting-row {
+        height: auto;
+        padding: 1 0 0 0;
+    }
+
+    .prompt-setting-label {
+        width: 15;
+        padding: 0 1 0 0;
+    }
+
+    #prompt-mode-row {
+        height: auto;
+        padding: 1 0;
+    }
+
+    #prompt-file-input {
+        width: 1fr;
+    }
+
+    #prompt-hint {
+        color: $text-muted;
+        text-style: italic;
+        padding: 0 0 1 0;
+    }
+
+    #prompt-buttons {
+        align: center middle;
+        padding: 1 0 0 0;
+    }
+
+    #prompt-buttons Button {
+        margin: 0 1;
+    }
+    """
+
+    def __init__(
+        self,
+        current_content: str | None = None,
+        current_mode: str = "append",
+        current_file: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the system prompt screen.
+
+        Args:
+            current_content: The currently configured prompt content.
+            current_mode: The currently configured mode ("replace" or "append").
+            current_file: The currently configured prompt file path.
+            **kwargs: Additional arguments passed to ModalScreen.
+        """
+        super().__init__(**kwargs)
+        self.original_content = current_content or ""
+        self.original_mode = current_mode
+        self.original_file = current_file
+
+        # Track current selections
+        self.selected_content = self.original_content
+        self.selected_mode = self.original_mode
+        self.selected_file = self.original_file
+
+    def compose(self) -> ComposeResult:
+        """Create child widgets for the system prompt screen."""
+        from textual.widgets import RadioButton, RadioSet, TextArea
+
+        with Static(id="prompt-container"):
+            yield Static("System Prompt Settings", id="prompt-title")
+            yield Static(
+                "Edit the prompt content below, or specify a file path to load from.",
+                id="prompt-hint",
+            )
+
+            # Prompt content text area
+            yield TextArea(
+                self.selected_content,
+                id="prompt-content-area",
+            )
+
+            # Mode selection (replace/append)
+            with Horizontal(id="prompt-mode-row"):
+                yield Label("Mode:", classes="prompt-setting-label")
+                with RadioSet(id="prompt-mode-radio"):
+                    yield RadioButton("Append to default", value=self.selected_mode == "append", id="mode-append")
+                    yield RadioButton("Replace default", value=self.selected_mode == "replace", id="mode-replace")
+
+            # File path input
+            with Horizontal(classes="prompt-setting-row"):
+                yield Label("File path:", classes="prompt-setting-label")
+                yield Input(
+                    value=self.selected_file or "",
+                    placeholder="Optional: ~/.config/chapgent/prompt.md",
+                    id="prompt-file-input",
+                )
+
+            # Buttons
+            with Horizontal(id="prompt-buttons"):
+                yield Button("Save", variant="success", id="btn-save")
+                yield Button("Cancel", variant="default", id="btn-cancel")
+
+    def on_radio_set_changed(self, event: Any) -> None:
+        """Handle radio set changes.
+
+        Args:
+            event: The radio set changed event.
+        """
+        if event.radio_set.id == "prompt-mode-radio":
+            # Get the pressed button
+            if event.pressed.id == "mode-replace":
+                self.selected_mode = "replace"
+            else:
+                self.selected_mode = "append"
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        """Handle input changes.
+
+        Args:
+            event: The input changed event.
+        """
+        if event.input.id == "prompt-file-input":
+            value = event.value.strip()
+            self.selected_file = value if value else None
+
+    def _get_content(self) -> str:
+        """Get the current content from the text area.
+
+        Returns:
+            The current text content.
+        """
+        from textual.widgets import TextArea
+
+        try:
+            text_area = self.query_one("#prompt-content-area", TextArea)
+            return text_area.text
+        except Exception:
+            return self.selected_content
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses.
+
+        Args:
+            event: The button press event.
+        """
+        button_id = event.button.id
+
+        if button_id == "btn-save":
+            # Get current values and save
+            content = self._get_content()
+            self.dismiss({
+                "content": content,
+                "mode": self.selected_mode,
+                "file": self.selected_file,
+            })
+
+        elif button_id == "btn-cancel":
+            self.dismiss(None)
+
+    def action_cancel(self) -> None:
+        """Handle escape key - dismiss without saving."""
+        self.dismiss(None)
+
+    BINDINGS = [
+        ("escape", "cancel", "Cancel"),
+    ]
+
+
+class ConfigShowScreen(ModalScreen[None]):
+    """Modal screen for displaying current configuration.
+
+    Features:
+    - Read-only display of current Settings as formatted text
+    - Shows LLM, TUI, permissions, system prompt, and logging settings
+    - Single "Close" button to dismiss
+
+    Returns:
+        None (informational screen).
+    """
+
+    CSS = """
+    ConfigShowScreen {
+        align: center middle;
+    }
+
+    #config-container {
+        background: $surface;
+        border: round $primary;
+        padding: 1 2;
+        width: 70;
+        height: 80%;
+        max-height: 40;
+    }
+
+    #config-title {
+        text-align: center;
+        text-style: bold;
+        color: $text;
+        padding: 0 0 1 0;
+    }
+
+    #config-content {
+        height: 1fr;
+        padding: 1 0;
+    }
+
+    .config-section {
+        padding: 0 0 1 0;
+    }
+
+    .config-section-header {
+        text-style: bold;
+        color: $primary;
+    }
+
+    .config-item {
+        padding-left: 2;
+    }
+
+    #config-buttons {
+        align: center middle;
+        padding: 1 0 0 0;
+    }
+    """
+
+    def __init__(self, settings: Any = None, **kwargs: Any) -> None:
+        """Initialize the config show screen.
+
+        Args:
+            settings: The current Settings object to display.
+            **kwargs: Additional arguments passed to ModalScreen.
+        """
+        super().__init__(**kwargs)
+        self.settings = settings
+
+    def compose(self) -> ComposeResult:
+        """Create child widgets for the config show screen."""
+        from textual.containers import VerticalScroll
+
+        with Static(id="config-container"):
+            yield Static("Current Configuration", id="config-title")
+            yield VerticalScroll(id="config-content")
+            with Horizontal(id="config-buttons"):
+                yield Button("Close", variant="primary", id="btn-close")
+
+    def on_mount(self) -> None:
+        """Handle mount event - populate config display."""
+        self._populate_config()
+
+    def _populate_config(self) -> None:
+        """Populate the config content area with settings."""
+        from textual.containers import VerticalScroll
+
+        content = self.query_one("#config-content", VerticalScroll)
+        content.query("*").remove()
+
+        if not self.settings:
+            content.mount(Static("No configuration available."))
+            return
+
+        # LLM Settings
+        content.mount(Static("[bold]LLM Settings[/bold]", classes="config-section-header"))
+        content.mount(Static(f"  Provider: {self.settings.llm.provider}", classes="config-item"))
+        content.mount(Static(f"  Model: {self.settings.llm.model}", classes="config-item"))
+        content.mount(Static(f"  Max Output Tokens: {self.settings.llm.max_output_tokens}", classes="config-item"))
+        content.mount(Static(f"  Base URL: {self.settings.llm.base_url or '(default)'}", classes="config-item"))
+        content.mount(
+            Static(f"  API Key: {'(configured)' if self.settings.llm.api_key else '(not set)'}", classes="config-item")
+        )
+        content.mount(
+            Static(
+                f"  OAuth Token: {'(configured)' if self.settings.llm.oauth_token else '(not set)'}",
+                classes="config-item",
+            )
+        )
+
+        # TUI Settings
+        content.mount(Static(""))  # Spacer
+        content.mount(Static("[bold]TUI Settings[/bold]", classes="config-section-header"))
+        content.mount(Static(f"  Theme: {self.settings.tui.theme}", classes="config-item"))
+        content.mount(Static(f"  Show Sidebar: {self.settings.tui.show_sidebar}", classes="config-item"))
+        content.mount(Static(f"  Show Tool Panel: {self.settings.tui.show_tool_panel}", classes="config-item"))
+
+        # Permission Settings
+        content.mount(Static(""))  # Spacer
+        content.mount(Static("[bold]Permission Settings[/bold]", classes="config-section-header"))
+        content.mount(
+            Static(f"  Auto-approve Low Risk: {self.settings.permissions.auto_approve_low_risk}", classes="config-item")
+        )
+        content.mount(
+            Static(
+                f"  Session Override Allowed: {self.settings.permissions.session_override_allowed}",
+                classes="config-item",
+            )
+        )
+
+        # System Prompt Settings
+        content.mount(Static(""))  # Spacer
+        content.mount(Static("[bold]System Prompt Settings[/bold]", classes="config-section-header"))
+        content.mount(Static(f"  Mode: {self.settings.system_prompt.mode}", classes="config-item"))
+        content.mount(
+            Static(
+                f"  File: {self.settings.system_prompt.file or '(none)'}", classes="config-item"
+            )
+        )
+        prompt_preview = self.settings.system_prompt.content or "(default)"
+        if len(prompt_preview) > 50:
+            prompt_preview = prompt_preview[:50] + "..."
+        content.mount(Static(f"  Content: {prompt_preview}", classes="config-item"))
+
+        # Logging Settings
+        content.mount(Static(""))  # Spacer
+        content.mount(Static("[bold]Logging Settings[/bold]", classes="config-section-header"))
+        content.mount(Static(f"  Level: {self.settings.logging.level}", classes="config-item"))
+        content.mount(Static(f"  File: {self.settings.logging.file or '(default)'}", classes="config-item"))
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses.
+
+        Args:
+            event: The button press event.
+        """
+        if event.button.id == "btn-close":
+            self.dismiss(None)
+
+    def action_close(self) -> None:
+        """Handle escape key - dismiss."""
+        self.dismiss(None)
+
+    BINDINGS = [
+        ("escape", "close", "Close"),
+    ]

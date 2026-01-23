@@ -163,6 +163,16 @@ DEFAULT_COMMANDS: list[PaletteCommand] = [
         description="View available tools by category",
     ),
     PaletteCommand(
+        id="show_prompt_settings",
+        name="System Prompt",
+        description="Configure the system prompt content and mode",
+    ),
+    PaletteCommand(
+        id="show_config",
+        name="Show Config",
+        description="View current configuration settings",
+    ),
+    PaletteCommand(
         id="quit",
         name="Quit",
         description="Exit the application",

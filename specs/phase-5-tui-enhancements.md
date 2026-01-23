@@ -315,11 +315,35 @@ These reuse existing `action_*` methods - just wire up slash commands:
      - Button to open theme picker
      - Save/Cancel buttons with escape key support
 
-6. **Phase 4.2**: Remaining
-   - System prompt screen
-   - Config show screen
-   - Utility aliases (/new, /save, /clear, etc.) - already wired
+6. **Phase 4.2**: Remaining Features ✅ COMPLETE
+   - Create `SystemPromptScreen` ✅
+   - Create `ConfigShowScreen` ✅
+   - Wire up `/prompt` command ✅
+   - Wire up `/config show` to use ConfigShowScreen ✅
+   - Add "System Prompt" and "Show Config" to command palette ✅
+   - Utility aliases (/new, /save, /clear, etc.) - already wired ✅
+   - **Files modified:**
+     - `src/chapgent/tui/screens.py` (added SystemPromptScreen and ConfigShowScreen classes)
+     - `src/chapgent/tui/__init__.py` (exports)
+     - `src/chapgent/tui/app.py` (action_show_prompt_settings, action_show_config)
+     - `src/chapgent/tui/widgets.py` (added "System Prompt" and "Show Config" to DEFAULT_COMMANDS)
+     - `tests/test_tui/test_screens.py` (added 15 tests for new screens)
+   - **Features:**
+     - SystemPromptScreen: TextArea for content, RadioSet for mode, file path input
+     - ConfigShowScreen: Read-only display of all settings grouped by section
+     - Both screens support escape/cancel to close without saving
 
-7. **Phase 5**: Polish
-   - Add styles to styles.tcss as needed
-   - Additional tests as needed
+7. **Phase 5**: Polish ✅ COMPLETE
+   - All styles embedded in screen classes (CSS property)
+   - Comprehensive test coverage (49 tests in test_screens.py)
+
+## Phase 5 TUI Enhancements - COMPLETE
+
+All phases complete:
+- Phase 1: Infrastructure ✅
+- Phase 2.1: Theme Picker ✅
+- Phase 2.2: LLM Settings ✅
+- Phase 3: Help & Tools ✅
+- Phase 4.1: TUI Settings ✅
+- Phase 4.2: System Prompt & Config Show ✅
+- Phase 5: Polish ✅

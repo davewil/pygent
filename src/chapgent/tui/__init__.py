@@ -22,8 +22,10 @@ from chapgent.tui.markdown import (
     MarkdownRenderer,
 )
 from chapgent.tui.screens import (
+    ConfigShowScreen,
     HelpScreen,
     LLMSettingsScreen,
+    SystemPromptScreen,
     ThemePickerScreen,
     ToolsScreen,
     TUISettingsScreen,
@@ -71,8 +73,10 @@ __all__ = [
     "list_slash_commands",
     "parse_slash_command",
     # Screens
+    "ConfigShowScreen",
     "HelpScreen",
     "LLMSettingsScreen",
+    "SystemPromptScreen",
     "ThemePickerScreen",
     "ToolsScreen",
     "TUISettingsScreen",
