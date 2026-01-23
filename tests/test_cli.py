@@ -20,13 +20,13 @@ def test_cli_structure():
     assert "config" in result.output
 
 
-@patch("chapgent.cli.ChapgentApp")
-@patch("chapgent.cli.Agent")
-@patch("chapgent.cli.LLMProvider")
-@patch("chapgent.cli.ToolRegistry")
-@patch("chapgent.cli.SessionStorage")
-@patch("chapgent.cli.PermissionManager")
-@patch("chapgent.cli.load_config")
+@patch("chapgent.cli.bootstrap.ChapgentApp")
+@patch("chapgent.cli.bootstrap.Agent")
+@patch("chapgent.cli.bootstrap.LLMProvider")
+@patch("chapgent.cli.bootstrap.ToolRegistry")
+@patch("chapgent.cli.bootstrap.SessionStorage")
+@patch("chapgent.cli.bootstrap.PermissionManager")
+@patch("chapgent.cli.bootstrap.load_config")
 def test_cli_chat_startup(
     mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
 ):
@@ -63,7 +63,7 @@ def test_cli_chat_startup(
 class TestSessionsCommand:
     """Tests for the sessions CLI command."""
 
-    @patch("chapgent.cli.SessionStorage")
+    @patch("chapgent.cli.main.SessionStorage")
     def test_sessions_empty(self, mock_storage_class):
         """Test sessions command when no sessions exist."""
         mock_storage = mock_storage_class.return_value
@@ -75,7 +75,7 @@ class TestSessionsCommand:
         assert result.exit_code == 0
         assert "No sessions found" in result.output
 
-    @patch("chapgent.cli.SessionStorage")
+    @patch("chapgent.cli.main.SessionStorage")
     def test_sessions_list(self, mock_storage_class):
         """Test sessions command lists sessions with proper formatting."""
         mock_storage = mock_storage_class.return_value
@@ -113,13 +113,13 @@ class TestSessionsCommand:
 class TestResumeCommand:
     """Tests for the resume CLI command."""
 
-    @patch("chapgent.cli.ChapgentApp")
-    @patch("chapgent.cli.Agent")
-    @patch("chapgent.cli.LLMProvider")
-    @patch("chapgent.cli.ToolRegistry")
-    @patch("chapgent.cli.SessionStorage")
-    @patch("chapgent.cli.PermissionManager")
-    @patch("chapgent.cli.load_config")
+    @patch("chapgent.cli.bootstrap.ChapgentApp")
+    @patch("chapgent.cli.bootstrap.Agent")
+    @patch("chapgent.cli.bootstrap.LLMProvider")
+    @patch("chapgent.cli.bootstrap.ToolRegistry")
+    @patch("chapgent.cli.bootstrap.SessionStorage")
+    @patch("chapgent.cli.bootstrap.PermissionManager")
+    @patch("chapgent.cli.bootstrap.load_config")
     def test_resume_session_found(
         self, mock_load_config, mock_permissions, mock_storage_class, mock_registry, mock_provider, mock_agent, mock_app
     ):
@@ -147,8 +147,8 @@ class TestResumeCommand:
         mock_storage.load.assert_called_with("abc123")
         mock_app.return_value.run.assert_called()
 
-    @patch("chapgent.cli.load_config")
-    @patch("chapgent.cli.SessionStorage")
+    @patch("chapgent.cli.bootstrap.load_config")
+    @patch("chapgent.cli.bootstrap.SessionStorage")
     def test_resume_session_not_found(self, mock_storage_class, mock_load_config):
         """Test resume command when session doesn't exist."""
         from chapgent.config.settings import LLMSettings, Settings
@@ -180,7 +180,7 @@ class TestConfigCommand:
         assert "init" in result.output
         assert "set" in result.output
 
-    @patch("chapgent.cli.load_config")
+    @patch("chapgent.cli.config.load_config")
     def test_config_show(self, mock_load_config):
         """Test config show command displays current configuration."""
         from chapgent.config.settings import Settings
@@ -195,13 +195,13 @@ class TestConfigCommand:
         assert "llm" in result.output.lower() or "model" in result.output.lower()
 
 
-@patch("chapgent.cli.ChapgentApp")
-@patch("chapgent.cli.Agent")
-@patch("chapgent.cli.LLMProvider")
-@patch("chapgent.cli.ToolRegistry")
-@patch("chapgent.cli.SessionStorage")
-@patch("chapgent.cli.PermissionManager")
-@patch("chapgent.cli.load_config")
+@patch("chapgent.cli.bootstrap.ChapgentApp")
+@patch("chapgent.cli.bootstrap.Agent")
+@patch("chapgent.cli.bootstrap.LLMProvider")
+@patch("chapgent.cli.bootstrap.ToolRegistry")
+@patch("chapgent.cli.bootstrap.SessionStorage")
+@patch("chapgent.cli.bootstrap.PermissionManager")
+@patch("chapgent.cli.bootstrap.load_config")
 def test_cli_resume_not_found_raises(
     mock_load_config, mock_permissions, mock_storage_class, mock_registry, mock_provider, mock_agent, mock_app
 ):
@@ -322,7 +322,7 @@ class TestAuthCommands:
         # Should mention import option
         assert "import-claude-code" in result.output or "Claude Code" in result.output
 
-    @patch("chapgent.cli.load_config")
+    @patch("chapgent.cli.auth.load_config")
     def test_auth_status_no_auth(self, mock_load_config):
         """Verify status shows no auth when unconfigured."""
         from chapgent.config.settings import Settings
@@ -336,7 +336,7 @@ class TestAuthCommands:
         # Default mode is "api", so it should show API key not configured
         assert "API key not configured" in result.output
 
-    @patch("chapgent.cli.load_config")
+    @patch("chapgent.cli.auth.load_config")
     def test_auth_status_with_api_key(self, mock_load_config):
         """Verify status shows API key when configured."""
         from chapgent.config.settings import Settings
@@ -351,7 +351,7 @@ class TestAuthCommands:
         assert result.exit_code == 0
         assert "API key configured" in result.output
 
-    @patch("chapgent.cli.load_config")
+    @patch("chapgent.cli.auth.load_config")
     def test_auth_status_max_mode_shows_claude_cli_status(self, mock_load_config):
         """Verify status shows Claude Code CLI status in max mode."""
         from chapgent.config.settings import Settings
@@ -427,7 +427,7 @@ class TestProxyCommands:
 class TestAuthLoginTokenStorage:
     """Tests for auth login storing tokens in config."""
 
-    @patch("chapgent.config.writer.save_config_value")
+    @patch("chapgent.cli.auth.save_config_value")
     def test_auth_login_with_direct_token_stores_to_config(self, mock_save):
         """Verify login with --token flag stores token in config."""
         mock_save.return_value = ("/path/to/config.toml", True)
@@ -442,7 +442,7 @@ class TestAuthLoginTokenStorage:
         assert call_args[0][1] == "test-oauth-token-12345678901234567890"
         assert "OAuth token saved successfully" in result.output
 
-    @patch("chapgent.config.writer.save_config_value")
+    @patch("chapgent.cli.auth.save_config_value")
     def test_auth_login_import_claude_code_reads_credentials(self, mock_save, tmp_path):
         """Verify login --import-claude-code reads from Claude Code credentials."""
         mock_save.return_value = ("/path/to/config.toml", True)
@@ -463,7 +463,7 @@ class TestAuthLoginTokenStorage:
         assert call_args[0][0] == "llm.oauth_token"
         assert call_args[0][1] == "imported-token-12345678901234567890"
 
-    @patch("chapgent.config.writer.save_config_value")
+    @patch("chapgent.cli.auth.save_config_value")
     def test_auth_login_import_nested_oauth_token(self, mock_save, tmp_path):
         """Verify login reads nested claudeAiOauth.accessToken format."""
         mock_save.return_value = ("/path/to/config.toml", True)
@@ -494,7 +494,7 @@ class TestAuthLoginTokenStorage:
 class TestAuthLogoutTokenRemoval:
     """Tests for auth logout removing tokens from config."""
 
-    @patch("chapgent.config.writer.save_config_value")
+    @patch("chapgent.cli.auth.save_config_value")
     def test_auth_logout_removes_both_tokens(self, mock_save):
         """Verify logout removes both oauth_token and api_key."""
         mock_save.return_value = ("/path/to/config.toml", True)
@@ -517,13 +517,13 @@ class TestAuthLogoutTokenRemoval:
 class TestCLIPassesSettingsToProvider:
     """Tests that CLI correctly passes gateway settings to LLMProvider."""
 
-    @patch("chapgent.cli.ChapgentApp")
-    @patch("chapgent.cli.Agent")
-    @patch("chapgent.cli.ClaudeCodeProvider")
-    @patch("chapgent.cli.ToolRegistry")
-    @patch("chapgent.cli.SessionStorage")
-    @patch("chapgent.cli.PermissionManager")
-    @patch("chapgent.cli.load_config")
+    @patch("chapgent.cli.bootstrap.ChapgentApp")
+    @patch("chapgent.cli.bootstrap.Agent")
+    @patch("chapgent.cli.bootstrap.ClaudeCodeProvider")
+    @patch("chapgent.cli.bootstrap.ToolRegistry")
+    @patch("chapgent.cli.bootstrap.SessionStorage")
+    @patch("chapgent.cli.bootstrap.PermissionManager")
+    @patch("chapgent.cli.bootstrap.load_config")
     @patch("shutil.which")
     def test_cli_uses_claude_code_provider_in_max_mode(
         self, mock_which, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
@@ -554,13 +554,13 @@ class TestCLIPassesSettingsToProvider:
         call_kwargs = mock_provider.call_args.kwargs
         assert call_kwargs.get("model") == "sonnet"  # Should map to alias
 
-    @patch("chapgent.cli.ChapgentApp")
-    @patch("chapgent.cli.Agent")
-    @patch("chapgent.cli.LLMProvider")
-    @patch("chapgent.cli.ToolRegistry")
-    @patch("chapgent.cli.SessionStorage")
-    @patch("chapgent.cli.PermissionManager")
-    @patch("chapgent.cli.load_config")
+    @patch("chapgent.cli.bootstrap.ChapgentApp")
+    @patch("chapgent.cli.bootstrap.Agent")
+    @patch("chapgent.cli.bootstrap.LLMProvider")
+    @patch("chapgent.cli.bootstrap.ToolRegistry")
+    @patch("chapgent.cli.bootstrap.SessionStorage")
+    @patch("chapgent.cli.bootstrap.PermissionManager")
+    @patch("chapgent.cli.bootstrap.load_config")
     def test_cli_passes_extra_headers_to_provider(
         self, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
     ):
@@ -581,13 +581,13 @@ class TestCLIPassesSettingsToProvider:
         call_kwargs = mock_provider.call_args.kwargs
         assert call_kwargs.get("extra_headers") == headers
 
-    @patch("chapgent.cli.ChapgentApp")
-    @patch("chapgent.cli.Agent")
-    @patch("chapgent.cli.ClaudeCodeProvider")
-    @patch("chapgent.cli.ToolRegistry")
-    @patch("chapgent.cli.SessionStorage")
-    @patch("chapgent.cli.PermissionManager")
-    @patch("chapgent.cli.load_config")
+    @patch("chapgent.cli.bootstrap.ChapgentApp")
+    @patch("chapgent.cli.bootstrap.Agent")
+    @patch("chapgent.cli.bootstrap.ClaudeCodeProvider")
+    @patch("chapgent.cli.bootstrap.ToolRegistry")
+    @patch("chapgent.cli.bootstrap.SessionStorage")
+    @patch("chapgent.cli.bootstrap.PermissionManager")
+    @patch("chapgent.cli.bootstrap.load_config")
     @patch("shutil.which")
     def test_cli_max_mode_requires_claude_cli(
         self, mock_which, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
@@ -612,13 +612,13 @@ class TestCLIPassesSettingsToProvider:
         assert result.exit_code != 0
         assert "Claude Code CLI" in result.output or "npm install" in result.output
 
-    @patch("chapgent.cli.ChapgentApp")
-    @patch("chapgent.cli.Agent")
-    @patch("chapgent.cli.ClaudeCodeProvider")
-    @patch("chapgent.cli.ToolRegistry")
-    @patch("chapgent.cli.SessionStorage")
-    @patch("chapgent.cli.PermissionManager")
-    @patch("chapgent.cli.load_config")
+    @patch("chapgent.cli.bootstrap.ChapgentApp")
+    @patch("chapgent.cli.bootstrap.Agent")
+    @patch("chapgent.cli.bootstrap.ClaudeCodeProvider")
+    @patch("chapgent.cli.bootstrap.ToolRegistry")
+    @patch("chapgent.cli.bootstrap.SessionStorage")
+    @patch("chapgent.cli.bootstrap.PermissionManager")
+    @patch("chapgent.cli.bootstrap.load_config")
     @patch("shutil.which")
     def test_cli_max_mode_maps_model_aliases(
         self, mock_which, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
