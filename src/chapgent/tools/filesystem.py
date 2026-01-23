@@ -46,16 +46,16 @@ async def read_file(path: str) -> str:
     file_size = file_path.stat().st_size
 
     async with aiofiles.open(file_path, encoding="utf-8") as f:
-        content = await f.read()
+        # Only read up to MAX_FILE_SIZE bytes to avoid loading huge files into memory
+        content = await f.read(MAX_FILE_SIZE)
 
-    # Truncate large files to prevent context overflow
-    if len(content) > MAX_FILE_SIZE:
-        truncated_content = content[:MAX_FILE_SIZE]
-        return (
-            f"{truncated_content}\n\n"
-            f"[TRUNCATED: File is {file_size:,} bytes, showing first {MAX_FILE_SIZE:,} chars. "
-            f"Use line offsets or grep for specific content.]"
-        )
+        # Check if there's more content (file was truncated)
+        if file_size > MAX_FILE_SIZE:
+            return (
+                f"{content}\n\n"
+                f"[TRUNCATED: File is {file_size:,} bytes, showing first {MAX_FILE_SIZE:,} chars. "
+                f"Use line offsets or grep for specific content.]"
+            )
 
     return content
 
