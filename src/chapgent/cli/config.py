@@ -2,7 +2,6 @@
 
 import asyncio
 import subprocess
-from pathlib import Path
 
 import click
 

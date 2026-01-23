@@ -304,7 +304,7 @@ class TestConfigSetCommand:
 class TestConfigShowCommand:
     """Tests for 'config show' command."""
 
-    @patch("chapgent.cli.load_config")
+    @patch("chapgent.cli.config.load_config")
     def test_shows_all_settings(self, mock_load_config):
         """Test shows all configuration settings."""
         from chapgent.config.settings import Settings
@@ -319,7 +319,7 @@ class TestConfigShowCommand:
         assert "Permissions" in result.output
         assert "TUI" in result.output
 
-    @patch("chapgent.cli.load_config")
+    @patch("chapgent.cli.config.load_config")
     def test_shows_custom_values(self, mock_load_config):
         """Test shows custom configuration values."""
         from chapgent.config.settings import LLMSettings, Settings
@@ -437,7 +437,7 @@ class TestIntegration:
         assert result.exit_code == 0
 
         # Show
-        with patch("chapgent.cli.load_config") as mock_load:
+        with patch("chapgent.cli.config.load_config") as mock_load:
             from chapgent.config.settings import LLMSettings, Settings
 
             mock_load.return_value = Settings(llm=LLMSettings(model="test-model"))

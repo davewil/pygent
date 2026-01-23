@@ -286,7 +286,7 @@ class ClaudeCodeProvider:
         try:
             result = json.loads(stdout.decode())
         except json.JSONDecodeError as e:
-            raise LLMError(f"Failed to parse Claude Code response: {e}")
+            raise LLMError(f"Failed to parse Claude Code response: {e}") from e
 
         # Store session ID for continuation
         self._session_id = result.get("session_id")

@@ -165,12 +165,9 @@ class LLMSettings(BaseModel):
     @field_validator("api_key")
     @classmethod
     def validate_api_key(cls, v: str | None) -> str | None:
-        """Validate that api_key is not an empty string."""
+        """Validate api_key, treating empty strings as None."""
         if v is not None and v.strip() == "":
-            raise ValueError(
-                "api_key cannot be an empty string. "
-                "Either provide a valid key or omit the setting to use environment variables."
-            )
+            return None  # Treat empty string as unset
         return v
 
     @field_validator("base_url")
@@ -206,12 +203,9 @@ class LLMSettings(BaseModel):
     @field_validator("oauth_token")
     @classmethod
     def validate_oauth_token(cls, v: str | None) -> str | None:
-        """Validate that oauth_token is not an empty string."""
+        """Validate oauth_token, treating empty strings as None."""
         if v is not None and v.strip() == "":
-            raise ValueError(
-                "oauth_token cannot be an empty string. "
-                "Either provide a valid token or omit the setting."
-            )
+            return None  # Treat empty string as unset
         return v
 
 

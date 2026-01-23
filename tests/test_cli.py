@@ -526,7 +526,15 @@ class TestCLIPassesSettingsToProvider:
     @patch("chapgent.cli.bootstrap.load_config")
     @patch("shutil.which")
     def test_cli_uses_claude_code_provider_in_max_mode(
-        self, mock_which, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
+        self,
+        mock_which,
+        mock_load_config,
+        mock_permissions,
+        mock_storage,
+        mock_registry,
+        mock_provider,
+        mock_agent,
+        mock_app,
     ):
         """Verify CLI uses ClaudeCodeProvider in max mode."""
         from chapgent.config.settings import LLMSettings, Settings
@@ -590,7 +598,15 @@ class TestCLIPassesSettingsToProvider:
     @patch("chapgent.cli.bootstrap.load_config")
     @patch("shutil.which")
     def test_cli_max_mode_requires_claude_cli(
-        self, mock_which, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
+        self,
+        mock_which,
+        mock_load_config,
+        mock_permissions,
+        mock_storage,
+        mock_registry,
+        mock_provider,
+        mock_agent,
+        mock_app,
     ):
         """Verify CLI errors if claude CLI is not installed in max mode."""
         from chapgent.config.settings import LLMSettings, Settings
@@ -621,7 +637,15 @@ class TestCLIPassesSettingsToProvider:
     @patch("chapgent.cli.bootstrap.load_config")
     @patch("shutil.which")
     def test_cli_max_mode_maps_model_aliases(
-        self, mock_which, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
+        self,
+        mock_which,
+        mock_load_config,
+        mock_permissions,
+        mock_storage,
+        mock_registry,
+        mock_provider,
+        mock_agent,
+        mock_app,
     ):
         """Verify CLI maps model names to Claude Code aliases in max mode."""
         from chapgent.config.settings import LLMSettings, Settings

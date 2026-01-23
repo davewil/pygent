@@ -110,11 +110,10 @@ class TestLLMSettingsValidation:
         assert LLMSettings(api_key=api_key).api_key == api_key
 
     @pytest.mark.parametrize("api_key", ["", "   "])
-    def test_invalid_api_key(self, api_key: str):
-        """Should reject empty or whitespace-only api_key."""
-        with pytest.raises(ValidationError) as exc_info:
-            LLMSettings(api_key=api_key)
-        assert "empty string" in str(exc_info.value)
+    def test_empty_api_key_becomes_none(self, api_key: str):
+        """Empty or whitespace-only api_key should become None."""
+        settings = LLMSettings(api_key=api_key)
+        assert settings.api_key is None
 
     @pytest.mark.parametrize("model", ["claude-sonnet-4-20250514", "gpt-4", "custom-model-v1"])
     def test_model_field_accepts_any(self, model: str):
@@ -176,11 +175,10 @@ class TestLLMSettingsValidation:
         assert LLMSettings(oauth_token=oauth_token).oauth_token == oauth_token
 
     @pytest.mark.parametrize("oauth_token", ["", "   "])
-    def test_invalid_oauth_token(self, oauth_token: str):
-        """Should reject empty or whitespace-only oauth_token."""
-        with pytest.raises(ValidationError) as exc_info:
-            LLMSettings(oauth_token=oauth_token)
-        assert "empty string" in str(exc_info.value)
+    def test_empty_oauth_token_becomes_none(self, oauth_token: str):
+        """Empty or whitespace-only oauth_token should become None."""
+        settings = LLMSettings(oauth_token=oauth_token)
+        assert settings.oauth_token is None
 
 
 # =============================================================================

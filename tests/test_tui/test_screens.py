@@ -662,7 +662,6 @@ class TestSystemPromptScreen:
     @pytest.mark.asyncio
     async def test_user_can_open_prompt_settings(self):
         """System prompt screen opens from command palette."""
-        from chapgent.tui.screens import SystemPromptScreen
 
         app = ChapgentApp()
         async with app.run_test(size=(100, 50)) as pilot:
@@ -673,7 +672,6 @@ class TestSystemPromptScreen:
     @pytest.mark.asyncio
     async def test_user_can_edit_prompt_content(self):
         """User can edit the prompt content in the text area."""
-        from chapgent.tui.screens import SystemPromptScreen
         from textual.widgets import TextArea
 
         app = ChapgentApp()
@@ -688,7 +686,6 @@ class TestSystemPromptScreen:
     @pytest.mark.asyncio
     async def test_user_can_toggle_mode_to_replace(self):
         """User can switch mode from append to replace."""
-        from chapgent.tui.screens import SystemPromptScreen
         from textual.widgets import RadioButton
 
         app = ChapgentApp()
@@ -706,7 +703,6 @@ class TestSystemPromptScreen:
     @pytest.mark.asyncio
     async def test_user_can_set_file_path(self):
         """User can specify a file path for the prompt."""
-        from chapgent.tui.screens import SystemPromptScreen
         from textual.widgets import Input
 
         app = ChapgentApp()
@@ -724,7 +720,6 @@ class TestSystemPromptScreen:
     @pytest.mark.asyncio
     async def test_user_can_save_prompt_settings(self):
         """Saving prompt settings persists content, mode, and file."""
-        from chapgent.tui.screens import SystemPromptScreen
         from textual.widgets import Button, TextArea
 
         app = ChapgentApp()
@@ -761,7 +756,6 @@ class TestSystemPromptScreen:
     @pytest.mark.asyncio
     async def test_escape_closes_prompt_settings(self):
         """Pressing escape closes without saving."""
-        from chapgent.tui.screens import SystemPromptScreen
 
         app = ChapgentApp()
         async with app.run_test(size=(100, 50)) as pilot:
@@ -777,7 +771,6 @@ class TestSystemPromptScreen:
     @pytest.mark.asyncio
     async def test_cancel_closes_without_saving(self):
         """Cancel button closes without saving."""
-        from chapgent.tui.screens import SystemPromptScreen
         from textual.widgets import Button
 
         app = ChapgentApp()
@@ -807,7 +800,6 @@ class TestConfigShowScreen:
     @pytest.mark.asyncio
     async def test_user_can_open_config_show(self):
         """Config show screen opens from command palette."""
-        from chapgent.tui.screens import ConfigShowScreen
 
         app = ChapgentApp()
         async with app.run_test(size=(100, 50)) as pilot:
@@ -818,10 +810,10 @@ class TestConfigShowScreen:
     @pytest.mark.asyncio
     async def test_config_shows_llm_settings(self):
         """Config screen displays LLM settings when provided."""
-        from chapgent.config.settings import Settings
-        from chapgent.tui.screens import ConfigShowScreen
         from textual.containers import VerticalScroll
         from textual.widgets import Static
+
+        from chapgent.config.settings import Settings
 
         settings = Settings()
         settings.llm.model = "test-model"
@@ -843,10 +835,8 @@ class TestConfigShowScreen:
     @pytest.mark.asyncio
     async def test_config_shows_tui_settings(self):
         """Config screen mounts correctly with TUI settings."""
+
         from chapgent.config.settings import Settings
-        from chapgent.tui.screens import ConfigShowScreen
-        from textual.containers import VerticalScroll
-        from textual.widgets import Static
 
         settings = Settings()
         settings.tui.theme = "dracula"
@@ -865,7 +855,6 @@ class TestConfigShowScreen:
     @pytest.mark.asyncio
     async def test_config_shows_no_settings_message(self):
         """Config screen shows minimal content when no settings available."""
-        from chapgent.tui.screens import ConfigShowScreen
         from textual.containers import VerticalScroll
         from textual.widgets import Static
 
@@ -885,7 +874,6 @@ class TestConfigShowScreen:
     @pytest.mark.asyncio
     async def test_escape_closes_config_show(self):
         """Pressing escape closes config show screen."""
-        from chapgent.tui.screens import ConfigShowScreen
 
         app = ChapgentApp()
         async with app.run_test(size=(100, 50)) as pilot:
@@ -901,7 +889,6 @@ class TestConfigShowScreen:
     @pytest.mark.asyncio
     async def test_close_button_closes_screen(self):
         """Close button closes config show screen."""
-        from chapgent.tui.screens import ConfigShowScreen
         from textual.widgets import Button
 
         app = ChapgentApp()
