@@ -300,11 +300,26 @@ These reuse existing `action_*` methods - just wire up slash commands:
      - HelpScreen: Shows topic list or specific topic content, back navigation, escape to close
      - ToolsScreen: Shows tools grouped by category, search/filter input, category dropdown
 
-5. **Phase 4**: Remaining
-   - TUI settings, system prompt, config show
-   - Utility aliases (/new, /save, /clear, etc.)
+5. **Phase 4.1**: TUI Settings ✅ COMPLETE
+   - Create `TUISettingsScreen` ✅
+   - Wire up `/tui` command ✅
+   - Add "TUI Settings" to command palette ✅
+   - **Files modified:**
+     - `src/chapgent/tui/screens.py` (added TUISettingsScreen class)
+     - `src/chapgent/tui/__init__.py` (exports)
+     - `src/chapgent/tui/app.py` (action_show_tui_settings, import TUISettingsScreen)
+     - `src/chapgent/tui/widgets.py` (added "TUI Settings" to DEFAULT_COMMANDS)
+     - `tests/test_tui/test_screens.py` (added 9 tests for TUISettingsScreen)
+   - **Features:**
+     - Checkbox toggles for sidebar and tool panel visibility
+     - Button to open theme picker
+     - Save/Cancel buttons with escape key support
 
-6. **Phase 5**: Polish
-   - Update `DEFAULT_COMMANDS` in widgets.py
-   - Add styles to styles.tcss
-   - Write tests
+6. **Phase 4.2**: Remaining
+   - System prompt screen
+   - Config show screen
+   - Utility aliases (/new, /save, /clear, etc.) - already wired
+
+7. **Phase 5**: Polish
+   - Add styles to styles.tcss as needed
+   - Additional tests as needed

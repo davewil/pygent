@@ -26,6 +26,7 @@ from chapgent.tui.screens import (
     LLMSettingsScreen,
     ThemePickerScreen,
     ToolsScreen,
+    TUISettingsScreen,
 )
 from chapgent.tui.themes import (
     DEFAULT_DARK_THEME,
@@ -74,6 +75,7 @@ __all__ = [
     "LLMSettingsScreen",
     "ThemePickerScreen",
     "ToolsScreen",
+    "TUISettingsScreen",
     # Themes
     "DEFAULT_DARK_THEME",
     "DEFAULT_LIGHT_THEME",

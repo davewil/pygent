@@ -1562,3 +1562,59 @@
   - read_file tool now truncates files >30KB to prevent context overflow (previous commit)
   - Test now verifies: truncation message present, file size in message, content starts correctly
   - Learned: Performance tests should match actual tool behavior (truncation is feature, not bug)
+2026-01-23: Completed Phase 7 LiteLLM Gateway Testing (all testing criteria verified):
+  - Added 4 tests for CLI passing gateway settings (base_url, extra_headers, oauth_token) to LLMProvider:
+    * TestCLIPassesSettingsToProvider: Verifies base_url, extra_headers, oauth_token as Authorization header, and header merging
+  - Added 4 tests for auth login token storage:
+    * TestAuthLoginTokenStorage: Direct token, Claude Code import, nested OAuth format, short token rejection
+  - Added 1 test for auth logout removing both oauth_token and api_key
+  - Added 16 tests for environment variable support:
+    * TestBaseUrlEnvVars: CHAPGENT_BASE_URL, ANTHROPIC_BASE_URL, priority handling
+    * TestExtraHeadersEnvVars: CHAPGENT_EXTRA_HEADERS, ANTHROPIC_CUSTOM_HEADERS, JSON parsing, priority
+    * TestOAuthTokenEnvVars: CHAPGENT_OAUTH_TOKEN, ANTHROPIC_OAUTH_TOKEN, priority
+    * TestGatewayConfigIntegration: Full gateway config, Claude Max subscription setup
+  - Added 5 tests for TOML config loading gateway settings:
+    * base_url, extra_headers, oauth_token, full config, project override
+  - Fixed env var priority handling in loader.py:
+    * BASE_URL_ENV_PRIORITY and EXTRA_HEADERS_ENV_PRIORITY constants were defined but not used
+    * Added priority handling loops for base_url and extra_headers to match api_key and oauth_token behavior
+  - Learned: When patching functions imported locally inside functions (e.g., `from module import func` inside a function), 
+    patch the original location (`chapgent.config.writer.save_config_value`) not the caller module
+  - Learned: Python 3.7+ dicts maintain insertion order, so without explicit priority handling, later env vars in ENV_MAPPINGS overwrite earlier ones
+  - Learned: Env var priority lists (e.g., CHAPGENT_* before ANTHROPIC_*) provide consistent, predictable behavior for users
+  - Total: 1566 tests pass, Phase 7 testing checklist complete
+2026-01-23: Implemented Phase 5 TUI Enhancements - Phase 4.1: TUISettingsScreen (specs/phase-5-tui-enhancements.md):
+  - Created TUISettingsScreen modal in src/chapgent/tui/screens.py:
+    * Checkbox toggle for sidebar visibility (show_sidebar setting)
+    * Checkbox toggle for tool panel visibility (show_tool_panel setting)
+    * Button to open ThemePickerScreen for theme selection
+    * Save button persists settings to config
+    * Cancel button and Escape key support
+    * CSS styles embedded in screen class
+  - Updated src/chapgent/tui/app.py:
+    * Added action_show_tui_settings() method
+    * Imports TUISettingsScreen from screens module
+    * Callback persists both settings to config
+    * Updates app.settings on save for consistency
+    * Displays notification on save/error
+  - Updated src/chapgent/tui/widgets.py:
+    * Added "TUI Settings" command to DEFAULT_COMMANDS
+    * id="show_tui_settings", name="TUI Settings"
+  - Updated src/chapgent/tui/__init__.py:
+    * Added TUISettingsScreen to exports
+  - Added 9 tests to tests/test_tui/test_screens.py:
+    * TestTUISettings.test_user_can_open_tui_settings
+    * TestTUISettings.test_user_can_toggle_sidebar_setting
+    * TestTUISettings.test_user_can_toggle_tool_panel_setting
+    * TestTUISettings.test_user_can_save_tui_settings
+    * TestTUISettings.test_escape_closes_tui_settings
+    * TestTUISettings.test_cancel_closes_without_saving
+    * TestTUISettings.test_theme_button_opens_theme_picker
+    * TestSlashCommands.test_slash_tui_opens_tui_settings
+    * TestSlashCommands.test_slash_ui_alias_opens_tui_settings
+  - /tui and /ui slash commands already registered in commands.py
+  - Learned: Checkbox.toggle() method toggles the checkbox value
+  - Learned: Nested modal screens (ThemePickerScreen from TUISettingsScreen) work via app.push_screen()
+  - Learned: Boolean config values should be converted to lowercase strings ("true"/"false") for TOML
+  - Phase 4.1 of Phase 5 TUI Enhancements complete (TUISettingsScreen)
+  - Total: 1575 tests pass (9 TUISettings tests added)

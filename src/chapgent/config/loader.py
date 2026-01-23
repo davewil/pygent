@@ -139,8 +139,28 @@ def _load_env_config() -> dict[str, Any]:
             _set_nested_value(env_config, "llm.oauth_token", value)
             break
 
-    # Handle other env vars (excluding API key and OAuth token vars already handled)
-    priority_handled_vars = set(API_KEY_ENV_PRIORITY) | set(OAUTH_TOKEN_ENV_PRIORITY)
+    # Handle base_url with priority
+    for env_var in BASE_URL_ENV_PRIORITY:
+        value = os.environ.get(env_var)
+        if value:
+            _set_nested_value(env_config, "llm.base_url", value)
+            break
+
+    # Handle extra_headers with priority
+    for env_var in EXTRA_HEADERS_ENV_PRIORITY:
+        value = os.environ.get(env_var)
+        if value:
+            converted = _convert_env_value(value, "llm.extra_headers")
+            _set_nested_value(env_config, "llm.extra_headers", converted)
+            break
+
+    # Handle other env vars (excluding vars already handled with priority)
+    priority_handled_vars = (
+        set(API_KEY_ENV_PRIORITY)
+        | set(OAUTH_TOKEN_ENV_PRIORITY)
+        | set(BASE_URL_ENV_PRIORITY)
+        | set(EXTRA_HEADERS_ENV_PRIORITY)
+    )
     for env_var, path in ENV_MAPPINGS.items():
         if env_var in priority_handled_vars:
             continue  # Already handled above with priority

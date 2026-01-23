@@ -453,3 +453,216 @@ class TestIntegration:
         assert settings.llm.provider == LLMSettings.model_fields["provider"].default
         expected = PermissionSettings.model_fields["auto_approve_low_risk"].default
         assert settings.permissions.auto_approve_low_risk == expected
+
+
+# =============================================================================
+# Phase 7: LiteLLM Gateway Environment Variable Tests
+# =============================================================================
+
+
+class TestBaseUrlEnvVars:
+    """Tests for base_url environment variable support."""
+
+    def test_chapgent_base_url_loaded(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """CHAPGENT_BASE_URL is loaded into config."""
+        for var in ENV_MAPPINGS:
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("CHAPGENT_BASE_URL", "http://localhost:4000")
+
+        result = _load_env_config()
+        assert result["llm"]["base_url"] == "http://localhost:4000"
+
+    def test_anthropic_base_url_loaded(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """ANTHROPIC_BASE_URL is loaded into config."""
+        for var in ENV_MAPPINGS:
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("ANTHROPIC_BASE_URL", "http://proxy.example.com")
+
+        result = _load_env_config()
+        assert result["llm"]["base_url"] == "http://proxy.example.com"
+
+    def test_chapgent_base_url_takes_priority(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """CHAPGENT_BASE_URL takes priority over ANTHROPIC_BASE_URL."""
+        for var in ENV_MAPPINGS:
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("CHAPGENT_BASE_URL", "http://chapgent-proxy:4000")
+        monkeypatch.setenv("ANTHROPIC_BASE_URL", "http://anthropic-proxy:4000")
+
+        result = _load_env_config()
+        assert result["llm"]["base_url"] == "http://chapgent-proxy:4000"
+
+    @pytest.mark.asyncio
+    async def test_base_url_env_overrides_config(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Base URL from env overrides config file value."""
+        for var in ENV_MAPPINGS:
+            monkeypatch.delenv(var, raising=False)
+
+        config_path = tmp_path / "config.toml"
+        config_data = {"llm": {"base_url": "http://file-proxy:4000"}}
+        with open(config_path, "wb") as f:
+            tomli_w.dump(config_data, f)
+
+        monkeypatch.setenv("CHAPGENT_BASE_URL", "http://env-proxy:4000")
+
+        settings = await load_config(
+            user_config_path=config_path,
+            project_config_path=tmp_path / "no_exist.toml",
+            load_env=True,
+        )
+
+        assert settings.llm.base_url == "http://env-proxy:4000"
+
+
+class TestExtraHeadersEnvVars:
+    """Tests for extra_headers environment variable support."""
+
+    def test_chapgent_extra_headers_loaded(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """CHAPGENT_EXTRA_HEADERS is loaded as JSON dict."""
+        for var in ENV_MAPPINGS:
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("CHAPGENT_EXTRA_HEADERS", '{"x-api-key": "test-key"}')
+
+        result = _load_env_config()
+        assert result["llm"]["extra_headers"] == {"x-api-key": "test-key"}
+
+    def test_anthropic_custom_headers_loaded(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """ANTHROPIC_CUSTOM_HEADERS is loaded as JSON dict."""
+        for var in ENV_MAPPINGS:
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("ANTHROPIC_CUSTOM_HEADERS", '{"Authorization": "Bearer token123"}')
+
+        result = _load_env_config()
+        assert result["llm"]["extra_headers"] == {"Authorization": "Bearer token123"}
+
+    def test_chapgent_extra_headers_takes_priority(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """CHAPGENT_EXTRA_HEADERS takes priority over ANTHROPIC_CUSTOM_HEADERS."""
+        for var in ENV_MAPPINGS:
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("CHAPGENT_EXTRA_HEADERS", '{"x-chapgent": "value1"}')
+        monkeypatch.setenv("ANTHROPIC_CUSTOM_HEADERS", '{"x-anthropic": "value2"}')
+
+        result = _load_env_config()
+        assert result["llm"]["extra_headers"] == {"x-chapgent": "value1"}
+
+    def test_extra_headers_with_multiple_keys(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Extra headers can contain multiple key-value pairs."""
+        for var in ENV_MAPPINGS:
+            monkeypatch.delenv(var, raising=False)
+        headers = '{"x-litellm-api-key": "Bearer sk-test", "Authorization": "Bearer oauth"}'
+        monkeypatch.setenv("CHAPGENT_EXTRA_HEADERS", headers)
+
+        result = _load_env_config()
+        assert result["llm"]["extra_headers"] == {
+            "x-litellm-api-key": "Bearer sk-test",
+            "Authorization": "Bearer oauth",
+        }
+
+    @pytest.mark.asyncio
+    async def test_extra_headers_env_to_settings(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Extra headers from env are set in Settings."""
+        for var in ENV_MAPPINGS:
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("CHAPGENT_EXTRA_HEADERS", '{"x-custom": "header-value"}')
+
+        settings = await load_config(
+            user_config_path=tmp_path / "no_exist.toml",
+            project_config_path=tmp_path / "no_exist.toml",
+            load_env=True,
+        )
+
+        assert settings.llm.extra_headers == {"x-custom": "header-value"}
+
+
+class TestOAuthTokenEnvVars:
+    """Tests for oauth_token environment variable support."""
+
+    def test_chapgent_oauth_token_loaded(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """CHAPGENT_OAUTH_TOKEN is loaded into config."""
+        for var in ENV_MAPPINGS:
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("CHAPGENT_OAUTH_TOKEN", "chapgent-oauth-token-12345")
+
+        result = _load_env_config()
+        assert result["llm"]["oauth_token"] == "chapgent-oauth-token-12345"
+
+    def test_anthropic_oauth_token_loaded(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """ANTHROPIC_OAUTH_TOKEN is loaded into config."""
+        for var in ENV_MAPPINGS:
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("ANTHROPIC_OAUTH_TOKEN", "anthropic-oauth-token-12345")
+
+        result = _load_env_config()
+        assert result["llm"]["oauth_token"] == "anthropic-oauth-token-12345"
+
+    def test_chapgent_oauth_token_takes_priority(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """CHAPGENT_OAUTH_TOKEN takes priority over ANTHROPIC_OAUTH_TOKEN."""
+        for var in ENV_MAPPINGS:
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("CHAPGENT_OAUTH_TOKEN", "chapgent-token")
+        monkeypatch.setenv("ANTHROPIC_OAUTH_TOKEN", "anthropic-token")
+
+        result = _load_env_config()
+        assert result["llm"]["oauth_token"] == "chapgent-token"
+
+    @pytest.mark.asyncio
+    async def test_oauth_token_env_to_settings(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """OAuth token from env is set in Settings."""
+        for var in ENV_MAPPINGS:
+            monkeypatch.delenv(var, raising=False)
+        monkeypatch.setenv("CHAPGENT_OAUTH_TOKEN", "test-oauth-token-123456")
+
+        settings = await load_config(
+            user_config_path=tmp_path / "no_exist.toml",
+            project_config_path=tmp_path / "no_exist.toml",
+            load_env=True,
+        )
+
+        assert settings.llm.oauth_token == "test-oauth-token-123456"
+
+
+class TestGatewayConfigIntegration:
+    """Integration tests for full LiteLLM gateway configuration via env vars."""
+
+    @pytest.mark.asyncio
+    async def test_full_gateway_env_config(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test complete gateway configuration from env vars."""
+        for var in ENV_MAPPINGS:
+            monkeypatch.delenv(var, raising=False)
+
+        # Set all gateway-related env vars
+        monkeypatch.setenv("CHAPGENT_BASE_URL", "http://localhost:4000")
+        monkeypatch.setenv("CHAPGENT_EXTRA_HEADERS", '{"x-litellm-api-key": "Bearer sk-litellm"}')
+        monkeypatch.setenv("CHAPGENT_OAUTH_TOKEN", "oauth-test-token-12345")
+        monkeypatch.setenv("CHAPGENT_MODEL", "anthropic-claude")
+
+        settings = await load_config(
+            user_config_path=tmp_path / "no_exist.toml",
+            project_config_path=tmp_path / "no_exist.toml",
+            load_env=True,
+        )
+
+        assert settings.llm.base_url == "http://localhost:4000"
+        assert settings.llm.extra_headers == {"x-litellm-api-key": "Bearer sk-litellm"}
+        assert settings.llm.oauth_token == "oauth-test-token-12345"
+        assert settings.llm.model == "anthropic-claude"
+
+    @pytest.mark.asyncio
+    async def test_anthropic_env_vars_for_claude_max(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test ANTHROPIC_* env vars for Claude Max subscription."""
+        for var in ENV_MAPPINGS:
+            monkeypatch.delenv(var, raising=False)
+
+        # Simulate Claude Max setup with ANTHROPIC_* env vars
+        monkeypatch.setenv("ANTHROPIC_BASE_URL", "http://litellm-proxy:4000")
+        monkeypatch.setenv("ANTHROPIC_CUSTOM_HEADERS", '{"Authorization": "Bearer claude-max-token"}')
+        monkeypatch.setenv("ANTHROPIC_OAUTH_TOKEN", "claude-max-oauth-12345")
+
+        settings = await load_config(
+            user_config_path=tmp_path / "no_exist.toml",
+            project_config_path=tmp_path / "no_exist.toml",
+            load_env=True,
+        )
+
+        assert settings.llm.base_url == "http://litellm-proxy:4000"
+        assert settings.llm.extra_headers == {"Authorization": "Bearer claude-max-token"}
+        assert settings.llm.oauth_token == "claude-max-oauth-12345"

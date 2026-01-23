@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any
 from textual.app import ComposeResult
 from textual.containers import Grid, Horizontal
 from textual.screen import ModalScreen
-from textual.widgets import Button, Input, Label, Select, Static
+from textual.widgets import Button, Checkbox, Input, Label, Select, Static
 
 from chapgent.config.settings import VALID_PROVIDERS, VALID_THEMES
 
@@ -399,6 +399,188 @@ class LLMSettingsScreen(ModalScreen[dict[str, Any] | None]):
 
         elif button_id == "btn-cancel":
             self.dismiss(None)
+
+    def action_cancel(self) -> None:
+        """Handle escape key - dismiss without saving."""
+        self.dismiss(None)
+
+    BINDINGS = [
+        ("escape", "cancel", "Cancel"),
+    ]
+
+
+class TUISettingsScreen(ModalScreen[dict[str, Any] | None]):
+    """Modal screen for configuring TUI appearance settings.
+
+    Features:
+    - Checkbox for showing/hiding sidebar
+    - Checkbox for showing/hiding tool panel
+    - Button to open theme picker
+    - Save button: persists settings to config
+    - Cancel button: discards changes
+
+    Returns:
+        A dict with {"show_sidebar": bool, "show_tool_panel": bool} on save,
+        or None on cancel.
+    """
+
+    CSS = """
+    TUISettingsScreen {
+        align: center middle;
+    }
+
+    #tui-settings-container {
+        background: $surface;
+        border: round $primary;
+        padding: 1 2;
+        width: 50;
+        height: auto;
+    }
+
+    #tui-settings-title {
+        text-align: center;
+        text-style: bold;
+        color: $text;
+        padding: 0 0 1 0;
+    }
+
+    .tui-setting-row {
+        height: auto;
+        padding: 0 0 1 0;
+    }
+
+    #tui-theme-button {
+        width: 100%;
+    }
+
+    #tui-settings-buttons {
+        align: center middle;
+        padding: 1 0 0 0;
+    }
+
+    #tui-settings-buttons Button {
+        margin: 0 1;
+    }
+    """
+
+    def __init__(
+        self,
+        show_sidebar: bool = True,
+        show_tool_panel: bool = True,
+        current_theme: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the TUI settings screen.
+
+        Args:
+            show_sidebar: Current sidebar visibility setting.
+            show_tool_panel: Current tool panel visibility setting.
+            current_theme: Current theme name.
+            **kwargs: Additional arguments passed to ModalScreen.
+        """
+        super().__init__(**kwargs)
+        self.original_show_sidebar = show_sidebar
+        self.original_show_tool_panel = show_tool_panel
+        self.original_theme = current_theme
+
+        # Track current selections
+        self.selected_show_sidebar = show_sidebar
+        self.selected_show_tool_panel = show_tool_panel
+        self.current_theme = current_theme
+
+    def compose(self) -> ComposeResult:
+        """Create child widgets for the TUI settings screen."""
+        with Static(id="tui-settings-container"):
+            yield Static("TUI Settings", id="tui-settings-title")
+
+            # Sidebar toggle
+            with Static(classes="tui-setting-row"):
+                yield Checkbox(
+                    "Show Sessions Sidebar",
+                    value=self.selected_show_sidebar,
+                    id="tui-show-sidebar",
+                )
+
+            # Tool panel toggle
+            with Static(classes="tui-setting-row"):
+                yield Checkbox(
+                    "Show Tool Panel",
+                    value=self.selected_show_tool_panel,
+                    id="tui-show-tool-panel",
+                )
+
+            # Theme button
+            with Static(classes="tui-setting-row"):
+                theme_label = self.current_theme or "textual-dark"
+                yield Button(
+                    f"Change Theme ({theme_label})",
+                    id="tui-theme-button",
+                    variant="default",
+                )
+
+            # Buttons
+            with Horizontal(id="tui-settings-buttons"):
+                yield Button("Save", variant="success", id="btn-save")
+                yield Button("Cancel", variant="default", id="btn-cancel")
+
+    def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
+        """Handle checkbox changes.
+
+        Args:
+            event: The checkbox changed event.
+        """
+        if event.checkbox.id == "tui-show-sidebar":
+            self.selected_show_sidebar = event.value
+        elif event.checkbox.id == "tui-show-tool-panel":
+            self.selected_show_tool_panel = event.value
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses.
+
+        Args:
+            event: The button press event.
+        """
+        button_id = event.button.id
+
+        if button_id == "btn-save":
+            # Return the settings
+            self.dismiss({
+                "show_sidebar": self.selected_show_sidebar,
+                "show_tool_panel": self.selected_show_tool_panel,
+            })
+
+        elif button_id == "btn-cancel":
+            self.dismiss(None)
+
+        elif button_id == "tui-theme-button":
+            # Open theme picker
+            self._open_theme_picker()
+
+    def _open_theme_picker(self) -> None:
+        """Open the theme picker modal."""
+
+        def handle_theme(result: str | None) -> None:
+            """Handle the selected theme from the picker."""
+            if result is not None:
+                self.current_theme = result
+                # Update button label
+                try:
+                    button = self.query_one("#tui-theme-button", Button)
+                    button.label = f"Change Theme ({result})"
+                except Exception:
+                    pass
+                # Persist theme immediately
+                try:
+                    from chapgent.config.writer import save_config_value
+
+                    save_config_value("tui.theme", result)
+                except Exception:
+                    pass
+
+        self.app.push_screen(
+            ThemePickerScreen(current_theme=self.current_theme),
+            callback=handle_theme,
+        )
 
     def action_cancel(self) -> None:
         """Handle escape key - dismiss without saving."""

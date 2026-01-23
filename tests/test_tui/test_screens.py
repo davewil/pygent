@@ -11,7 +11,7 @@ import pytest
 
 from chapgent.tools.base import ToolCategory
 from chapgent.tui.app import ChapgentApp
-from chapgent.tui.screens import HelpScreen, LLMSettingsScreen, ThemePickerScreen, ToolsScreen
+from chapgent.tui.screens import HelpScreen, LLMSettingsScreen, ThemePickerScreen, ToolsScreen, TUISettingsScreen
 from chapgent.ux.help import HELP_TOPICS
 
 # =============================================================================
@@ -194,6 +194,151 @@ class TestLLMSettings:
             await pilot.pause()
 
             assert not isinstance(app.screen, LLMSettingsScreen)
+
+
+# =============================================================================
+# TUISettingsScreen - User can configure TUI appearance
+# =============================================================================
+
+
+class TestTUISettings:
+    """User can configure TUI appearance settings."""
+
+    @pytest.mark.asyncio
+    async def test_user_can_open_tui_settings(self):
+        """TUI settings opens from command palette."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.action_show_tui_settings()
+            await pilot.pause()
+            assert isinstance(app.screen, TUISettingsScreen)
+
+    @pytest.mark.asyncio
+    async def test_user_can_toggle_sidebar_setting(self):
+        """User can toggle sidebar visibility setting."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(TUISettingsScreen(show_sidebar=True, show_tool_panel=True))
+            await pilot.pause()
+
+            screen = app.screen
+            from textual.widgets import Checkbox
+
+            sidebar_checkbox = screen.query_one("#tui-show-sidebar", Checkbox)
+            assert sidebar_checkbox.value is True
+
+            # Toggle off
+            sidebar_checkbox.toggle()
+            await pilot.pause()
+            assert screen.selected_show_sidebar is False
+
+    @pytest.mark.asyncio
+    async def test_user_can_toggle_tool_panel_setting(self):
+        """User can toggle tool panel visibility setting."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(TUISettingsScreen(show_sidebar=True, show_tool_panel=True))
+            await pilot.pause()
+
+            screen = app.screen
+            from textual.widgets import Checkbox
+
+            tool_panel_checkbox = screen.query_one("#tui-show-tool-panel", Checkbox)
+            assert tool_panel_checkbox.value is True
+
+            # Toggle off
+            tool_panel_checkbox.toggle()
+            await pilot.pause()
+            assert screen.selected_show_tool_panel is False
+
+    @pytest.mark.asyncio
+    async def test_user_can_save_tui_settings(self):
+        """Saving TUI settings persists sidebar and tool panel visibility."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            saved_values = {}
+
+            with patch("chapgent.config.writer.save_config_value") as mock_save:
+
+                def capture_save(key, value):
+                    saved_values[key] = value
+                    return ("/path/config.toml", value)
+
+                mock_save.side_effect = capture_save
+
+                app.action_show_tui_settings()
+                await pilot.pause()
+
+                screen = app.screen
+                from textual.widgets import Button, Checkbox
+
+                # Toggle both off
+                screen.query_one("#tui-show-sidebar", Checkbox).toggle()
+                screen.query_one("#tui-show-tool-panel", Checkbox).toggle()
+                await pilot.pause()
+
+                # Save
+                save_btn = screen.query_one("#btn-save", Button)
+                save_btn.press()
+                await asyncio.sleep(0.2)
+                await pilot.pause()
+
+            assert saved_values.get("tui.show_sidebar") == "false"
+            assert saved_values.get("tui.show_tool_panel") == "false"
+
+    @pytest.mark.asyncio
+    async def test_escape_closes_tui_settings(self):
+        """Pressing escape closes without saving."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            app.push_screen(TUISettingsScreen())
+            await pilot.pause()
+
+            await pilot.press("escape")
+            await asyncio.sleep(0.1)
+            await pilot.pause()
+
+            assert not isinstance(app.screen, TUISettingsScreen)
+
+    @pytest.mark.asyncio
+    async def test_cancel_closes_without_saving(self):
+        """Cancel button closes without saving."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            with patch("chapgent.config.writer.save_config_value") as mock_save:
+                app.push_screen(TUISettingsScreen())
+                await pilot.pause()
+
+                screen = app.screen
+                from textual.widgets import Button
+
+                cancel_btn = screen.query_one("#btn-cancel", Button)
+                cancel_btn.press()
+                await asyncio.sleep(0.1)
+                await pilot.pause()
+
+                mock_save.assert_not_called()
+                assert not isinstance(app.screen, TUISettingsScreen)
+
+    @pytest.mark.asyncio
+    async def test_theme_button_opens_theme_picker(self):
+        """Theme button opens the theme picker modal."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            with patch("chapgent.config.writer.save_config_value"):
+                app.push_screen(TUISettingsScreen(current_theme="textual-dark"))
+                await pilot.pause()
+
+                screen = app.screen
+                from textual.widgets import Button
+
+                theme_btn = screen.query_one("#tui-theme-button", Button)
+                theme_btn.press()
+                await asyncio.sleep(0.1)
+                await pilot.pause()
+
+                # Should now have theme picker on top
+                assert isinstance(app.screen, ThemePickerScreen)
 
 
 # =============================================================================
@@ -444,3 +589,27 @@ class TestSlashCommands:
             await pilot.pause()
 
             assert isinstance(app.screen, LLMSettingsScreen)
+
+    @pytest.mark.asyncio
+    async def test_slash_tui_opens_tui_settings(self):
+        """/tui opens the TUI settings."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            input_widget = app.query_one("#input")
+            input_widget.value = "/tui"
+            await pilot.press("enter")
+            await pilot.pause()
+
+            assert isinstance(app.screen, TUISettingsScreen)
+
+    @pytest.mark.asyncio
+    async def test_slash_ui_alias_opens_tui_settings(self):
+        """/ui alias opens the TUI settings."""
+        app = ChapgentApp()
+        async with app.run_test(size=(100, 50)) as pilot:
+            input_widget = app.query_one("#input")
+            input_widget.value = "/ui"
+            await pilot.press("enter")
+            await pilot.pause()
+
+            assert isinstance(app.screen, TUISettingsScreen)

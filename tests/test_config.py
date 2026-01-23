@@ -76,3 +76,116 @@ async def test_load_project_config_overrides_user(tmp_path):
     # Check default remaining untouched
     expected_auto_approve = PermissionSettings.model_fields["auto_approve_low_risk"].default
     assert settings.permissions.auto_approve_low_risk == expected_auto_approve
+
+
+# =============================================================================
+# Phase 7: LiteLLM Gateway TOML Config Tests
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_load_base_url_from_toml(tmp_path):
+    """Test loading base_url from TOML config file."""
+    user_config_path = tmp_path / "user_config.toml"
+    config_data = {"llm": {"base_url": "http://localhost:4000"}}
+    with open(user_config_path, "wb") as f:
+        tomli_w.dump(config_data, f)
+
+    settings = await load_config(
+        user_config_path=user_config_path,
+        project_config_path=tmp_path / "project_config.toml",
+    )
+
+    assert settings.llm.base_url == "http://localhost:4000"
+
+
+@pytest.mark.asyncio
+async def test_load_extra_headers_from_toml(tmp_path):
+    """Test loading extra_headers from TOML config file."""
+    user_config_path = tmp_path / "user_config.toml"
+    config_data = {
+        "llm": {
+            "extra_headers": {
+                "x-litellm-api-key": "Bearer sk-litellm",
+                "Authorization": "Bearer oauth-token",
+            }
+        }
+    }
+    with open(user_config_path, "wb") as f:
+        tomli_w.dump(config_data, f)
+
+    settings = await load_config(
+        user_config_path=user_config_path,
+        project_config_path=tmp_path / "project_config.toml",
+    )
+
+    assert settings.llm.extra_headers == {
+        "x-litellm-api-key": "Bearer sk-litellm",
+        "Authorization": "Bearer oauth-token",
+    }
+
+
+@pytest.mark.asyncio
+async def test_load_oauth_token_from_toml(tmp_path):
+    """Test loading oauth_token from TOML config file."""
+    user_config_path = tmp_path / "user_config.toml"
+    config_data = {"llm": {"oauth_token": "oauth-test-token-12345"}}
+    with open(user_config_path, "wb") as f:
+        tomli_w.dump(config_data, f)
+
+    settings = await load_config(
+        user_config_path=user_config_path,
+        project_config_path=tmp_path / "project_config.toml",
+    )
+
+    assert settings.llm.oauth_token == "oauth-test-token-12345"
+
+
+@pytest.mark.asyncio
+async def test_full_gateway_config_from_toml(tmp_path):
+    """Test loading complete gateway configuration from TOML."""
+    user_config_path = tmp_path / "user_config.toml"
+    config_data = {
+        "llm": {
+            "model": "anthropic-claude",
+            "base_url": "http://litellm-proxy:4000",
+            "extra_headers": {"x-custom": "header-value"},
+            "oauth_token": "full-oauth-token-12345",
+        }
+    }
+    with open(user_config_path, "wb") as f:
+        tomli_w.dump(config_data, f)
+
+    settings = await load_config(
+        user_config_path=user_config_path,
+        project_config_path=tmp_path / "project_config.toml",
+    )
+
+    assert settings.llm.model == "anthropic-claude"
+    assert settings.llm.base_url == "http://litellm-proxy:4000"
+    assert settings.llm.extra_headers == {"x-custom": "header-value"}
+    assert settings.llm.oauth_token == "full-oauth-token-12345"
+
+
+@pytest.mark.asyncio
+async def test_project_config_overrides_gateway_settings(tmp_path):
+    """Test that project config overrides user gateway settings."""
+    user_config_path = tmp_path / "user_config.toml"
+    project_config_path = tmp_path / "project_config.toml"
+
+    # User config sets base_url
+    user_data = {"llm": {"base_url": "http://user-proxy:4000"}}
+    with open(user_config_path, "wb") as f:
+        tomli_w.dump(user_data, f)
+
+    # Project config overrides base_url
+    project_data = {"llm": {"base_url": "http://project-proxy:4000"}}
+    with open(project_config_path, "wb") as f:
+        tomli_w.dump(project_data, f)
+
+    settings = await load_config(
+        user_config_path=user_config_path,
+        project_config_path=project_config_path,
+    )
+
+    assert settings.llm.base_url == "http://project-proxy:4000"

@@ -10,7 +10,7 @@ from chapgent.core.agent import Agent
 from chapgent.session.models import Session
 from chapgent.session.storage import SessionStorage
 from chapgent.tui.commands import parse_slash_command
-from chapgent.tui.screens import HelpScreen, LLMSettingsScreen, ThemePickerScreen, ToolsScreen
+from chapgent.tui.screens import HelpScreen, LLMSettingsScreen, ThemePickerScreen, ToolsScreen, TUISettingsScreen
 from chapgent.tui.widgets import (
     CommandPalette,
     ConversationPanel,
@@ -332,6 +332,46 @@ class ChapgentApp(App[None]):
                 current_max_output_tokens=current_max_output_tokens,
             ),
             callback=handle_llm_settings,
+        )
+
+    def action_show_tui_settings(self) -> None:
+        """Show the TUI settings modal."""
+
+        def handle_tui_settings(result: dict[str, Any] | None) -> None:
+            """Handle the TUI settings from the modal."""
+            if result is not None:
+                # Persist settings to config
+                try:
+                    from chapgent.config.writer import save_config_value
+
+                    # Save each setting
+                    save_config_value("tui.show_sidebar", str(result["show_sidebar"]).lower())
+                    save_config_value("tui.show_tool_panel", str(result["show_tool_panel"]).lower())
+
+                    self.notify(
+                        "TUI settings updated. Restart to apply sidebar/panel changes.",
+                        severity="information",
+                    )
+
+                    # Update settings if available
+                    if self.settings:
+                        self.settings.tui.show_sidebar = result["show_sidebar"]
+                        self.settings.tui.show_tool_panel = result["show_tool_panel"]
+                except Exception as e:
+                    self.notify(f"Error saving TUI settings: {e}", severity="error")
+
+        # Get current settings
+        show_sidebar = self.settings.tui.show_sidebar if self.settings else True
+        show_tool_panel = self.settings.tui.show_tool_panel if self.settings else True
+        current_theme = self.theme if hasattr(self, "theme") else None
+
+        self.push_screen(
+            TUISettingsScreen(
+                show_sidebar=show_sidebar,
+                show_tool_panel=show_tool_panel,
+                current_theme=current_theme,
+            ),
+            callback=handle_tui_settings,
         )
 
     def action_show_help(self, topic: str | None = None) -> None:

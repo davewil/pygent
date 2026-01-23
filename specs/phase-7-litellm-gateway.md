@@ -443,17 +443,19 @@ base_url = "http://localhost:4000"
 
 ## Testing Checklist
 
-- [ ] `LLMProvider` accepts and passes `base_url` to litellm
-- [ ] `LLMProvider` accepts and passes `extra_headers` to litellm
-- [ ] CLI passes settings to provider correctly
-- [ ] `chapgent auth login` displays OAuth URL
-- [ ] `chapgent auth login` stores token in config
-- [ ] `chapgent auth logout` removes tokens
-- [ ] `chapgent auth status` shows auth state
-- [ ] `chapgent proxy start` generates valid config
-- [ ] `chapgent proxy start` runs litellm subprocess
-- [ ] Environment variables work: `ANTHROPIC_BASE_URL`, `ANTHROPIC_CUSTOM_HEADERS`
-- [ ] TOML config works for base_url and extra_headers
+- [x] `LLMProvider` accepts and passes `base_url` to litellm (TestLLMProviderGatewaySupport)
+- [x] `LLMProvider` accepts and passes `extra_headers` to litellm (TestLLMProviderGatewaySupport)
+- [x] CLI passes settings to provider correctly (TestCLIPassesSettingsToProvider: 4 tests)
+- [x] `chapgent auth login` displays OAuth URL (TestAuthCommands.test_auth_login_shows_options)
+- [x] `chapgent auth login` stores token in config (TestAuthLoginTokenStorage: 4 tests)
+- [x] `chapgent auth logout` removes tokens (TestAuthLogoutTokenRemoval: 1 test)
+- [x] `chapgent auth status` shows auth state (TestAuthCommands: 3 tests)
+- [x] `chapgent proxy start` generates valid config (TestProxyCommands.test_proxy_start_displays_instructions)
+- [x] `chapgent proxy start` runs litellm subprocess (TestProxyCommands: 3 tests)
+- [x] Environment variables work: `ANTHROPIC_BASE_URL`, `ANTHROPIC_CUSTOM_HEADERS` (TestBaseUrlEnvVars, TestExtraHeadersEnvVars, TestOAuthTokenEnvVars, TestGatewayConfigIntegration: 16 tests)
+- [x] TOML config works for base_url and extra_headers (test_config.py: 5 tests)
+
+*All testing criteria verified - Phase 7 testing complete*
 
 ## Dependencies
 

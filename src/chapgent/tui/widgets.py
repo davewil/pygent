@@ -148,6 +148,11 @@ DEFAULT_COMMANDS: list[PaletteCommand] = [
         description="Configure LLM provider, model, and max tokens",
     ),
     PaletteCommand(
+        id="show_tui_settings",
+        name="TUI Settings",
+        description="Configure sidebar, tool panel, and theme",
+    ),
+    PaletteCommand(
         id="show_help",
         name="Help",
         description="Show help topics and documentation",
