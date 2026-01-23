@@ -27,9 +27,7 @@ def chat(session: str | None, new: bool, mock: bool, mode: str | None) -> None:
     """Start interactive chat session."""
     from chapgent.cli.bootstrap import init_agent_and_app
 
-    app = asyncio.run(
-        init_agent_and_app(session_id=session, is_new=new, use_mock=mock, auth_mode_override=mode)
-    )
+    app = asyncio.run(init_agent_and_app(session_id=session, is_new=new, use_mock=mock, auth_mode_override=mode))
     app.run()
 
 

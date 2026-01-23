@@ -544,10 +544,12 @@ class TUISettingsScreen(ModalScreen[dict[str, Any] | None]):
 
         if button_id == "btn-save":
             # Return the settings
-            self.dismiss({
-                "show_sidebar": self.selected_show_sidebar,
-                "show_tool_panel": self.selected_show_tool_panel,
-            })
+            self.dismiss(
+                {
+                    "show_sidebar": self.selected_show_sidebar,
+                    "show_tool_panel": self.selected_show_tool_panel,
+                }
+            )
 
         elif button_id == "btn-cancel":
             self.dismiss(None)
@@ -1324,11 +1326,13 @@ class SystemPromptScreen(ModalScreen[dict[str, Any] | None]):
         if button_id == "btn-save":
             # Get current values and save
             content = self._get_content()
-            self.dismiss({
-                "content": content,
-                "mode": self.selected_mode,
-                "file": self.selected_file,
-            })
+            self.dismiss(
+                {
+                    "content": content,
+                    "mode": self.selected_mode,
+                    "file": self.selected_file,
+                }
+            )
 
         elif button_id == "btn-cancel":
             self.dismiss(None)
@@ -1474,11 +1478,7 @@ class ConfigShowScreen(ModalScreen[None]):
         content.mount(Static(""))  # Spacer
         content.mount(Static("[bold]System Prompt Settings[/bold]", classes="config-section-header"))
         content.mount(Static(f"  Mode: {self.settings.system_prompt.mode}", classes="config-item"))
-        content.mount(
-            Static(
-                f"  File: {self.settings.system_prompt.file or '(none)'}", classes="config-item"
-            )
-        )
+        content.mount(Static(f"  File: {self.settings.system_prompt.file or '(none)'}", classes="config-item"))
         prompt_preview = self.settings.system_prompt.content or "(default)"
         if len(prompt_preview) > 50:
             prompt_preview = prompt_preview[:50] + "..."

@@ -177,14 +177,9 @@ class LLMSettings(BaseModel):
         if v is not None:
             v = v.strip()
             if v == "":
-                raise ValueError(
-                    "base_url cannot be an empty string. "
-                    "Either provide a valid URL or omit the setting."
-                )
+                raise ValueError("base_url cannot be an empty string. Either provide a valid URL or omit the setting.")
             if not (v.startswith("http://") or v.startswith("https://")):
-                raise ValueError(
-                    f"base_url must start with http:// or https://, got: {v}"
-                )
+                raise ValueError(f"base_url must start with http:// or https://, got: {v}")
         return v
 
     @field_validator("extra_headers")

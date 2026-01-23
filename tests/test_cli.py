@@ -507,9 +507,7 @@ class TestAuthLogoutTokenRemoval:
 
         # Verify both tokens are cleared
         calls = [call[0] for call in mock_save.call_args_list]
-        assert ("llm.oauth_token", "", False) in calls or any(
-            c[0] == "llm.oauth_token" and c[1] == "" for c in calls
-        )
+        assert ("llm.oauth_token", "", False) in calls or any(c[0] == "llm.oauth_token" and c[1] == "" for c in calls)
         assert ("llm.api_key", "", False) in calls or any(c[0] == "llm.api_key" and c[1] == "" for c in calls)
         assert "Authentication tokens removed" in result.output
 

@@ -88,9 +88,7 @@ def _setup_claude_max(existing: dict[str, Any], user_config: Path) -> None:
 
         # Token can be in different locations depending on Claude Code version
         oauth_token = (
-            creds.get("accessToken")
-            or creds.get("access_token")
-            or creds.get("claudeAiOauth", {}).get("accessToken")
+            creds.get("accessToken") or creds.get("access_token") or creds.get("claudeAiOauth", {}).get("accessToken")
         )
 
         if not oauth_token:
