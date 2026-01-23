@@ -352,21 +352,21 @@ class TestAuthCommands:
         assert "API key configured" in result.output
 
     @patch("chapgent.cli.load_config")
-    def test_auth_status_with_oauth_token(self, mock_load_config):
-        """Verify status shows OAuth token when configured in max mode."""
+    def test_auth_status_max_mode_shows_claude_cli_status(self, mock_load_config):
+        """Verify status shows Claude Code CLI status in max mode."""
         from chapgent.config.settings import Settings
 
         settings = Settings()
-        settings.llm.auth_mode = "max"  # OAuth requires max mode
-        settings.llm.oauth_token = "oauth-token-12345678901234567890"
+        settings.llm.auth_mode = "max"
         mock_load_config.return_value = settings
 
         runner = CliRunner()
         result = runner.invoke(cli, ["auth", "status"])
 
         assert result.exit_code == 0
-        assert "OAuth token configured" in result.output
         assert "Claude Max" in result.output
+        # Either shows installed or not installed
+        assert "Claude Code CLI" in result.output
 
 
 # =============================================================================
@@ -519,23 +519,25 @@ class TestCLIPassesSettingsToProvider:
 
     @patch("chapgent.cli.ChapgentApp")
     @patch("chapgent.cli.Agent")
-    @patch("chapgent.cli.LLMProvider")
+    @patch("chapgent.cli.ClaudeCodeProvider")
     @patch("chapgent.cli.ToolRegistry")
     @patch("chapgent.cli.SessionStorage")
     @patch("chapgent.cli.PermissionManager")
     @patch("chapgent.cli.load_config")
-    def test_cli_passes_base_url_to_provider(
-        self, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
+    @patch("shutil.which")
+    def test_cli_uses_claude_code_provider_in_max_mode(
+        self, mock_which, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
     ):
-        """Verify CLI passes base_url from settings to LLMProvider in max mode."""
+        """Verify CLI uses ClaudeCodeProvider in max mode."""
         from chapgent.config.settings import LLMSettings, Settings
 
-        # base_url is only used in "max" mode (Claude Max with proxy)
+        # Mock claude CLI being available
+        mock_which.return_value = "/usr/bin/claude"
+
         settings = Settings(
             llm=LLMSettings(
                 auth_mode="max",
-                oauth_token="test-oauth-token",
-                base_url="http://localhost:4000",
+                model="claude-sonnet-4-20250514",
             )
         )
         mock_load_config.return_value = settings
@@ -547,10 +549,10 @@ class TestCLIPassesSettingsToProvider:
             print(result.output)
         assert result.exit_code == 0
 
-        # Verify LLMProvider was called with base_url
+        # Verify ClaudeCodeProvider was called
         mock_provider.assert_called_once()
         call_kwargs = mock_provider.call_args.kwargs
-        assert call_kwargs.get("base_url") == "http://localhost:4000"
+        assert call_kwargs.get("model") == "sonnet"  # Should map to alias
 
     @patch("chapgent.cli.ChapgentApp")
     @patch("chapgent.cli.Agent")
@@ -581,22 +583,24 @@ class TestCLIPassesSettingsToProvider:
 
     @patch("chapgent.cli.ChapgentApp")
     @patch("chapgent.cli.Agent")
-    @patch("chapgent.cli.LLMProvider")
+    @patch("chapgent.cli.ClaudeCodeProvider")
     @patch("chapgent.cli.ToolRegistry")
     @patch("chapgent.cli.SessionStorage")
     @patch("chapgent.cli.PermissionManager")
     @patch("chapgent.cli.load_config")
-    def test_cli_passes_oauth_token_as_authorization_header(
-        self, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
+    @patch("shutil.which")
+    def test_cli_max_mode_requires_claude_cli(
+        self, mock_which, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
     ):
-        """Verify CLI converts oauth_token to Authorization header for LLMProvider in max mode."""
+        """Verify CLI errors if claude CLI is not installed in max mode."""
         from chapgent.config.settings import LLMSettings, Settings
+
+        # Mock claude CLI NOT being available
+        mock_which.return_value = None
 
         settings = Settings(
             llm=LLMSettings(
-                auth_mode="max",  # OAuth token requires max mode
-                oauth_token="oauth-test-token-12345678901234567890",
-                base_url="http://localhost:4000",
+                auth_mode="max",
             )
         )
         mock_load_config.return_value = settings
@@ -604,35 +608,31 @@ class TestCLIPassesSettingsToProvider:
         runner = CliRunner()
         result = runner.invoke(cli, ["chat"])
 
-        assert result.exit_code == 0
-
-        # Verify LLMProvider was called with Authorization header
-        mock_provider.assert_called_once()
-        call_kwargs = mock_provider.call_args.kwargs
-        extra_headers = call_kwargs.get("extra_headers", {})
-        assert "Authorization" in extra_headers
-        assert extra_headers["Authorization"] == "Bearer oauth-test-token-12345678901234567890"
+        # Should fail with error about missing claude CLI
+        assert result.exit_code != 0
+        assert "Claude Code CLI" in result.output or "npm install" in result.output
 
     @patch("chapgent.cli.ChapgentApp")
     @patch("chapgent.cli.Agent")
-    @patch("chapgent.cli.LLMProvider")
+    @patch("chapgent.cli.ClaudeCodeProvider")
     @patch("chapgent.cli.ToolRegistry")
     @patch("chapgent.cli.SessionStorage")
     @patch("chapgent.cli.PermissionManager")
     @patch("chapgent.cli.load_config")
-    def test_cli_merges_oauth_with_existing_extra_headers(
-        self, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
+    @patch("shutil.which")
+    def test_cli_max_mode_maps_model_aliases(
+        self, mock_which, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
     ):
-        """Verify CLI merges oauth_token Authorization with existing extra_headers in max mode."""
+        """Verify CLI maps model names to Claude Code aliases in max mode."""
         from chapgent.config.settings import LLMSettings, Settings
 
-        existing_headers = {"x-custom": "value"}
+        mock_which.return_value = "/usr/bin/claude"
+
+        # Test with opus model
         settings = Settings(
             llm=LLMSettings(
-                auth_mode="max",  # OAuth token requires max mode
-                oauth_token="oauth-test-token-12345678901234567890",
-                base_url="http://localhost:4000",
-                extra_headers=existing_headers,
+                auth_mode="max",
+                model="claude-opus-4-5-20251101",
             )
         )
         mock_load_config.return_value = settings
@@ -642,8 +642,7 @@ class TestCLIPassesSettingsToProvider:
 
         assert result.exit_code == 0
 
-        # Verify both existing headers and Authorization are present
+        # Verify ClaudeCodeProvider was called with mapped alias
+        mock_provider.assert_called_once()
         call_kwargs = mock_provider.call_args.kwargs
-        extra_headers = call_kwargs.get("extra_headers", {})
-        assert extra_headers.get("x-custom") == "value"
-        assert extra_headers.get("Authorization") == "Bearer oauth-test-token-12345678901234567890"
+        assert call_kwargs.get("model") == "opus"

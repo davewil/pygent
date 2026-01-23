@@ -19,7 +19,7 @@ from chapgent.context.detection import detect_project_context
 from chapgent.core.agent import Agent
 from chapgent.core.mock_provider import MockLLMProvider
 from chapgent.core.permissions import PermissionManager
-from chapgent.core.providers import LLMProvider
+from chapgent.core.providers import ClaudeCodeProvider, LLMProvider
 from chapgent.session.models import Session
 from chapgent.session.storage import SessionStorage
 from chapgent.tools.base import ToolCategory
@@ -47,6 +47,7 @@ def _start_proxy_background(host: str = DEFAULT_PROXY_HOST, port: int = DEFAULT_
 
     Returns True if proxy started successfully, False otherwise.
     """
+    import os
     import tempfile
     import time
 
@@ -94,11 +95,18 @@ def _start_proxy_background(host: str = DEFAULT_PROXY_HOST, port: int = DEFAULT_
             return False
 
     try:
+        # LiteLLM requires ANTHROPIC_API_KEY env var even when using OAuth via proxy.
+        # The actual auth comes from the forwarded Authorization header, but the proxy
+        # needs this env var to initialize. We use a placeholder value.
+        env = os.environ.copy()
+        env["ANTHROPIC_API_KEY"] = env.get("ANTHROPIC_API_KEY", "placeholder-for-oauth-proxy")
+
         subprocess.Popen(
             [litellm_cmd, "--config", str(config_path), "--host", host, "--port", str(port)],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             start_new_session=True,  # Detach from parent process
+            env=env,
         )
     except FileNotFoundError:
         return False
@@ -145,7 +153,7 @@ async def _init_agent_and_app(
     settings = await load_config()
 
     # 2. Determine auth mode and validate
-    provider: LLMProvider
+    provider: LLMProvider | ClaudeCodeProvider
     if use_mock:
         provider = MockLLMProvider(delay=0.3)
     else:
@@ -153,56 +161,32 @@ async def _init_agent_and_app(
         auth_mode = auth_mode_override or settings.llm.auth_mode
 
         if auth_mode == "max":
-            # Claude Max mode: requires OAuth token, uses proxy
-            if not settings.llm.oauth_token:
+            # Claude Max mode: delegate to Claude Code CLI
+            # Claude Code handles OAuth authentication internally
+            import shutil
+
+            if not shutil.which("claude"):
                 raise click.ClickException(
-                    "Claude Max mode requires OAuth token.\n\n"
-                    "Import from Claude Code CLI:\n"
-                    "  chapgent auth login --import-claude-code\n\n"
+                    "Claude Max mode requires Claude Code CLI.\n\n"
+                    "Install Claude Code:\n"
+                    "  npm install -g @anthropic-ai/claude-code\n\n"
+                    "Then authenticate:\n"
+                    "  claude auth login\n\n"
                     "Or switch to API mode:\n"
                     "  chapgent chat --mode api"
                 )
 
-            # Auto-start proxy if needed
-            if not settings.llm.base_url:
-                proxy_url = f"http://{DEFAULT_PROXY_HOST}:{DEFAULT_PROXY_PORT}"
+            # Map model name to Claude Code alias
+            model_alias = settings.llm.model
+            if "sonnet" in model_alias.lower():
+                model_alias = "sonnet"
+            elif "opus" in model_alias.lower():
+                model_alias = "opus"
+            elif "haiku" in model_alias.lower():
+                model_alias = "haiku"
 
-                if _is_proxy_running():
-                    click.echo(f"✓ Proxy already running at {proxy_url}")
-                else:
-                    click.echo("Starting LiteLLM proxy for Claude Max...")
-                    if not _start_proxy_background():
-                        raise click.ClickException(
-                            "Failed to start proxy. Make sure litellm is installed:\n"
-                            "  pip install 'litellm[proxy]'\n\n"
-                            "Or start the proxy manually:\n"
-                            "  chapgent proxy start"
-                        )
-                    click.echo(f"✓ Proxy started at {proxy_url}")
-
-                # Configure base_url
-                try:
-                    save_config_value("llm.base_url", proxy_url)
-                    click.echo(f"✓ Configured llm.base_url = {proxy_url}\n")
-                except Exception:
-                    pass  # Non-fatal, we'll use it anyway
-
-                settings.llm.base_url = proxy_url
-
-            # Build headers with OAuth token and required beta header
-            headers = dict(settings.llm.extra_headers) if settings.llm.extra_headers else {}
-            headers["Authorization"] = f"Bearer {settings.llm.oauth_token}"
-            headers["anthropic-beta"] = "oauth-2025-04-20"  # Required for OAuth tokens
-
-            # Use placeholder API key to avoid LiteLLM validation error
-            # The proxy will use the Authorization header instead
-            provider = LLMProvider(
-                model=settings.llm.model,
-                api_key="oauth-via-proxy",
-                base_url=settings.llm.base_url,
-                extra_headers=headers,
-            )
-            click.echo("Using Claude Max (subscription)\n")
+            provider = ClaudeCodeProvider(model=model_alias)
+            click.echo("Using Claude Max (via Claude Code CLI)\n")
 
         else:  # auth_mode == "api"
             # API mode: direct API key, no proxy needed
@@ -1083,19 +1067,32 @@ def status() -> None:
 
     # Show credentials based on mode
     if mode == "max":
-        if settings.llm.oauth_token:
-            console.print("[green]✓ OAuth token configured[/green]")
-            token = settings.llm.oauth_token
-            masked = token[:8] + "..." + token[-4:] if len(token) > 12 else "****"
-            console.print(f"  Token: {masked}")
-        else:
-            console.print("[yellow]✗ OAuth token not configured[/yellow]")
-            console.print("  Run: chapgent auth login --import-claude-code")
+        import shutil
 
-        if settings.llm.base_url:
-            console.print(f"[green]✓ Proxy URL: {settings.llm.base_url}[/green]")
+        # Check if Claude Code CLI is installed
+        claude_path = shutil.which("claude")
+        if claude_path:
+            console.print("[green]✓ Claude Code CLI installed[/green]")
+            console.print(f"  Path: {claude_path}")
+
+            # Check if authenticated by running claude auth status
+            import subprocess
+
+            try:
+                result = subprocess.run(
+                    ["claude", "--version"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                if result.returncode == 0:
+                    console.print(f"  Version: {result.stdout.strip()}")
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
         else:
-            console.print("[dim]  Proxy URL: (auto-configured on chat)[/dim]")
+            console.print("[yellow]✗ Claude Code CLI not installed[/yellow]")
+            console.print("  Install: npm install -g @anthropic-ai/claude-code")
+            console.print("  Then run: claude auth login")
     else:  # api mode
         if settings.llm.api_key:
             console.print("[green]✓ API key configured[/green]")

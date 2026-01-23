@@ -199,6 +199,123 @@ class LLMResponse:
     usage: TokenUsage | None = None
 
 
+class ClaudeCodeProvider:
+    """Provider that delegates to Claude Code CLI for Claude Max subscription.
+
+    Spawns claude --print as a subprocess and uses its OAuth authentication.
+    Claude Code runs its own agent loop with tools like Bash, Read, Edit, etc.
+    """
+
+    def __init__(self, model: str = "sonnet") -> None:
+        """Initialize Claude Code provider.
+
+        Args:
+            model: Model alias ('sonnet', 'opus', 'haiku') or full name.
+        """
+        self.model = model
+        self._session_id: str | None = None
+
+    async def complete(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[ToolDefinition],  # noqa: ARG002 - Claude Code uses its own tools
+        max_output_tokens: int = 4096,  # noqa: ARG002 - Claude Code manages this
+    ) -> LLMResponse:
+        """Send completion request via Claude Code CLI.
+
+        Note: Claude Code runs its own agent loop and executes tools internally.
+        The tools parameter is ignored - Claude Code uses its own tool set.
+
+        Args:
+            messages: List of message dicts (role, content).
+            tools: Ignored - Claude Code uses its own tools.
+            max_output_tokens: Ignored - Claude Code manages output length.
+
+        Returns:
+            LLMResponse containing the final text result.
+        """
+        import asyncio
+        import json
+        import shutil
+
+        # Find claude binary
+        claude_path = shutil.which("claude")
+        if not claude_path:
+            raise LLMError("Claude Code CLI not found. Install with: npm install -g @anthropic-ai/claude-code")
+
+        # Extract the last user message as the prompt
+        prompt = ""
+        for msg in reversed(messages):
+            if msg.get("role") == "user":
+                content = msg.get("content", "")
+                if isinstance(content, str):
+                    prompt = content
+                elif isinstance(content, list):
+                    # Extract text from content blocks
+                    for block in content:
+                        if isinstance(block, dict) and block.get("type") == "text":
+                            prompt = block.get("text", "")
+                            break
+                break
+
+        if not prompt:
+            raise InvalidRequestError("No user message found in messages")
+
+        # Build command
+        cmd = [claude_path, "--print", "--output-format", "json", "--model", self.model]
+
+        # Resume session if we have one
+        if self._session_id:
+            cmd.extend(["--resume", self._session_id])
+
+        # Run claude CLI
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+
+        stdout, stderr = await proc.communicate(input=prompt.encode())
+
+        if proc.returncode != 0:
+            error_msg = stderr.decode() if stderr else "Unknown error"
+            raise LLMError(f"Claude Code CLI failed: {error_msg}")
+
+        # Parse JSON response
+        try:
+            result = json.loads(stdout.decode())
+        except json.JSONDecodeError as e:
+            raise LLMError(f"Failed to parse Claude Code response: {e}")
+
+        # Store session ID for continuation
+        self._session_id = result.get("session_id")
+
+        # Extract result text
+        result_text = result.get("result", "")
+
+        # Build usage from response
+        usage_data = result.get("usage", {})
+        usage = TokenUsage(
+            prompt_tokens=usage_data.get("input_tokens", 0) + usage_data.get("cache_read_input_tokens", 0),
+            completion_tokens=usage_data.get("output_tokens", 0),
+            total_tokens=(
+                usage_data.get("input_tokens", 0)
+                + usage_data.get("cache_read_input_tokens", 0)
+                + usage_data.get("output_tokens", 0)
+            ),
+        )
+
+        # Determine stop reason
+        stop_reason = "end_turn" if result.get("subtype") == "success" else "error"
+
+        return LLMResponse(
+            content=[TextBlock(text=result_text)],
+            stop_reason=stop_reason,
+            usage=usage,
+        )
+
+
 class LLMProvider:
     """Wrapper around litellm for LLM interactions.
 
