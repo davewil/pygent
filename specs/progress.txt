@@ -1670,3 +1670,21 @@
   - Learned: Auto-configuration of base_url on proxy start greatly improves UX for Claude Max users
   - Learned: Keeping --no-configure flag allows advanced users to control behavior
   - Total: 1590 tests pass
+2026-01-23: Auto-start Proxy in chapgent chat (Phase 7 UX Enhancement):
+  - `chapgent chat` now auto-starts the LiteLLM proxy when OAuth token is set but no proxy is running:
+    * Added _is_proxy_running() helper to check if proxy is listening on port
+    * Added _start_proxy_background() helper to launch proxy in background with subprocess.Popen
+    * Proxy starts detached from parent process (start_new_session=True)
+    * Waits up to 10 seconds for proxy to be ready before continuing
+  - Flow when user has oauth_token configured:
+    1. Check if proxy already running - if so, use it
+    2. If not running, auto-start proxy in background
+    3. Configure base_url in settings
+    4. Proceed with chat
+  - User experience now: just run `chapgent chat` - everything is automatic
+  - Added DEFAULT_PROXY_HOST and DEFAULT_PROXY_PORT constants (127.0.0.1:4000)
+  - Error handling: shows helpful message if litellm not installed
+  - Learned: subprocess.Popen with start_new_session=True detaches child process from parent
+  - Learned: socket.create_connection is reliable way to check if port is listening
+  - Learned: DEVNULL for stdout/stderr keeps background process quiet
+  - Total: 1590 tests pass

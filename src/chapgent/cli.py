@@ -1,4 +1,5 @@
 import asyncio
+import subprocess
 import uuid
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,7 @@ from chapgent.config.prompt import PromptLoadError, build_full_system_prompt
 from chapgent.config.writer import (
     ConfigWriteError,
     get_config_paths,
+    save_config_value,
     write_default_config,
     write_toml,
 )
@@ -23,6 +25,79 @@ from chapgent.session.storage import SessionStorage
 from chapgent.tools.base import ToolCategory
 from chapgent.tools.registry import ToolRegistry
 from chapgent.tui.app import ChapgentApp
+
+# Default proxy settings
+DEFAULT_PROXY_HOST = "127.0.0.1"
+DEFAULT_PROXY_PORT = 4000
+
+
+def _is_proxy_running(host: str = DEFAULT_PROXY_HOST, port: int = DEFAULT_PROXY_PORT) -> bool:
+    """Check if proxy is already running by trying to connect."""
+    import socket
+
+    try:
+        with socket.create_connection((host, port), timeout=1):
+            return True
+    except (ConnectionRefusedError, OSError, TimeoutError):
+        return False
+
+
+def _start_proxy_background(host: str = DEFAULT_PROXY_HOST, port: int = DEFAULT_PROXY_PORT) -> bool:
+    """Start the LiteLLM proxy in the background.
+
+    Returns True if proxy started successfully, False otherwise.
+    """
+    import tempfile
+    import time
+
+    import yaml
+
+    # Generate LiteLLM config
+    config = {
+        "model_list": [
+            {
+                "model_name": "anthropic-claude",
+                "litellm_params": {"model": "anthropic/claude-sonnet-4-20250514"},
+            },
+            {
+                "model_name": "claude-sonnet-4-20250514",
+                "litellm_params": {"model": "anthropic/claude-sonnet-4-20250514"},
+            },
+            {
+                "model_name": "claude-3-5-haiku-20241022",
+                "litellm_params": {"model": "anthropic/claude-3-5-haiku-20241022"},
+            },
+        ],
+        "general_settings": {"forward_client_headers_to_llm_api": True},
+        "litellm_settings": {"drop_params": True},
+    }
+
+    # Write config file
+    config_dir = Path(tempfile.gettempdir()) / "chapgent"
+    config_dir.mkdir(exist_ok=True)
+    config_path = config_dir / "litellm-proxy.yaml"
+
+    with open(config_path, "w") as f:
+        yaml.dump(config, f)
+
+    # Start proxy in background
+    try:
+        subprocess.Popen(
+            ["litellm", "--config", str(config_path), "--host", host, "--port", str(port)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,  # Detach from parent process
+        )
+    except FileNotFoundError:
+        return False
+
+    # Wait for proxy to be ready (up to 10 seconds)
+    for _ in range(20):
+        time.sleep(0.5)
+        if _is_proxy_running(host, port):
+            return True
+
+    return False
 
 
 @click.group()
@@ -49,7 +124,7 @@ async def _init_agent_and_app(
     # 1. Load Config
     settings = await load_config()
 
-    # 2. Validate authentication configuration
+    # 2. Validate authentication configuration and auto-start proxy if needed
     if not use_mock:
         has_api_key = bool(settings.llm.api_key)
         has_oauth = bool(settings.llm.oauth_token)
@@ -63,14 +138,34 @@ async def _init_agent_and_app(
                 "  - Run 'chapgent config set llm.api_key YOUR_KEY'"
             )
 
+        # Auto-start proxy for Claude Max users
         if has_oauth and not has_base_url:
-            raise click.ClickException(
-                "OAuth token configured but no proxy URL set.\n\n"
-                "Claude Max requires a LiteLLM proxy. Either:\n"
-                "  1. Start the proxy: chapgent proxy start --port 4000\n"
-                "  2. Set the URL: chapgent config set llm.base_url http://localhost:4000\n\n"
-                "Or run 'chapgent setup' to reconfigure."
-            )
+            proxy_url = f"http://{DEFAULT_PROXY_HOST}:{DEFAULT_PROXY_PORT}"
+
+            # Check if proxy is already running
+            if _is_proxy_running():
+                click.echo(f"✓ Proxy already running at {proxy_url}")
+            else:
+                click.echo("Starting LiteLLM proxy for Claude Max...")
+                if not _start_proxy_background():
+                    raise click.ClickException(
+                        "Failed to start proxy. Make sure litellm is installed:\n"
+                        "  pip install 'litellm[proxy]'\n\n"
+                        "Or start the proxy manually:\n"
+                        "  chapgent proxy start"
+                    )
+                click.echo(f"✓ Proxy started at {proxy_url}")
+
+            # Configure base_url
+            try:
+                save_config_value("llm.base_url", proxy_url)
+                click.echo(f"✓ Configured llm.base_url = {proxy_url}\n")
+            except Exception:
+                pass  # Non-fatal, we'll use it anyway
+
+            # Update settings with the proxy URL
+            settings.llm.base_url = proxy_url
+            has_base_url = True
 
     # 3. Initialize Components
     provider: LLMProvider
