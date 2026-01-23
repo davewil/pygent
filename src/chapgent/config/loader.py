@@ -16,6 +16,7 @@ ENV_MAPPINGS: dict[str, str] = {
     # Chapgent-specific env vars (highest priority)
     "CHAPGENT_MODEL": "llm.model",
     "CHAPGENT_API_KEY": "llm.api_key",
+    "CHAPGENT_AUTH_MODE": "llm.auth_mode",  # "api" or "max"
     "CHAPGENT_MAX_OUTPUT_TOKENS": "llm.max_output_tokens",
     "CHAPGENT_MAX_TOKENS": "llm.max_output_tokens",  # Backwards compat
     "CHAPGENT_PROVIDER": "llm.provider",

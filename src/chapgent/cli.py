@@ -111,8 +111,16 @@ async def _init_agent_and_app(
     session_id: str | None = None,
     is_new: bool = False,
     use_mock: bool = False,
+    auth_mode_override: str | None = None,
 ) -> ChapgentApp:
-    """Initialize agent and app components."""
+    """Initialize agent and app components.
+
+    Args:
+        session_id: Optional session ID to resume.
+        is_new: If True, create new session even if session_id not found.
+        use_mock: If True, use mock provider for testing.
+        auth_mode_override: Override auth_mode from config ("api" or "max").
+    """
     import os
 
     from chapgent.core.logging import setup_logging
@@ -124,66 +132,86 @@ async def _init_agent_and_app(
     # 1. Load Config
     settings = await load_config()
 
-    # 2. Validate authentication configuration and auto-start proxy if needed
-    if not use_mock:
-        has_api_key = bool(settings.llm.api_key)
-        has_oauth = bool(settings.llm.oauth_token)
-        has_base_url = bool(settings.llm.base_url)
-
-        if not has_api_key and not has_oauth:
-            raise click.ClickException(
-                "No authentication configured.\n\n"
-                "Run 'chapgent setup' to configure authentication, or:\n"
-                "  - Set ANTHROPIC_API_KEY environment variable\n"
-                "  - Run 'chapgent config set llm.api_key YOUR_KEY'"
-            )
-
-        # Auto-start proxy for Claude Max users
-        if has_oauth and not has_base_url:
-            proxy_url = f"http://{DEFAULT_PROXY_HOST}:{DEFAULT_PROXY_PORT}"
-
-            # Check if proxy is already running
-            if _is_proxy_running():
-                click.echo(f"✓ Proxy already running at {proxy_url}")
-            else:
-                click.echo("Starting LiteLLM proxy for Claude Max...")
-                if not _start_proxy_background():
-                    raise click.ClickException(
-                        "Failed to start proxy. Make sure litellm is installed:\n"
-                        "  pip install 'litellm[proxy]'\n\n"
-                        "Or start the proxy manually:\n"
-                        "  chapgent proxy start"
-                    )
-                click.echo(f"✓ Proxy started at {proxy_url}")
-
-            # Configure base_url
-            try:
-                save_config_value("llm.base_url", proxy_url)
-                click.echo(f"✓ Configured llm.base_url = {proxy_url}\n")
-            except Exception:
-                pass  # Non-fatal, we'll use it anyway
-
-            # Update settings with the proxy URL
-            settings.llm.base_url = proxy_url
-            has_base_url = True
-
-    # 3. Initialize Components
+    # 2. Determine auth mode and validate
     provider: LLMProvider
     if use_mock:
         provider = MockLLMProvider(delay=0.3)
     else:
-        # Build headers - merge extra_headers with OAuth token if present
-        headers = dict(settings.llm.extra_headers) if settings.llm.extra_headers else {}
-        if settings.llm.oauth_token:
-            # OAuth token for Claude Max subscription via LiteLLM proxy
+        # Determine effective auth mode
+        auth_mode = auth_mode_override or settings.llm.auth_mode
+
+        if auth_mode == "max":
+            # Claude Max mode: requires OAuth token, uses proxy
+            if not settings.llm.oauth_token:
+                raise click.ClickException(
+                    "Claude Max mode requires OAuth token.\n\n"
+                    "Import from Claude Code CLI:\n"
+                    "  chapgent auth login --import-claude-code\n\n"
+                    "Or switch to API mode:\n"
+                    "  chapgent chat --mode api"
+                )
+
+            # Auto-start proxy if needed
+            if not settings.llm.base_url:
+                proxy_url = f"http://{DEFAULT_PROXY_HOST}:{DEFAULT_PROXY_PORT}"
+
+                if _is_proxy_running():
+                    click.echo(f"✓ Proxy already running at {proxy_url}")
+                else:
+                    click.echo("Starting LiteLLM proxy for Claude Max...")
+                    if not _start_proxy_background():
+                        raise click.ClickException(
+                            "Failed to start proxy. Make sure litellm is installed:\n"
+                            "  pip install 'litellm[proxy]'\n\n"
+                            "Or start the proxy manually:\n"
+                            "  chapgent proxy start"
+                        )
+                    click.echo(f"✓ Proxy started at {proxy_url}")
+
+                # Configure base_url
+                try:
+                    save_config_value("llm.base_url", proxy_url)
+                    click.echo(f"✓ Configured llm.base_url = {proxy_url}\n")
+                except Exception:
+                    pass  # Non-fatal, we'll use it anyway
+
+                settings.llm.base_url = proxy_url
+
+            # Build headers with OAuth token
+            headers = dict(settings.llm.extra_headers) if settings.llm.extra_headers else {}
             headers["Authorization"] = f"Bearer {settings.llm.oauth_token}"
 
-        provider = LLMProvider(
-            model=settings.llm.model,
-            api_key=settings.llm.api_key,
-            base_url=settings.llm.base_url,
-            extra_headers=headers if headers else None,
-        )
+            # Use placeholder API key to avoid LiteLLM validation error
+            # The proxy will use the Authorization header instead
+            provider = LLMProvider(
+                model=settings.llm.model,
+                api_key="oauth-via-proxy",
+                base_url=settings.llm.base_url,
+                extra_headers=headers,
+            )
+            click.echo("Using Claude Max (subscription)\n")
+
+        else:  # auth_mode == "api"
+            # API mode: direct API key, no proxy needed
+            if not settings.llm.api_key:
+                raise click.ClickException(
+                    "API mode requires an API key.\n\n"
+                    "Set your Anthropic API key:\n"
+                    "  export ANTHROPIC_API_KEY=sk-...\n"
+                    "  # or\n"
+                    "  chapgent config set llm.api_key sk-...\n\n"
+                    "Or switch to Claude Max mode:\n"
+                    "  chapgent chat --mode max"
+                )
+
+            # Direct API call - no proxy, no extra headers needed
+            headers = dict(settings.llm.extra_headers) if settings.llm.extra_headers else None
+            provider = LLMProvider(
+                model=settings.llm.model,
+                api_key=settings.llm.api_key,
+                base_url=None,  # Direct to Anthropic
+                extra_headers=headers,
+            )
 
     tools = ToolRegistry()
     # Register basic tools
@@ -268,9 +296,16 @@ async def _init_agent_and_app(
 @click.option("--session", "-s", help="Resume a session by ID")
 @click.option("--new", "-n", is_flag=True, help="Start a new session")
 @click.option("--mock", "-m", is_flag=True, help="Use mock provider (no API key needed)")
-def chat(session: str | None, new: bool, mock: bool) -> None:
+@click.option(
+    "--mode",
+    type=click.Choice(["api", "max"]),
+    help="Auth mode: 'api' for direct API key, 'max' for Claude Max subscription",
+)
+def chat(session: str | None, new: bool, mock: bool, mode: str | None) -> None:
     """Start interactive chat session."""
-    app = asyncio.run(_init_agent_and_app(session_id=session, is_new=new, use_mock=mock))
+    app = asyncio.run(
+        _init_agent_and_app(session_id=session, is_new=new, use_mock=mock, auth_mode_override=mode)
+    )
     app.run()
 
 
@@ -783,6 +818,7 @@ def _setup_api_key(
             return
 
     existing["llm"]["api_key"] = api_key
+    existing["llm"]["auth_mode"] = "api"  # Set auth mode
     # Clear any proxy settings that might conflict
     existing["llm"].pop("base_url", None)
     existing["llm"].pop("oauth_token", None)
@@ -875,6 +911,7 @@ def _setup_claude_max(existing: dict[str, Any], user_config: Path) -> None:
         base_url = click.prompt("Remote proxy URL", default="http://localhost:4000")
 
     existing["llm"]["base_url"] = base_url
+    existing["llm"]["auth_mode"] = "max"  # Set auth mode
     # Clear API key if using OAuth
     existing["llm"].pop("api_key", None)
 
@@ -1023,26 +1060,41 @@ def status() -> None:
 
     console.print("\n[bold]Authentication Status[/bold]\n")
 
-    if settings.llm.oauth_token:
-        console.print("[green]✓ Claude Max OAuth token configured[/green]")
-        # Show partial token for verification
-        token = settings.llm.oauth_token
-        masked = token[:8] + "..." + token[-4:] if len(token) > 12 else "****"
-        console.print(f"  Token: {masked}")
-    elif settings.llm.api_key:
-        console.print("[green]✓ API key configured[/green]")
-        # Show partial key for verification
-        key = settings.llm.api_key
-        masked = key[:8] + "..." + key[-4:] if len(key) > 12 else "****"
-        console.print(f"  Key: {masked}")
+    # Show auth mode
+    mode = settings.llm.auth_mode
+    if mode == "max":
+        console.print("[cyan]Mode: Claude Max (subscription)[/cyan]")
     else:
-        console.print("[yellow]✗ No authentication configured[/yellow]")
-        console.print("  Run: chapgent auth login")
+        console.print("[cyan]Mode: Claude API (pay-per-token)[/cyan]")
+    console.print()
 
-    # Show base_url if configured (for proxy)
-    if settings.llm.base_url:
-        console.print(f"\n[dim]Proxy URL: {settings.llm.base_url}[/dim]")
+    # Show credentials based on mode
+    if mode == "max":
+        if settings.llm.oauth_token:
+            console.print("[green]✓ OAuth token configured[/green]")
+            token = settings.llm.oauth_token
+            masked = token[:8] + "..." + token[-4:] if len(token) > 12 else "****"
+            console.print(f"  Token: {masked}")
+        else:
+            console.print("[yellow]✗ OAuth token not configured[/yellow]")
+            console.print("  Run: chapgent auth login --import-claude-code")
 
+        if settings.llm.base_url:
+            console.print(f"[green]✓ Proxy URL: {settings.llm.base_url}[/green]")
+        else:
+            console.print("[dim]  Proxy URL: (auto-configured on chat)[/dim]")
+    else:  # api mode
+        if settings.llm.api_key:
+            console.print("[green]✓ API key configured[/green]")
+            key = settings.llm.api_key
+            masked = key[:8] + "..." + key[-4:] if len(key) > 12 else "****"
+            console.print(f"  Key: {masked}")
+        else:
+            console.print("[yellow]✗ API key not configured[/yellow]")
+            console.print("  Run: chapgent setup")
+
+    console.print()
+    console.print("[dim]Switch modes with: chapgent chat --mode api|max[/dim]")
     console.print()
 
 

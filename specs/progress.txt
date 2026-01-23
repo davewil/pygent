@@ -1688,3 +1688,28 @@
   - Learned: socket.create_connection is reliable way to check if port is listening
   - Learned: DEVNULL for stdout/stderr keeps background process quiet
   - Total: 1590 tests pass
+2026-01-23: Implemented Auth Mode Selection (Phase 7 - Claude Max vs Claude API):
+  - Added `auth_mode` field to LLMSettings (Literal["api", "max"], default="api"):
+    * "api" = direct Anthropic API key (pay-per-token)
+    * "max" = Claude Max subscription (OAuth via LiteLLM proxy)
+  - Added CHAPGENT_AUTH_MODE env var mapping in loader.py
+  - Rewrote provider initialization in _init_agent_and_app():
+    * Validates credentials based on auth_mode
+    * In "max" mode: requires oauth_token, auto-starts proxy, uses placeholder api_key
+    * In "api" mode: requires api_key, no proxy needed, base_url=None
+    * Fix: Pass "oauth-via-proxy" as api_key in max mode to avoid LiteLLM validation error
+  - Added --mode flag to `chapgent chat` command:
+    * `chapgent chat --mode api` - use API key
+    * `chapgent chat --mode max` - use Claude Max subscription
+  - Updated setup wizard to set auth_mode based on user's choice:
+    * Option 1 (API Key) -> auth_mode="api"
+    * Option 2 (Claude Max) -> auth_mode="max"
+  - Updated `auth status` command to show:
+    * Current mode ("Claude Max (subscription)" or "Claude API (pay-per-token)")
+    * Credentials based on mode (OAuth token vs API key)
+    * Switch mode hint: "chapgent chat --mode api|max"
+  - Updated tests to use auth_mode="max" when testing OAuth/proxy features
+  - Learned: LiteLLM validates api_key before making requests - need placeholder for OAuth flow
+  - Learned: Separate validation logic by mode makes error messages clearer for users
+  - Learned: CLI flag override allows per-session mode switching without config changes
+  - Total: 1590 tests pass

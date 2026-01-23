@@ -333,7 +333,8 @@ class TestAuthCommands:
         result = runner.invoke(cli, ["auth", "status"])
 
         assert result.exit_code == 0
-        assert "No authentication configured" in result.output
+        # Default mode is "api", so it should show API key not configured
+        assert "API key not configured" in result.output
 
     @patch("chapgent.cli.load_config")
     def test_auth_status_with_api_key(self, mock_load_config):
@@ -352,10 +353,11 @@ class TestAuthCommands:
 
     @patch("chapgent.cli.load_config")
     def test_auth_status_with_oauth_token(self, mock_load_config):
-        """Verify status shows OAuth token when configured."""
+        """Verify status shows OAuth token when configured in max mode."""
         from chapgent.config.settings import Settings
 
         settings = Settings()
+        settings.llm.auth_mode = "max"  # OAuth requires max mode
         settings.llm.oauth_token = "oauth-token-12345678901234567890"
         mock_load_config.return_value = settings
 
@@ -364,6 +366,7 @@ class TestAuthCommands:
 
         assert result.exit_code == 0
         assert "OAuth token configured" in result.output
+        assert "Claude Max" in result.output
 
 
 # =============================================================================
@@ -524,10 +527,17 @@ class TestCLIPassesSettingsToProvider:
     def test_cli_passes_base_url_to_provider(
         self, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
     ):
-        """Verify CLI passes base_url from settings to LLMProvider."""
+        """Verify CLI passes base_url from settings to LLMProvider in max mode."""
         from chapgent.config.settings import LLMSettings, Settings
 
-        settings = Settings(llm=LLMSettings(api_key="test-key", base_url="http://localhost:4000"))
+        # base_url is only used in "max" mode (Claude Max with proxy)
+        settings = Settings(
+            llm=LLMSettings(
+                auth_mode="max",
+                oauth_token="test-oauth-token",
+                base_url="http://localhost:4000",
+            )
+        )
         mock_load_config.return_value = settings
 
         runner = CliRunner()
@@ -579,13 +589,14 @@ class TestCLIPassesSettingsToProvider:
     def test_cli_passes_oauth_token_as_authorization_header(
         self, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
     ):
-        """Verify CLI converts oauth_token to Authorization header for LLMProvider."""
+        """Verify CLI converts oauth_token to Authorization header for LLMProvider in max mode."""
         from chapgent.config.settings import LLMSettings, Settings
 
         settings = Settings(
             llm=LLMSettings(
+                auth_mode="max",  # OAuth token requires max mode
                 oauth_token="oauth-test-token-12345678901234567890",
-                base_url="http://localhost:4000",  # OAuth requires base_url
+                base_url="http://localhost:4000",
             )
         )
         mock_load_config.return_value = settings
@@ -612,12 +623,13 @@ class TestCLIPassesSettingsToProvider:
     def test_cli_merges_oauth_with_existing_extra_headers(
         self, mock_load_config, mock_permissions, mock_storage, mock_registry, mock_provider, mock_agent, mock_app
     ):
-        """Verify CLI merges oauth_token Authorization with existing extra_headers."""
+        """Verify CLI merges oauth_token Authorization with existing extra_headers in max mode."""
         from chapgent.config.settings import LLMSettings, Settings
 
         existing_headers = {"x-custom": "value"}
         settings = Settings(
             llm=LLMSettings(
+                auth_mode="max",  # OAuth token requires max mode
                 oauth_token="oauth-test-token-12345678901234567890",
                 base_url="http://localhost:4000",
                 extra_headers=existing_headers,

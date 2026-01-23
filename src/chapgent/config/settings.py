@@ -117,6 +117,7 @@ class LLMSettings(BaseModel):
 
     Attributes:
         provider: LLM provider name (e.g., "anthropic", "openai", "ollama").
+        auth_mode: Authentication mode - "api" for direct API key, "max" for Claude Max subscription.
         model: Model identifier. Known models are validated; unknown models
             trigger a warning but are allowed for flexibility.
         max_output_tokens: Maximum tokens in the model's response. Must be between 1 and 100000.
@@ -127,6 +128,7 @@ class LLMSettings(BaseModel):
     """
 
     provider: str = "anthropic"
+    auth_mode: Literal["api", "max"] = "api"  # "api" = direct API key, "max" = Claude Max subscription
     model: str = "claude-sonnet-4-20250514"
     max_output_tokens: int = 4096  # Maximum tokens in the model's response
     api_key: str | None = None  # Falls back to env var
