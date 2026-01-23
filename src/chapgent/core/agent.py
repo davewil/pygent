@@ -6,7 +6,7 @@ from chapgent.core.cache import ToolCache
 from chapgent.core.cancellation import CancellationToken
 from chapgent.core.loop import DEFAULT_MAX_ITERATIONS, LoopEvent, conversation_loop
 from chapgent.core.permissions import PermissionManager
-from chapgent.core.providers import LLMProvider
+from chapgent.core.providers import ClaudeCodeProvider, LLMProvider
 from chapgent.session.models import Message, Session
 from chapgent.tools.registry import ToolRegistry
 
@@ -27,7 +27,7 @@ class Agent:
 
     def __init__(
         self,
-        provider: LLMProvider,
+        provider: LLMProvider | ClaudeCodeProvider,
         tools: ToolRegistry,
         permissions: PermissionManager,
         session: Session,

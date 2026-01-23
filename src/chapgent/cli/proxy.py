@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 import click
-import yaml
+import yaml  # type: ignore[import-untyped]
 from rich.console import Console
 
 from chapgent.cli.main import cli
@@ -77,9 +77,10 @@ def _start_proxy_background(host: str = DEFAULT_PROXY_HOST, port: int = DEFAULT_
     if venv_litellm.exists():
         litellm_cmd = str(venv_litellm)
     else:
-        litellm_cmd = shutil.which("litellm")
-        if not litellm_cmd:
+        found_litellm = shutil.which("litellm")
+        if not found_litellm:
             return False
+        litellm_cmd = found_litellm
 
     try:
         # LiteLLM requires ANTHROPIC_API_KEY env var even when using OAuth via proxy.
@@ -183,10 +184,11 @@ def start(port: int, host: str, no_configure: bool) -> None:
     if venv_litellm.exists():
         litellm_cmd = str(venv_litellm)
     else:
-        litellm_cmd = shutil.which("litellm")
-        if not litellm_cmd:
+        found_litellm = shutil.which("litellm")
+        if not found_litellm:
             console.print("[red]Error: litellm CLI not found. Install with: pip install 'litellm[proxy]'[/red]")
             raise SystemExit(1)
+        litellm_cmd = found_litellm
 
     console.print("[bold]Starting LiteLLM Proxy[/bold]\n")
     console.print(f"Config: {config_path}")

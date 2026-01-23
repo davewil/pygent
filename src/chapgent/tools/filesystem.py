@@ -81,7 +81,7 @@ async def list_files(path: str = ".", recursive: bool = False) -> str:
     if not root.exists():
         raise FileNotFoundError(f"Directory not found: {path}")
 
-    entries = []
+    entries: list[dict[str, str | int | bool]] = []
     truncated = False
 
     if recursive:
