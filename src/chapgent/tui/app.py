@@ -7,6 +7,7 @@ from textual.widgets import Footer, Header
 
 from chapgent.config.settings import Settings
 from chapgent.core.agent import Agent
+from chapgent.core.logging import logger
 from chapgent.session.models import Session
 from chapgent.session.storage import SessionStorage
 from chapgent.tui.commands import parse_slash_command
@@ -102,9 +103,12 @@ class ChapgentApp(App[None]):
         self.query_one(ConversationPanel).append_user_message(user_input)
 
         # Run agent (streaming or regular mode)
+        logger.debug(f"on_input_submitted: streaming_provider={self.streaming_provider is not None}, agent={self.agent is not None}")
         if self.streaming_provider:
+            logger.debug("Calling run_streaming_agent_loop")
             self.run_streaming_agent_loop(user_input)
         elif self.agent:
+            logger.debug("Calling run_agent_loop")
             self.run_agent_loop(user_input)
         else:
             self.query_one(ConversationPanel).append_assistant_message("Error: No agent attached to this session.")
@@ -163,10 +167,14 @@ class ChapgentApp(App[None]):
         This method uses the StreamingClaudeCodeProvider to stream responses
         directly from Claude Code CLI, updating the UI incrementally.
         """
+        logger.info(f"run_streaming_agent_loop called with input: {user_input[:50]}...")
         if not self.streaming_provider:
+            logger.error("No streaming provider in run_streaming_agent_loop!")
             return
 
         from chapgent.core.loop import streaming_conversation_loop
+
+        logger.debug(f"Starting streaming loop for: {user_input[:50]}...")
 
         # Reset streaming content buffer
         self._streaming_content = ""
@@ -176,14 +184,19 @@ class ChapgentApp(App[None]):
         panel.append_streaming_message()
 
         try:
+            event_count = 0
             async for event in streaming_conversation_loop(
                 self.streaming_provider,
                 user_input,
             ):
+                event_count += 1
+                logger.debug(f"Event {event_count}: type={event.type}, content_len={len(event.content) if event.content else 0}")
+
                 if event.type == "text_delta" and event.content:
                     # Accumulate text deltas and update the streaming message
                     self._streaming_content += event.content
                     panel.update_streaming_message(self._streaming_content)
+                    logger.debug(f"Updated message, total len={len(self._streaming_content)}")
 
                 elif event.type == "tool_call" and event.tool_name and event.tool_id:
                     try:
@@ -217,9 +230,12 @@ class ChapgentApp(App[None]):
                 elif event.type == "finished":
                     # Finalize the streaming message
                     panel.finalize_streaming_message()
+                    logger.info(f"Streaming finished with {event_count} events")
 
         except Exception as e:
+            import traceback
             error_msg = f"Streaming error: {e}"
+            logger.error(f"Streaming error: {e}\n{traceback.format_exc()}")
             panel.finalize_streaming_message()
             panel.append_assistant_message(error_msg)
             self.notify(error_msg, severity="error")

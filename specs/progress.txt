@@ -1856,3 +1856,27 @@
   - Learned: Textual widget IDs persist in registry even after setting id=None
   - Learned: Use unique IDs instead of trying to reuse/remove IDs in Textual
   - Total: 1625 tests pass (1 new test for multiple streaming messages)
+2026-01-24: Added proper logging to streaming pipeline for debugging:
+  - Added logging import to stream_provider.py using project's loguru-based logging
+  - Added comprehensive debug logging to send_message() method:
+    * Log when method is called
+    * Log subprocess start/stop
+    * Log message sending
+    * Log each line read from subprocess
+    * Log parsing results
+  - Added logging to app.py streaming integration:
+    * Log when on_input_submitted determines streaming vs regular mode
+    * Log when run_streaming_agent_loop is called (INFO level)
+    * Log each event received and content updates (DEBUG level)
+    * Log when streaming finishes (INFO level)
+    * Log errors with tracebacks (ERROR level)
+  - Verified streaming works correctly with integration test:
+    * Events are received and parsed correctly
+    * Text deltas accumulate in _streaming_content
+    * Message updates happen incrementally via update_streaming_message()
+    * Streaming completes with proper finalization
+  - Learned: Textual workers (@work decorator) handle async generators correctly
+  - Learned: Piping input to TUI doesn't work because TUI reads from terminal, not stdin
+  - Learned: Textual pilot testing mode is required for programmatic TUI testing
+  - Learned: loguru with enqueue=True is thread-safe for async logging
+  - Total: 1625 tests pass

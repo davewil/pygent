@@ -16,6 +16,8 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any
 
+from chapgent.core.logging import logger
+
 # =============================================================================
 # Stream Event Types
 # =============================================================================
@@ -191,8 +193,12 @@ class StreamingClaudeCodeProvider:
         Raises:
             StreamingClaudeCodeProviderError: If subprocess communication fails.
         """
+        logger.debug("StreamingClaudeCodeProvider.send_message called")
+
         if not self._started or not self.is_running:
+            logger.debug("Starting subprocess...")
             await self.start()
+            logger.debug("Subprocess started")
 
         if self._process is None or self._process.stdin is None or self._process.stdout is None:
             raise StreamingClaudeCodeProviderError("Subprocess not properly initialized")
@@ -202,17 +208,25 @@ class StreamingClaudeCodeProvider:
             "type": "user",
             "message": {"role": "user", "content": content}
         })
+        logger.debug(f"Sending message: {msg[:100]}...")
         try:
             self._process.stdin.write(f"{msg}\n".encode())
             await self._process.stdin.drain()
+            logger.debug("Message sent and drained")
         except (BrokenPipeError, ConnectionResetError) as e:
             raise StreamingClaudeCodeProviderError(f"Failed to send message: {e}") from e
 
         # Read streaming response
+        logger.debug("Starting to read lines from subprocess")
+        line_count = 0
         async for line in self._read_lines():
+            line_count += 1
+            logger.debug(f"Read line {line_count}: {line[:100]}...")
             event = self._parse_event(line)
             if event is None:
+                logger.debug(f"Line {line_count} parsed to None, skipping")
                 continue
+            logger.debug(f"Parsed event type: {type(event).__name__}")
 
             # Handle permission requests via callback
             if isinstance(event, PermissionRequest):
