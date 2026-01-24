@@ -1829,3 +1829,19 @@
   - Learned: Patching streaming_conversation_loop requires patching at chapgent.core.loop, not at import site
   - Phase 8 Phase 4 complete (TUI streaming support)
   - Total: 1624 tests pass (8 new streaming TUI tests)
+2026-01-24: Fixed Claude Code stream-json protocol implementation:
+  - Discovery: Initial implementation had wrong message format and missing flags
+  - Added --verbose flag (required for stream-json output format)
+  - Added --include-partial-messages flag (enables streaming text deltas)
+  - Fixed user message format from {"type":"user_message","content":"..."} to
+    {"type":"user","message":{"role":"user","content":"..."}}
+  - Fixed event parsing for actual Claude Code stream-json format:
+    * Text deltas: {"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"..."}}}
+    * Tool calls: {"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use",...}}}
+    * Tool results: {"type":"assistant","message":{"content":[{"type":"tool_result",...}]}}
+    * Completion: {"type":"result","session_id":"...","usage":{...}}
+  - Updated tests to use correct stream-json format
+  - Learned: Always test with actual CLI before implementing protocol
+  - Learned: Claude Code stream-json is different from the Anthropic API streaming format
+  - Learned: --verbose flag is required for stream-json output, error message is clear about it
+  - Total: 1624 tests pass
