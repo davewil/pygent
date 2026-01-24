@@ -1845,3 +1845,14 @@
   - Learned: Claude Code stream-json is different from the Anthropic API streaming format
   - Learned: --verbose flag is required for stream-json output, error message is clear about it
   - Total: 1624 tests pass
+2026-01-24: Fixed DuplicateIds error when sending multiple streaming messages:
+  - Problem: append_streaming_message() always used id="streaming-message"
+  - When sending a second message, Textual raised DuplicateIds error
+  - Setting widget.id = None in finalize didn't remove from Textual's registry
+  - Fix: Use counter-based unique IDs (streaming-message-1, streaming-message-2, etc.)
+  - Track current streaming message ID in ConversationPanel._streaming_message_id
+  - finalize_streaming_message() now just clears the tracking ID
+  - Added test for multiple streaming messages getting unique IDs
+  - Learned: Textual widget IDs persist in registry even after setting id=None
+  - Learned: Use unique IDs instead of trying to reuse/remove IDs in Textual
+  - Total: 1625 tests pass (1 new test for multiple streaming messages)
