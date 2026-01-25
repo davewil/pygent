@@ -193,12 +193,27 @@ class MarkdownMessage(Static):
         else:
             classes = role_class
 
-        super().__init__(name=name, id=id, classes=classes)
-
         self._content = content
         self._role = role
         self._renderer = renderer or MarkdownRenderer()
         self._selected = False
+
+        # Initialize Static with rendered content
+        super().__init__(self._render_markdown(), name=name, id=id, classes=classes)
+
+    def _render_markdown(self) -> RichMarkdown:
+        """Render the current content to a Rich Markdown object."""
+        prefix = "**You:** " if self._role == "user" else "**Agent:** "
+        full_content = f"{prefix}{self._content}"
+        return self._renderer.render(full_content)
+
+    def render(self) -> RichMarkdown:
+        """Render the markdown content.
+
+        Returns:
+            Rich Markdown renderable with role prefix.
+        """
+        return self._render_markdown()
 
     @property
     def content(self) -> str:
@@ -209,24 +224,12 @@ class MarkdownMessage(Static):
     def content(self, value: str) -> None:
         """Set the content."""
         self._content = value
-        self.refresh()
+        self.update(self._render_markdown())
 
     @property
     def role(self) -> str:
         """Get the message role."""
         return self._role
-
-    def render(self) -> RichMarkdown:
-        """Render the markdown content.
-
-        Returns:
-            Rich Markdown renderable with role prefix.
-        """
-        # Add role prefix
-        prefix = "**You:** " if self._role == "user" else "**Agent:** "
-        full_content = f"{prefix}{self._content}"
-
-        return self._renderer.render(full_content)
 
     def update_content(self, content: str) -> None:
         """Update the message content.
@@ -238,7 +241,8 @@ class MarkdownMessage(Static):
             content: New markdown content.
         """
         self._content = content
-        self.refresh()
+        # Use Static.update() which properly refreshes the display
+        self.update(self._render_markdown())
 
     @property
     def selected(self) -> bool:

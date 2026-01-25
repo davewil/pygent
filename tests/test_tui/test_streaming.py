@@ -9,7 +9,7 @@ import pytest
 
 from chapgent.config.settings import Settings
 from chapgent.core.loop import LoopEvent
-from chapgent.core.stream_provider import StreamingClaudeCodeProvider
+from chapgent.core.acp_provider import ACPClaudeCodeProvider
 from chapgent.tui.app import ChapgentApp
 from chapgent.tui.widgets import ConversationPanel, MarkdownMessage
 
@@ -20,7 +20,7 @@ class TestStreamingMode:
     @pytest.mark.asyncio
     async def test_app_with_streaming_provider_uses_streaming_loop(self):
         """When streaming_provider is set, app should use streaming loop."""
-        mock_provider = MagicMock(spec=StreamingClaudeCodeProvider)
+        mock_provider = MagicMock(spec=ACPClaudeCodeProvider)
 
         app = ChapgentApp(streaming_provider=mock_provider)
 
@@ -32,7 +32,10 @@ class TestStreamingMode:
     @pytest.mark.asyncio
     async def test_streaming_text_deltas_update_conversation(self):
         """Text delta events should update the conversation panel incrementally."""
-        mock_provider = MagicMock(spec=StreamingClaudeCodeProvider)
+        mock_provider = MagicMock(spec=ACPClaudeCodeProvider)
+        # Add properties that the app accesses for logging
+        mock_provider.is_running = False
+        mock_provider.session_id = None
 
         app = ChapgentApp(streaming_provider=mock_provider)
 
@@ -63,18 +66,18 @@ class TestStreamingMode:
     @pytest.mark.asyncio
     async def test_streaming_creates_single_message_for_all_deltas(self):
         """Streaming should create one message that accumulates all deltas."""
-        mock_provider = MagicMock(spec=StreamingClaudeCodeProvider)
+        mock_provider = MagicMock(spec=ACPClaudeCodeProvider)
 
         app = ChapgentApp(streaming_provider=mock_provider)
 
         async with app.run_test():
             panel = app.query_one(ConversationPanel)
 
-            # Create a streaming message
+            # Create a streaming message (starts with thinking placeholder)
             streaming_msg = panel.append_streaming_message()
-            assert streaming_msg.content == ""
+            assert streaming_msg.content == "_Thinking..._"
 
-            # Update with multiple deltas
+            # Update with multiple deltas (replaces thinking placeholder)
             panel.update_streaming_message("First")
             assert streaming_msg.content == "First"
 
@@ -92,7 +95,7 @@ class TestStreamingMode:
     @pytest.mark.asyncio
     async def test_streaming_error_shows_error_message(self):
         """LLM errors during streaming should show error in conversation."""
-        mock_provider = MagicMock(spec=StreamingClaudeCodeProvider)
+        mock_provider = MagicMock(spec=ACPClaudeCodeProvider)
 
         app = ChapgentApp(streaming_provider=mock_provider)
 
@@ -118,7 +121,7 @@ class TestStreamingPermissions:
     @pytest.mark.asyncio
     async def test_permission_callback_wired_to_streaming_provider(self):
         """Permission callback should be available for streaming provider."""
-        mock_provider = MagicMock(spec=StreamingClaudeCodeProvider)
+        mock_provider = MagicMock(spec=ACPClaudeCodeProvider)
         mock_provider.permission_callback = None
 
         app = ChapgentApp(streaming_provider=mock_provider)
@@ -141,7 +144,7 @@ class TestStreamingToolDisplay:
         """Tool calls during streaming should appear in the tool panel."""
         from chapgent.tui.widgets import ToolPanel
 
-        mock_provider = MagicMock(spec=StreamingClaudeCodeProvider)
+        mock_provider = MagicMock(spec=ACPClaudeCodeProvider)
 
         settings = Settings()
         app = ChapgentApp(streaming_provider=mock_provider, settings=settings)
@@ -164,7 +167,7 @@ class TestStreamingToolDisplay:
         """Tool results during streaming should update the tool panel."""
         from chapgent.tui.widgets import ToolPanel
 
-        mock_provider = MagicMock(spec=StreamingClaudeCodeProvider)
+        mock_provider = MagicMock(spec=ACPClaudeCodeProvider)
 
         settings = Settings()
         app = ChapgentApp(streaming_provider=mock_provider, settings=settings)

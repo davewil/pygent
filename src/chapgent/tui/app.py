@@ -13,7 +13,7 @@ from chapgent.session.storage import SessionStorage
 from chapgent.tui.commands import parse_slash_command
 
 if TYPE_CHECKING:
-    from chapgent.core.stream_provider import StreamingClaudeCodeProvider
+    from chapgent.core.acp_provider import ACPClaudeCodeProvider
 from chapgent.tui.screens import (
     ConfigShowScreen,
     HelpScreen,
@@ -54,7 +54,7 @@ class ChapgentApp(App[None]):
         agent: Agent | None = None,
         storage: SessionStorage | None = None,
         settings: Settings | None = None,
-        streaming_provider: "StreamingClaudeCodeProvider | None" = None,
+        streaming_provider: "ACPClaudeCodeProvider | None" = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -164,24 +164,29 @@ class ChapgentApp(App[None]):
     async def run_streaming_agent_loop(self, user_input: str) -> None:
         """Run the streaming agent loop for Claude Max mode.
 
-        This method uses the StreamingClaudeCodeProvider to stream responses
-        directly from Claude Code CLI, updating the UI incrementally.
+        This method uses the ACPClaudeCodeProvider to stream responses
+        via the Agent Client Protocol, updating the UI incrementally.
         """
-        logger.info(f"run_streaming_agent_loop called with input: {user_input[:50]}...")
+        logger.info(f"=== STREAMING START === input: {user_input[:30]}...")
         if not self.streaming_provider:
-            logger.error("No streaming provider in run_streaming_agent_loop!")
+            logger.error("No streaming provider!")
             return
 
         from chapgent.core.loop import streaming_conversation_loop
 
-        logger.debug(f"Starting streaming loop for: {user_input[:50]}...")
+        # Log provider state
+        logger.info(f"Provider: running={self.streaming_provider.is_running}, session={self.streaming_provider.session_id}")
 
         # Reset streaming content buffer
         self._streaming_content = ""
 
-        # Create streaming message placeholder
+        # Create streaming message placeholder with "Thinking..." indicator
         panel = self.query_one(ConversationPanel)
         panel.append_streaming_message()
+        logger.info(f"Created streaming msg: {panel._streaming_message_id}")
+
+        # Show subtle notification that request is in progress
+        self.notify("Sending to Claude Code...", timeout=2)
 
         try:
             event_count = 0
@@ -190,15 +195,16 @@ class ChapgentApp(App[None]):
                 user_input,
             ):
                 event_count += 1
-                logger.debug(f"Event {event_count}: type={event.type}, content_len={len(event.content) if event.content else 0}")
-
-                if event.type == "text_delta" and event.content:
+                if event.type == "text_delta":
                     # Accumulate text deltas and update the streaming message
-                    self._streaming_content += event.content
+                    self._streaming_content += event.content or ""
                     panel.update_streaming_message(self._streaming_content)
-                    logger.debug(f"Updated message, total len={len(self._streaming_content)}")
+                    # Log first few and then every 10th
+                    if event_count <= 3 or event_count % 10 == 0:
+                        logger.info(f"Event {event_count}: text_delta, total={len(self._streaming_content)} chars")
 
                 elif event.type == "tool_call" and event.tool_name and event.tool_id:
+                    logger.info(f"Event {event_count}: tool_call {event.tool_name}")
                     try:
                         self.query_one(ToolPanel).append_tool_call(
                             tool_name=event.tool_name,
@@ -209,6 +215,7 @@ class ChapgentApp(App[None]):
                         pass  # ToolPanel might not be present
 
                 elif event.type == "tool_result" and event.tool_id and event.content is not None:
+                    logger.info(f"Event {event_count}: tool_result")
                     try:
                         self.query_one(ToolPanel).update_tool_result(
                             tool_id=event.tool_id,
@@ -221,16 +228,15 @@ class ChapgentApp(App[None]):
                         pass  # ToolPanel might not be present
 
                 elif event.type == "llm_error":
+                    logger.error(f"Event {event_count}: llm_error - {event.error_message}")
                     error_msg = f"LLM Error: {event.error_message or event.content or 'Unknown error'}"
-                    # Finalize any streaming message first
                     panel.finalize_streaming_message()
                     panel.append_assistant_message(error_msg)
                     self.notify(error_msg, severity="error")
 
                 elif event.type == "finished":
-                    # Finalize the streaming message
                     panel.finalize_streaming_message()
-                    logger.info(f"Streaming finished with {event_count} events")
+                    logger.info(f"=== STREAMING FINISHED === {event_count} events, {len(self._streaming_content)} chars")
 
         except Exception as e:
             import traceback

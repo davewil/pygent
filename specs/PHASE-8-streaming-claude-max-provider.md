@@ -518,3 +518,203 @@ Updated `src/chapgent/tui/app.py` for streaming display:
 - TestStreamingWithNoProvider: 1 test (error handling when no provider)
 
 **Total tests:** 1624 passed (8 new streaming TUI tests)
+
+### Phase 5: Refactor to Agent Client Protocol SDK (COMPLETE)
+
+**Status:** Complete
+**Date:** 2026-01-24
+
+**Motivation:**
+
+The current custom subprocess/stream-json implementation has issues with:
+- Fragile subprocess lifecycle management (process exits after each `--print` response)
+- Cleanup logic that breaks when requests are interrupted mid-stream
+- Manual NDJSON parsing that may not match all edge cases
+- Session management complexity with `--resume`
+
+The `agent-client-protocol` Python SDK provides a standardized, robust implementation.
+
+**SDK:** `agent-client-protocol` (PyPI) - https://github.com/agentclientprotocol/python-sdk
+
+**Key SDK Components:**
+- `Client` class - manages JSON-RPC communication over stdio
+- `spawn_agent_process()` - helper to spawn the agent subprocess
+- `session_update()` callback - receives streaming events
+- Built-in permission handling via protocol methods
+
+**Note from Zed Integration:**
+Zed uses `@zed-industries/claude-code-acp` as an ACP adapter for Claude Code:
+- Authentication is handled by Claude Code directly (not passed through ACP)
+- The ACP layer handles protocol translation cleanly
+- Subprocess lifecycle is managed by the SDK
+
+**Implementation Plan:**
+
+1. **Add Dependency**
+   ```toml
+   # pyproject.toml
+   dependencies = [
+       "agent-client-protocol>=0.1.0",
+       # ... existing deps
+   ]
+   ```
+
+2. **Create ACP-Based Provider**
+
+   New file: `src/chapgent/core/acp_provider.py`
+
+   ```python
+   from agent_client_protocol import Client, spawn_agent_process
+   from collections.abc import AsyncIterator
+   from typing import Any, Callable, Awaitable
+   import asyncio
+
+   # Keep existing event dataclasses for API compatibility
+   from chapgent.core.stream_provider import (
+       TextDelta, ToolCall, ToolResult,
+       PermissionRequest, StreamComplete, StreamError,
+       StreamEvent
+   )
+
+   class ACPClaudeCodeProvider:
+       """Claude Code provider using Agent Client Protocol."""
+
+       def __init__(
+           self,
+           model: str = "sonnet",
+           permission_callback: Callable[[str, dict[str, Any]], Awaitable[bool]] | None = None,
+           working_directory: str | None = None,
+       ) -> None:
+           self.model = model
+           self.permission_callback = permission_callback
+           self.working_directory = working_directory
+           self._client: Client | None = None
+           self._session_id: str | None = None
+
+       async def start(self) -> None:
+           """Initialize the ACP client and spawn Claude Code."""
+           process = await spawn_agent_process(
+               ["claude", "--model", self.model],
+               cwd=self.working_directory
+           )
+           self._client = Client(process.stdin, process.stdout)
+           await self._client.initialize()
+
+       async def send_message(self, content: str) -> AsyncIterator[StreamEvent]:
+           """Send message and yield streaming events."""
+           if self._client is None:
+               await self.start()
+
+           events_queue = asyncio.Queue()
+
+           async def session_update(event):
+               # Map ACP events to our event types
+               await events_queue.put(self._map_event(event))
+
+           # Send via ACP with streaming callback
+           result = await self._client.send_message(
+               content,
+               session_id=self._session_id,
+               session_update=session_update
+           )
+
+           # Yield all queued events
+           while not events_queue.empty():
+               yield await events_queue.get()
+
+           # Update session and yield completion
+           self._session_id = result.get("session_id")
+           yield StreamComplete(
+               session_id=self._session_id or "",
+               usage=result.get("usage", {})
+           )
+   ```
+
+3. **Map ACP Events to Existing Types**
+
+   | ACP Event Type | Our Type |
+   |---------------|----------|
+   | `content_block_delta` with `text_delta` | `TextDelta` |
+   | `content_block_start` with `tool_use` | `ToolCall` |
+   | `tool_result` | `ToolResult` |
+   | Error events | `StreamError` |
+
+4. **Handle Permissions via ACP**
+
+   ACP provides built-in permission handling:
+   - Register permission handler with client
+   - When permission is requested, invoke `permission_callback`
+   - Return response via ACP's permission response mechanism
+
+5. **Update TUI Integration**
+
+   Replace provider instantiation in `src/chapgent/tui/app.py`:
+   ```python
+   # Before
+   from chapgent.core.stream_provider import StreamingClaudeCodeProvider
+
+   # After
+   from chapgent.core.acp_provider import ACPClaudeCodeProvider
+   ```
+
+   The streaming loop should work unchanged since we preserve the event type interface.
+
+6. **Keep Old Provider as Fallback (Optional)**
+
+   Keep `stream_provider.py` with deprecation warning for fallback.
+
+**Files to Modify:**
+
+| File | Change |
+|------|--------|
+| `pyproject.toml` | Add `agent-client-protocol` dependency |
+| `src/chapgent/core/acp_provider.py` | New file - ACP-based provider |
+| `src/chapgent/core/stream_provider.py` | Add deprecation warning (optional) |
+| `src/chapgent/tui/app.py` | Import new provider |
+| `tests/test_core/test_stream_provider.py` | Update/add tests for new provider |
+
+**Verification:**
+
+1. **Unit tests:** Run existing tests adapted for new implementation
+2. **Integration test:** Launch TUI, send message, verify streaming works
+3. **Multi-message test:** Send 2+ messages, verify session persistence
+4. **Interruption test:** Send message, interrupt with new, verify no stale state
+5. **Permission test:** Trigger tool requiring permission, verify callback works
+
+```bash
+# Run tests
+uv run pytest tests/test_core/test_stream_provider.py -v
+
+# Manual TUI test
+uv run python -m chapgent.tui.app
+```
+
+**Risks and Mitigations:**
+
+| Risk | Mitigation |
+|------|------------|
+| ACP SDK version incompatibility | Pin to specific version, test thoroughly |
+| Different event format than expected | Map events carefully, add logging |
+| Session management differences | Verify resume functionality works |
+
+**Implementation Notes:**
+
+Implemented `ACPClaudeCodeProvider` in `src/chapgent/core/acp_provider.py` which:
+- Uses `spawn_agent_process()` context manager to spawn Claude Code subprocess
+- Implements `ChapgentACPClient` class that handles ACP callbacks:
+  - `session_update()` - receives streaming updates and maps to our event types
+  - `request_permission()` - handles permission requests via callback
+- Maps ACP events (`AgentMessageChunk`, `ToolCallStart`, etc.) to existing `TextDelta`, `ToolCall`, etc. event types
+- Preserves API compatibility with the old `StreamingClaudeCodeProvider`
+
+**Files Changed:**
+- `pyproject.toml` - Added `agent-client-protocol>=0.1.0` dependency
+- `src/chapgent/core/acp_provider.py` - New ACP-based provider (created)
+- `src/chapgent/core/loop.py` - Updated imports to use ACPClaudeCodeProvider
+- `src/chapgent/cli/bootstrap.py` - Updated imports to use ACPClaudeCodeProvider
+- `src/chapgent/tui/app.py` - Updated type hints and removed old provider-specific cleanup
+- `tests/test_cli.py` - Updated mocks to use ACPClaudeCodeProvider
+- `tests/test_core/test_loop.py` - Updated imports and mocks
+- `tests/test_tui/test_streaming.py` - Updated imports
+
+**Test Results:** 1625 passed, 1 skipped

@@ -479,8 +479,9 @@ class TestProviderLifecycle:
         # Should have received events
         assert len(events) == 2
 
-        # Process should have been terminated
-        mock_process.terminate.assert_called_once()
+        # Process should have been cleaned up after message completion
+        # (subprocess exits after --print mode response, we wait for it)
+        mock_process.wait.assert_called()
 
     @pytest.mark.asyncio
     async def test_stop_terminates_subprocess(self) -> None:

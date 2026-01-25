@@ -250,16 +250,57 @@ class StreamingClaudeCodeProvider:
                     )
                 continue
 
-            yield event
-
-            # Stop iteration on stream completion
+            # Handle completion and error BEFORE yielding
+            # This ensures cleanup happens even if consumer breaks from the loop
             if isinstance(event, StreamComplete):
                 self._session_id = event.session_id
+                # Clean up subprocess - it exits after --print mode response
+                await self._cleanup_subprocess()
+                yield event
                 break
 
-            # Stop iteration on error
             if isinstance(event, StreamError):
+                await self._cleanup_subprocess()
+                yield event
                 break
+
+            yield event
+
+    async def _cleanup_subprocess(self, force: bool = False) -> None:
+        """Clean up the subprocess after it completes.
+
+        With --print mode, Claude Code exits after each response.
+        This waits for the process to exit and resets state so a new
+        subprocess can be started for the next message.
+
+        Args:
+            force: If True, kill immediately without waiting. Use when cleaning
+                   up a stale process from a cancelled request.
+        """
+        if self._process is None:
+            self._started = False
+            return
+
+        try:
+            if force:
+                # Kill immediately for stale cleanup
+                self._process.kill()
+                await asyncio.wait_for(self._process.wait(), timeout=2.0)
+            else:
+                # Wait briefly for normal exit
+                await asyncio.wait_for(self._process.wait(), timeout=5.0)
+        except asyncio.TimeoutError:
+            self._process.kill()
+            try:
+                await asyncio.wait_for(self._process.wait(), timeout=2.0)
+            except asyncio.TimeoutError:
+                pass  # Give up, process is stuck
+        except ProcessLookupError:
+            pass  # Process already gone
+        finally:
+            self._process = None
+            self._started = False
+            # _session_id is preserved for --resume on next start
 
     async def _read_lines(self) -> AsyncIterator[str]:
         """Read NDJSON lines from subprocess stdout.

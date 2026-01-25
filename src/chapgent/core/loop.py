@@ -12,11 +12,11 @@ from chapgent.core.parallel import execute_tools_parallel
 from chapgent.core.providers import LLMError, LLMResponse, TokenUsage, classify_llm_error
 from chapgent.core.providers import TextBlock as ProvTextBlock
 from chapgent.core.providers import ToolUseBlock as ProvToolUseBlock
-from chapgent.core.stream_provider import (
+from chapgent.core.acp_provider import (
+    ACPClaudeCodeProvider,
     StreamComplete,
     StreamError,
     StreamEvent,
-    StreamingClaudeCodeProvider,
     TextDelta,
     ToolCall,
     ToolResult,
@@ -352,14 +352,14 @@ async def conversation_loop(
 
 
 async def streaming_conversation_loop(
-    provider: StreamingClaudeCodeProvider,
+    provider: ACPClaudeCodeProvider,
     user_message: str,
     cancellation_token: CancellationToken | None = None,
 ) -> AsyncIterator[LoopEvent]:
     """Streaming conversation loop for Claude Max mode.
 
-    This loop uses the StreamingClaudeCodeProvider to stream responses
-    directly from Claude Code CLI, yielding events as they arrive.
+    This loop uses the ACPClaudeCodeProvider to stream responses
+    via the Agent Client Protocol, yielding events as they arrive.
 
     Unlike the regular conversation_loop, this does not manage tools locally -
     Claude Code handles all tool execution. This loop just passes through
@@ -392,6 +392,7 @@ async def streaming_conversation_loop(
         return
 
     try:
+        logger.info(f"streaming_conversation_loop: calling provider.send_message({user_message[:30]}...)")
         async for event in provider.send_message(user_message):
             # Check cancellation between events
             if cancellation_token is not None and cancellation_token.is_cancelled:

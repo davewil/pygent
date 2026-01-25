@@ -19,10 +19,10 @@ from chapgent.core.loop import DEFAULT_MAX_ITERATIONS, conversation_loop, stream
 from chapgent.core.providers import LLMResponse, TokenUsage
 from chapgent.core.providers import TextBlock as ProvTextBlock
 from chapgent.core.providers import ToolUseBlock as ProvToolUseBlock
-from chapgent.core.stream_provider import (
+from chapgent.core.acp_provider import (
     StreamComplete,
     StreamError,
-    StreamingClaudeCodeProvider,
+    ACPClaudeCodeProvider,
     TextDelta,
     ToolCall,
     ToolResult,
@@ -522,13 +522,13 @@ class TestErrorHandling:
 
 
 # =============================================================================
-# Streaming Loop - Claude Max streaming via StreamingClaudeCodeProvider
+# Streaming Loop - Claude Max streaming via ACPClaudeCodeProvider
 # =============================================================================
 
 
 def create_mock_streaming_provider(events: list) -> MagicMock:
     """Create a mock streaming provider that yields the given events."""
-    provider = MagicMock(spec=StreamingClaudeCodeProvider)
+    provider = MagicMock(spec=ACPClaudeCodeProvider)
 
     async def mock_send_message(content: str):
         for event in events:
@@ -696,7 +696,7 @@ class TestStreamingLoopErrors:
     @pytest.mark.asyncio
     async def test_provider_exception_yields_llm_error(self):
         """Exception from provider yields llm_error event."""
-        provider = MagicMock(spec=StreamingClaudeCodeProvider)
+        provider = MagicMock(spec=ACPClaudeCodeProvider)
 
         async def mock_send_message(content: str):
             raise RuntimeError("Connection failed")
@@ -743,7 +743,7 @@ class TestStreamingLoopCancellation:
     async def test_cancellation_during_streaming(self):
         """Cancellation during streaming yields cancelled event."""
         # Provider that yields events with a delay
-        provider = MagicMock(spec=StreamingClaudeCodeProvider)
+        provider = MagicMock(spec=ACPClaudeCodeProvider)
         token = CancellationToken()
 
         async def mock_send_message(content: str):

@@ -517,7 +517,7 @@ class TestCLIPassesSettingsToProvider:
 
     @patch("chapgent.cli.bootstrap.ChapgentApp")
     @patch("chapgent.cli.bootstrap.Agent")
-    @patch("chapgent.cli.bootstrap.StreamingClaudeCodeProvider")
+    @patch("chapgent.cli.bootstrap.ACPClaudeCodeProvider")
     @patch("chapgent.cli.bootstrap.ToolRegistry")
     @patch("chapgent.cli.bootstrap.SessionStorage")
     @patch("chapgent.cli.bootstrap.load_config")
@@ -532,7 +532,7 @@ class TestCLIPassesSettingsToProvider:
         mock_agent,
         mock_app,
     ):
-        """Verify CLI uses StreamingClaudeCodeProvider in max mode."""
+        """Verify CLI uses ACPClaudeCodeProvider in max mode."""
         from chapgent.config.settings import LLMSettings, Settings
 
         # Mock claude CLI being available
@@ -553,7 +553,7 @@ class TestCLIPassesSettingsToProvider:
             print(result.output)
         assert result.exit_code == 0
 
-        # Verify StreamingClaudeCodeProvider was called
+        # Verify ACPClaudeCodeProvider was called
         mock_streaming_provider.assert_called_once()
         call_kwargs = mock_streaming_provider.call_args.kwargs
         assert call_kwargs.get("model") == "sonnet"  # Should map to alias
@@ -625,7 +625,7 @@ class TestCLIPassesSettingsToProvider:
         assert "Claude Code CLI" in result.output or "npm install" in result.output
 
     @patch("chapgent.cli.bootstrap.ChapgentApp")
-    @patch("chapgent.cli.bootstrap.StreamingClaudeCodeProvider")
+    @patch("chapgent.cli.bootstrap.ACPClaudeCodeProvider")
     @patch("chapgent.cli.bootstrap.ToolRegistry")
     @patch("chapgent.cli.bootstrap.SessionStorage")
     @patch("chapgent.cli.bootstrap.load_config")
@@ -658,7 +658,7 @@ class TestCLIPassesSettingsToProvider:
 
         assert result.exit_code == 0
 
-        # Verify StreamingClaudeCodeProvider was called with mapped alias
+        # Verify ACPClaudeCodeProvider was called with mapped alias
         mock_streaming_provider.assert_called_once()
         call_kwargs = mock_streaming_provider.call_args.kwargs
         assert call_kwargs.get("model") == "opus"

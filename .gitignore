@@ -149,3 +149,5 @@ cython_debug/
 
 # Project specific
 .chapgent/
+node_modules/
+package-lock.json

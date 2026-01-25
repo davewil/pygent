@@ -264,7 +264,8 @@ class ConversationPanel(Static):
         """Append an empty assistant message for streaming updates.
 
         This method creates a placeholder message that can be updated
-        incrementally as streaming content arrives.
+        incrementally as streaming content arrives. Initially shows a
+        "thinking" indicator until content starts arriving.
 
         Returns:
             The MarkdownMessage widget that can be updated via update_content().
@@ -275,7 +276,7 @@ class ConversationPanel(Static):
 
         scroll = self.query_one("#conversation-messages", VerticalScroll)
         message = MarkdownMessage(
-            "",
+            "_Thinking..._",  # Placeholder while waiting for response
             role="agent",
             renderer=self._get_renderer(),
             id=self._streaming_message_id,

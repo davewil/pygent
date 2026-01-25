@@ -91,8 +91,8 @@ class TestConversationPanelStreaming:
     """Tests for streaming message support."""
 
     @pytest.mark.asyncio
-    async def test_append_streaming_message_creates_empty_message(self):
-        """append_streaming_message should create an empty agent message."""
+    async def test_append_streaming_message_creates_thinking_placeholder(self):
+        """append_streaming_message should create an agent message with thinking indicator."""
         app = ChapgentApp()
         async with app.run_test():
             panel = app.query_one(ConversationPanel)
@@ -100,7 +100,7 @@ class TestConversationPanelStreaming:
 
             assert streaming_msg is not None
             assert streaming_msg.role == "agent"
-            assert streaming_msg.content == ""
+            assert streaming_msg.content == "_Thinking..._"  # Shows thinking placeholder
             # ID should be unique with counter suffix
             assert streaming_msg.id is not None
             assert streaming_msg.id.startswith("streaming-message-")

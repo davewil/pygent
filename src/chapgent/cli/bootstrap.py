@@ -13,7 +13,7 @@ from chapgent.core.agent import Agent
 from chapgent.core.mock_provider import MockLLMProvider
 from chapgent.core.permissions import PermissionManager
 from chapgent.core.providers import ClaudeCodeProvider, LLMProvider
-from chapgent.core.stream_provider import StreamingClaudeCodeProvider
+from chapgent.core.acp_provider import ACPClaudeCodeProvider
 from chapgent.session.models import Session
 from chapgent.session.storage import SessionStorage
 from chapgent.tools.registry import ToolRegistry
@@ -47,7 +47,7 @@ async def init_agent_and_app(
 
     # 2. Determine auth mode and validate
     provider: LLMProvider | ClaudeCodeProvider | None = None
-    streaming_provider: StreamingClaudeCodeProvider | None = None
+    streaming_provider: ACPClaudeCodeProvider | None = None
 
     # Determine effective auth mode
     auth_mode = auth_mode_override or settings.llm.auth_mode
@@ -55,7 +55,7 @@ async def init_agent_and_app(
     if use_mock:
         provider = MockLLMProvider(delay=0.3)
     elif auth_mode == "max":
-        # Claude Max mode: use StreamingClaudeCodeProvider for real-time streaming
+        # Claude Max mode: use ACPClaudeCodeProvider for real-time streaming
         # Claude Code handles OAuth authentication internally
         import shutil
 
@@ -80,7 +80,7 @@ async def init_agent_and_app(
             model_alias = "haiku"
 
         # Create streaming provider (permission callback wired after app creation)
-        streaming_provider = StreamingClaudeCodeProvider(
+        streaming_provider = ACPClaudeCodeProvider(
             model=model_alias,
             working_directory=str(Path.cwd()),
         )
