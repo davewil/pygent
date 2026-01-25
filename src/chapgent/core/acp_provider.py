@@ -19,7 +19,7 @@ from typing import Any
 
 from acp import PROTOCOL_VERSION, spawn_agent_process, text_block
 from acp.client.connection import ClientSideConnection
-from acp.interfaces import Agent, Client
+from acp.interfaces import Agent
 from acp.schema import (
     AgentMessageChunk,
     AgentThoughtChunk,
@@ -125,12 +125,11 @@ class ChapgentACPClient:
     ) -> None:
         self.event_queue = event_queue
         self.permission_callback = permission_callback
-        self._agent: Agent | None = None
         self._pending_permission: asyncio.Future[bool] | None = None
 
     def on_connect(self, conn: Agent) -> None:
-        """Called when connected to the agent."""
-        self._agent = conn
+        """Called when connected to the agent. Required by ACP Client interface."""
+        pass
 
     async def session_update(
         self,
@@ -432,7 +431,6 @@ class ACPClaudeCodeProvider:
         self._session_id: str | None = None
         self._connection: ClientSideConnection | None = None
         self._process: asyncio.subprocess.Process | None = None
-        self._context_manager: Any = None
 
     @property
     def session_id(self) -> str | None:

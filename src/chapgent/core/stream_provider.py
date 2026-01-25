@@ -1,5 +1,10 @@
 """Streaming provider for Claude Max using Claude CLI's stream-json protocol.
 
+.. deprecated::
+    This module is deprecated and kept only for reference. Use
+    :mod:`chapgent.core.acp_provider` instead, which provides a more robust
+    implementation using the Agent Client Protocol (ACP) SDK.
+
 This module provides a streaming interface to Claude Code CLI, enabling:
 - Real-time streaming of responses via text deltas
 - Permission handling passed through to the application
