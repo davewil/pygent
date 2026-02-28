@@ -9,14 +9,13 @@ IMPORTANT:
 - when tests pass, commit and push to gh
 
 
+study specs/progress.txt if it exists
+study specs/implementation-plan.md (the plan) and pick the most important thing to do
 
-study specs/README.md
-  study specs/progress.txt
-  study the other specs  (the plan) and pick the most important thing to do
-
-  IMPORTANT:
-  - author predominataly behavioural tests, property based tests where fuzzing is needed, or unit tests where needed  (whichever is best), following new test patterns
-  - after making changes to the files run the tests
-  - update the specs document you decided to work on  when the task is done
-  - append to progress.txt what you have learned
-  - when tests pass, commit and push to gh
+IMPORTANT:
+- NEVER use Ash.get, Ash.read, Ash.write, Ash.create etc. calls directly. ALWAYS use Ash via a call to a code_interface on the Domain
+- author predominataly behavioural tests, property based tests where fuzzing is needed, or unit tests where needed  (whichever is best), following new test patterns
+- after making changes to the files run the tests
+- update the specs/implementation-plan.md document you decided to work on  when the task is done
+- append to progress.txt what you have learned
+- when tests pass, commit and push to gh
